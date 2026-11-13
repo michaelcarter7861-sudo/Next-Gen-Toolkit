@@ -139,10 +139,10 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     clusteredQueries: ['compress pdf to 100kb', 'reduce pdf file size without losing quality', 'offline pdf compressor in browser no upload', 'shrink pdf for email'],
     specTable: {
       supportedFormats: 'PDF 1.3 – 2.0 (.pdf)',
-      maxFileCapacity: 'Unlimited (Browser RAM Bound, 500MB+ tested)',
+      maxFileCapacity: 'Depends on available browser memory and input size',
       executionEngine: 'pdf-lib Object Stream Reconstruction + Canvas Downsampling',
       privacyModel: 'Zero-Knowledge / 0 Bytes Uploaded to Server',
-      batchSupport: 'Unlimited Multi-File Queue + 1-Click JSZip Export',
+      batchSupport: 'Multi-file queue with ZIP export; capacity depends on browser memory',
     },
     faqs: [
       { q: 'Does Utilix upload my confidential PDF to any server?', a: 'No. Every byte of your PDF is parsed and compressed locally inside your browser using JavaScript and WebAssembly. Network inspection verifies 0 bytes are transmitted.' },
@@ -179,7 +179,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     clusteredQueries: ['combine pdf pages free no sign up', 'reorder pdf pages in browser', 'join multiple pdfs into one offline', 'merge pdf without watermark'],
     specTable: {
       supportedFormats: 'Multi-file PDF (.pdf)',
-      maxFileCapacity: 'Unlimited files per merge session',
+      maxFileCapacity: 'Depends on available browser memory and input size',
       executionEngine: 'pdf-lib copyPages() & Byte Buffer Concatenation',
       privacyModel: '100% Local Browser RAM (Zero Cloud Storage)',
       batchSupport: 'Multi-PDF Queue + Instant Unified Output',
@@ -218,7 +218,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     clusteredQueries: ['extract pages from pdf free', 'split pdf by page numbers online', 'separate pdf pages in browser', 'cut pdf pages without uploading'],
     specTable: {
       supportedFormats: 'PDF (.pdf)',
-      maxFileCapacity: 'Unlimited pages',
+      maxFileCapacity: 'Depends on document size and available browser memory',
       executionEngine: 'pdf-lib Page Index Slicer + JSZip',
       privacyModel: 'Zero-Knowledge / Local Browser Execution',
       batchSupport: 'Custom Range Syntax + Multi-File Queue',
@@ -257,7 +257,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     clusteredQueries: ['pdf to png 300 dpi online free', 'convert pdf pages to jpg without upload', 'pdf to webp converter bulk', 'high resolution pdf to image'],
     specTable: {
       supportedFormats: 'Input: PDF • Output: PNG, JPEG, WebP',
-      maxFileCapacity: 'Unlimited local rendering',
+      maxFileCapacity: 'Depends on document size and available browser memory',
       executionEngine: 'HTML5 Canvas + pdf-lib Page Geometry + JSZip',
       privacyModel: '100% Local Browser Canvas',
       batchSupport: 'Multi-Page Simultaneous Export + ZIP',
@@ -335,7 +335,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     clusteredQueries: ['strip metadata from pdf online free', 'view hidden pdf properties in browser', 'remove creator and author from pdf', 'sanitize pdf before sharing'],
     specTable: {
       supportedFormats: 'PDF 1.0 – 2.0 (.pdf)',
-      maxFileCapacity: 'Unlimited file size',
+      maxFileCapacity: 'Depends on document size and available browser memory',
       executionEngine: 'pdf-lib Info Dictionary & Stream Sanitizer',
       privacyModel: '100% Client-Side Forensic Scrubbing',
       batchSupport: 'Multi-PDF Sanitization + ZIP Export',
@@ -379,7 +379,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     clusteredQueries: ['reduce jpg size under 50kb online', 'compress photo to 20kb for form upload', 'resize signature and photo for job application'],
     specTable: {
       supportedFormats: 'JPG, PNG, WebP (Max 50 MB per file)',
-      maxFileCapacity: 'Unlimited batch queue',
+      maxFileCapacity: 'Depends on available browser memory and input size',
       executionEngine: 'Binary-Search Canvas Quality Iteration Loop',
       privacyModel: '100% In-Browser Processing (Zero Upload)',
       batchSupport: 'Multi-Image Queue + 1-Click ZIP Export',
@@ -398,14 +398,14 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     slug: 'bulk-webp-avif-converter',
     canonicalPath: '/image-tools/bulk-webp-avif-converter/',
     name: 'Bulk WebP & Format Converter',
-    shortDesc: 'Convert between JPG, PNG, and next-gen WebP in unlimited batches.',
+    shortDesc: 'Convert JPG, PNG and WebP images with batch export.',
     primaryKeyword: 'Bulk WebP & Image Format Converter (No Limit)',
     valuePropSubtitle: 'Batch transcode PNG and JPG images into high-efficiency WebP or standard formats for Core Web Vitals.',
     subCategory: 'Convert',
     nextStepToolId: 'social-media-image-resizer',
     nextStepPrompt: 'Need responsive social aspect ratios? Send to Social & E-Com Bulk Resizer →',
     entityLeadSentence:
-      'Utilix Bulk WebP & Format Converter is a high-speed client-side image transcoder that converts PNG, JPEG, and WebP files in unlimited batches using hardware-accelerated HTML5 Canvas codecs.',
+      'Utilix Bulk WebP & Format Converter is a high-speed client-side image transcoder that converts PNG, JPEG, and WebP files using HTML5 Canvas codecs. Practical batch limits depend on browser memory and input size.',
     aeoQuestionHeading: 'How to Batch Convert PNG and JPG to WebP for Faster Core Web Vitals?',
     aeoSummaryParagraph:
       'Drop your folder of PNG or JPG assets into the Utilix Bulk WebP Converter, set the quality slider (e.g., 82%), and download all converted next-gen WebP files in a single ZIP archive with zero upload wait time.',
@@ -421,7 +421,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       maxFileCapacity: '50+ images simultaneously',
       executionEngine: 'HTML5 Canvas Native MIME Transcoder + JSZip',
       privacyModel: '100% Client-Side RAM Execution',
-      batchSupport: 'Unlimited Queue + Total Bandwidth Saved Summary',
+      batchSupport: 'Multi-file queue and ZIP export; capacity depends on browser memory',
     },
     faqs: [
       { q: 'Why does Google PageSpeed Insights recommend WebP?', a: 'WebP reduces image payload sizes by 30%–65% compared to legacy PNG and JPEG, directly improving Largest Contentful Paint (LCP).' },
@@ -457,7 +457,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     clusteredQueries: ['remove exif data from photo online free', 'check gps location in jpg image', 'strip camera metadata before uploading', 'bulk exif remover browser'],
     specTable: {
       supportedFormats: 'JPEG, PNG, WebP',
-      maxFileCapacity: 'Unlimited local inspection',
+      maxFileCapacity: 'Depends on image dimensions and available browser memory',
       executionEngine: 'DataView 0xFFE1 APP1 Parser + Clean Canvas Pixel Re-encoder',
       privacyModel: 'Zero Server Upload / Local Forensic Scan',
       batchSupport: 'Multi-Photo Scrubbing + ZIP Export',
@@ -535,7 +535,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     clusteredQueries: ['copy text from image online free', 'paste screenshot to extract text', 'image to markdown ocr in browser', 'offline ocr no upload'],
     specTable: {
       supportedFormats: 'Input: PNG, JPG, WebP, Clipboard • Output: TXT, MD, JSON',
-      maxFileCapacity: 'Unlimited screenshots & scans',
+      maxFileCapacity: 'Depends on image dimensions and available browser memory',
       executionEngine: 'Client-Side Canvas Contrast Normalizer + Lexical OCR Pipeline',
       privacyModel: 'Zero Server Upload for Local OCR',
       batchSupport: 'Instant Clipboard Paste + Multi-Format Export',
@@ -586,7 +586,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     },
     faqs: [
       { q: 'What syntax errors can "Auto-Fix Broken JSON" repair automatically?', a: 'Powered by jsonrepair, it automatically fixes trailing commas, single-quoted strings, unquoted object keys, missing closing brackets, and Python True/False/None constants.' },
-      { q: 'Is it safe to paste production JSON containing API keys or PII?', a: 'Yes. Utilix processes JSON 100% locally in your browser JavaScript thread with zero network requests.' },
+      { q: 'Is it safe to paste production JSON containing API keys or PII?', a: 'The JSON formatting and conversion steps run in your browser; the JSON input is not sent to a processing API by this tool.' },
       { q: 'Can I convert an array of JSON objects directly into a CSV spreadsheet or SQL table?', a: 'Yes! Click the CSV or SQL tab in the output toolbar to generate RFC-compliant CSV rows or CREATE TABLE + INSERT statements.' },
       { q: 'Does it generate TypeScript interfaces from nested JSON?', a: 'Yes, select the TypeScript tab to infer strongly typed interfaces from any JSON payload.' },
       { q: 'What indentation levels are supported?', a: 'You can toggle between 2 spaces, 4 spaces, and compact 1-line minified JSON.' },
@@ -784,7 +784,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       { q: 'Does the Base64 decoder strip "data:image/png;base64," prefixes automatically?', a: 'Yes, if you paste a full Data URI, Utilix automatically strips the MIME header before decoding.' },
       { q: 'What is the difference between URL encodeURI and encodeURIComponent?', a: 'Utilix uses RFC 3986 encodeURIComponent rules so reserved characters like &, =, ?, and / are safely escaped for query parameters.' },
       { q: 'Which characters are escaped in HTML Entity mode?', a: 'It escapes &, <, >, ", and \' to prevent XSS injection when embedding code snippets in HTML.' },
-      { q: 'Is any encoded string logged or transmitted?', a: 'No, 0 bytes leave your browser.' },
+      { q: 'Is any encoded string logged or transmitted?', a: 'The encoding and decoding steps run locally in your browser; the input string is not sent to a processing API by this tool.' },
     ],
   },
 
@@ -857,7 +857,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     clusteredQueries: ['create txt file online and download', 'strip formatting from copied chatgpt text', 'remove hidden ai watermarks from text', 'convert string to md'],
     specTable: {
       supportedFormats: 'Input: Rich Text / AI Text / Markdown • Output: .txt, .md',
-      maxFileCapacity: 'Unlimited text length',
+      maxFileCapacity: 'Depends on input length and available browser memory',
       executionEngine: 'Unicode Regex Scrubber + Turndown + Blob Constructor',
       privacyModel: '100% Local Browser Sanitization',
       batchSupport: 'Custom Filename & LF/CRLF Line Ending Export',
