@@ -170,7 +170,8 @@ export function SeoGeoInspectorModal({
       robots: '/robots.txt',
       sitemap: '/sitemap.xml',
     };
-    fetch(pathMap[activeTab])
+    const assetPath = `${import.meta.env.BASE_URL}${pathMap[activeTab].replace(/^\\/+/, '')}`;
+    fetch(assetPath)
       .then((r) => r.text())
       .then((txt) => setFileContent(txt))
       .catch(() => setFileContent('Failed to load file.'));
@@ -379,6 +380,10 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
 
   const runAiQuery = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (import.meta.env.VITE_STATIC_DEPLOYMENT === 'true') {
+      setErrorMsg('AI Search requires the optional server API and is not available in this static hosting build. The browser-based utility tools remain available.');
+      return;
+    }
     if (!query.trim()) {
       setErrorMsg('Please enter a query before running the AI workflow.');
       return;
