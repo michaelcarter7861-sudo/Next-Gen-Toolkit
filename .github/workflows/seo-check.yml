@@ -1,0 +1,59 @@
+name: UTILIX SEO Build Check
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAGES: 'true'
+      SITE_URL: https://michaelcarter7861-sudo.github.io/UTILIX
+      VITE_SITE_URL: https://michaelcarter7861-sudo.github.io/UTILIX
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run utility engine tests
+        run: npm test
+
+      - name: Type-check project
+        run: npm run lint
+
+      - name: Build and generate static SEO pages
+        run: npm run build
+
+      - name: Verify generated SEO routes
+        run: |
+          test -f dist/index.html
+          test -f dist/404.html
+          test -f dist/robots.txt
+          test -f dist/sitemap.xml
+          test -f dist/pdf-tools/compress-pdf/index.html
+          test -f dist/image-tools/compress-image-to-kb/index.html
+          test -f dist/dev-tools/json-formatter-validator/index.html
+          test -f dist/generators/cron-expression-generator/index.html
+          grep -q 'rel="canonical"' dist/pdf-tools/compress-pdf/index.html
+          grep -q 'application/ld+json' dist/pdf-tools/compress-pdf/index.html
+          grep -q 'https://michaelcarter7861-sudo.github.io/UTILIX/' dist/sitemap.xml
+
+      - name: Upload static site artifact for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: utilix-static-site
+          path: dist
+          if-no-files-found: error
