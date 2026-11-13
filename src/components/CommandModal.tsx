@@ -170,7 +170,7 @@ export function SeoGeoInspectorModal({
       robots: '/robots.txt',
       sitemap: '/sitemap.xml',
     };
-    const assetPath = `${import.meta.env.BASE_URL}${pathMap[activeTab].replaceAll('/', '')}`;
+    const assetPath = `${import.meta.env.BASE_URL}${pathMap[activeTab].slice(1)}`;
     fetch(assetPath)
       .then((r) => r.text())
       .then((txt) => setFileContent(txt))
