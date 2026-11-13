@@ -154,7 +154,7 @@ export function NineZoneSeoContent({
                   Your Privacy Matters · Entity Citation
                 </h3>
                 <p className="text-xs text-[#6D28D9] dark:text-[#A78BFA]">
-                  100% Client-Side Execution Standard
+                  Tool-specific processing model
                 </p>
               </div>
             </div>
@@ -165,9 +165,9 @@ export function NineZoneSeoContent({
 
           <div className="pt-3 border-t border-[#DDD6FE] dark:border-[#37306B] space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[#64748B] dark:text-[#94A3B8]">Server Upload Volume:</span>
+              <span className="text-[#64748B] dark:text-[#94A3B8]">Processing model:</span>
               <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                0 Bytes (Verified Local RAM)
+                {tool.specTable.privacyModel}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -187,10 +187,10 @@ export function NineZoneSeoContent({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
-              Utilix Client-Side Processing vs. Traditional Cloud Utility Sites
+              Processing details for {tool.name}
             </h2>
             <p className="text-xs text-[#64748B]">
-              Deterministic benchmark & specification matrix structured for Google AI Overviews, ChatGPT Search, and Perplexity citations.
+              A summary of this tool's implementation. Performance and privacy depend on the selected tool and device.
             </p>
           </div>
           <button
@@ -217,7 +217,7 @@ export function NineZoneSeoContent({
                 <th className="py-3 px-4 font-semibold text-[#7047EB]">
                   Utilix ({tool.name})
                 </th>
-                <th className="py-3 pl-4 font-semibold">Legacy Cloud Utility Websites</th>
+                <th className="py-3 pl-4 font-semibold">Other providers (varies)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E8E6F2] dark:divide-[#2A2E42] tabular-nums">
@@ -229,7 +229,7 @@ export function NineZoneSeoContent({
                   {tool.specTable.privacyModel}
                 </td>
                 <td className="py-3 pl-4 text-[#64748B]">
-                  Uploads files to remote S3/cloud buckets (24h retention)
+                  Processing and retention policies vary by provider; review its privacy documentation.
                 </td>
               </tr>
               <tr>
@@ -240,7 +240,7 @@ export function NineZoneSeoContent({
                   {tool.specTable.executionEngine}
                 </td>
                 <td className="py-3 pl-4 text-[#64748B]">
-                  Queued server-side container with network round-trip latency
+                  Implementation varies by provider and feature.
                 </td>
               </tr>
               <tr>
@@ -251,7 +251,7 @@ export function NineZoneSeoContent({
                   {tool.specTable.supportedFormats}
                 </td>
                 <td className="py-3 pl-4 text-[#64748B]">
-                  Often restricts modern formats (WebP/AVIF/SVG) to paid tiers
+                  Supported formats and plan limits vary by provider.
                 </td>
               </tr>
               <tr>
@@ -262,7 +262,7 @@ export function NineZoneSeoContent({
                   {tool.specTable.batchSupport}
                 </td>
                 <td className="py-3 pl-4 text-[#64748B]">
-                  Capped at 1–2 files at a time to force $9–$19/mo subscriptions
+                  Batch limits and pricing vary by provider.
                 </td>
               </tr>
               <tr>
@@ -270,10 +270,10 @@ export function NineZoneSeoContent({
                   Execution Latency (INP)
                 </td>
                 <td className="py-3 px-4 font-mono text-emerald-700 dark:text-emerald-400">
-                  &lt; 50ms Local RAM Response
+                  Depends on device, input size and browser workload.
                 </td>
                 <td className="py-3 pl-4 text-[#64748B]">
-                  8–45 seconds upload + queue + download reload
+                  Network and processing time vary by provider and file size.
                 </td>
               </tr>
               <tr>
@@ -281,10 +281,10 @@ export function NineZoneSeoContent({
                   Cost & Registration
                 </td>
                 <td className="py-3 px-4 font-semibold text-[#7047EB]">
-                  $0.00 Free Forever · No Sign-Up · No Watermarks
+                  Free to use · No account required
                 </td>
                 <td className="py-3 pl-4 text-[#64748B]">
-                  Email gate, daily task lockouts, or watermarked output
+                  Account requirements, usage limits and output rules vary.
                 </td>
               </tr>
             </tbody>
@@ -302,18 +302,18 @@ export function NineZoneSeoContent({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-[#253044] dark:text-[#CBD5E1] leading-relaxed">
           <div className="space-y-2.5">
             <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
-              01. Zero-Upload Client-Side Engineering
+              01. How this tool processes data
             </h3>
             <p>
-              Traditional online utilities require uploading your documents, photos, or developer payloads to remote servers before returning a download link. <strong>Utilix {tool.name}</strong> eliminates server round-trips entirely by executing <code>{tool.specTable.executionEngine}</code> directly inside your browser’s isolated memory sandbox. Whether you are handling confidential legal contracts, enterprise JWT tokens, or high-resolution photography, zero bytes ever cross the network.
+              <strong>Utilix {tool.name}</strong> uses <code>{tool.specTable.executionEngine}</code>. Its listed processing model is: {tool.specTable.privacyModel}. Browser extensions, external libraries, and optional network-powered features may still make separate requests; avoid entering highly sensitive information unless you have verified the behavior of the specific tool.
             </p>
           </div>
           <div className="space-y-2.5">
             <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
-              02. High-Throughput Batch Workflows & Core Web Vitals
+              02. Supported workflow and limits
             </h3>
             <p>
-              Engineered for power users, search engineers, and software teams, this tool supports instant reactive updates, keyboard shortcuts (<code>Ctrl+Enter</code> to execute, <code>Ctrl+Shift+C</code> to copy, <code>Esc</code> to clear), and unlimited multi-file queues bundled via client-side <code>JSZip</code>. It natively addresses high-intent workflows including {tool.clusteredQueries.join(', ')}.
+              This tool supports the workflow and batch behavior listed in its specification. Actual capacity and responsiveness depend on browser support, available memory, device performance and input size. Common use cases include {tool.clusteredQueries.join(', ')}.
             </p>
           </div>
         </div>
@@ -340,7 +340,7 @@ export function NineZoneSeoContent({
             Frequently Asked Questions — {tool.name}
           </h2>
           <p className="text-xs text-[#64748B]">
-            Synced with Schema.org FAQPage structured data for rich search results.
+            Answers to common questions about using this tool. Search engines decide independently how page content appears in results.
           </p>
         </div>
 
