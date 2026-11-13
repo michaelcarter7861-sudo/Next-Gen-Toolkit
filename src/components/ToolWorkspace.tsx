@@ -816,7 +816,7 @@ export function ToolWorkspace({
           </div>
         </div>
 
-        {/* Mandatory UX Upgrade #4: Interactive Verifiable Zero-Upload Badge */}
+        {/* Tool-specific processing information */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
@@ -824,7 +824,7 @@ export function ToolWorkspace({
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:border-emerald-500 transition-colors whitespace-nowrap shrink-0"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>100% Client-Side: 0 Bytes Sent to Server</span>
+            <span>Processing details</span>
           </button>
           <button
             type="button"
@@ -840,9 +840,9 @@ export function ToolWorkspace({
       {showZeroUploadVerify && (
         <div className="mb-6 p-4 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <strong>Zero-Knowledge Browser RAM Verification:</strong> Open Chrome DevTools (F12 → Network Tab) while processing files in <strong>{tool.name}</strong>. You will observe <code>0 B</code> of outbound payload traffic—all parsing executes inside local <code>ArrayBuffer</code> and <code>WebAssembly</code> memory.
+            <strong>Processing model for {tool.name}:</strong> {tool.specTable.privacyModel}. This note describes the core utility only. The optional AI Grounded Inspect action sends the text you submit to the configured AI provider; do not submit passwords, access tokens or other secrets.
           </div>
-          <span className="font-mono font-bold whitespace-nowrap">Outbound Traffic: 0 Bytes</span>
+          <span className="font-mono font-bold whitespace-nowrap">Review optional AI data sharing</span>
         </div>
       )}
 
@@ -977,7 +977,7 @@ export function ToolWorkspace({
                   Select {tool.hubId === 'pdf-tools' && tool.id !== 'image-to-pdf' ? 'PDF Files' : 'Images'}
                 </button>
                 <p className="text-xs text-[#64748B] mt-4">
-                  {tool.specTable.supportedFormats} · Unlimited batch queue · Up to 50+ files
+                  {tool.specTable.supportedFormats} · Batch capacity depends on file size and available browser memory
                 </p>
               </div>
 
