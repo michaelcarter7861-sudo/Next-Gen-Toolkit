@@ -134,10 +134,19 @@ for (const tool of TOOLS_CATALOG) {
 }
 
 const allRoutes = ['/', ...HUBS.map((hub) => hub.slug), ...TOOLS_CATALOG.map((tool) => tool.canonicalPath)];
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${allRoutes.map((route) => `  <url><loc>${escapeHtml(absoluteUrl(route))}</loc></url>`).join('\n')}\n</urlset>\n`;
+const uniqueRoutes = [...new Set(allRoutes)];
+if (uniqueRoutes.length !== allRoutes.length) {
+  throw new Error('Duplicate canonical routes detected; refusing to generate sitemap.');
+}
+const sitemapUrls = uniqueRoutes.map((route) => absoluteUrl(route));
+if (sitemapUrls.some((url) => !url.startsWith(`${SITE_URL}/`) && url !== SITE_URL)) {
+  throw new Error('Generated sitemap contains a URL outside the configured SITE_URL.');
+}
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls.map((url) => `  <url><loc>${escapeHtml(url)}</loc></url>`).join('\n')}\n</urlset>\n`;
+const plainTextSitemap = `${sitemapUrls.join('\n')}\n`;
 await writeFile(path.join(DIST, 'sitemap.xml'), sitemap);
+await writeFile(path.join(DIST, 'sitemap.txt'), plainTextSitemap);
 await writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`);
-
 for (const filename of ['llms.txt', 'llms-full.txt']) {
   const filePath = path.join(DIST, filename);
   try {
