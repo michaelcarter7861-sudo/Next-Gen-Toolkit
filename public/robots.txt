@@ -27,5 +27,6 @@ User-agent: Applebot-Extended
 Allow: /
 
 Sitemap: https://utilix-5rz.pages.dev/sitemap.xml
+# UTILIX crawler policy
 # LLMs Directory: https://utilix-5rz.pages.dev/llms.txt
 # LLMs Full Spec: https://utilix-5rz.pages.dev/llms-full.txt
