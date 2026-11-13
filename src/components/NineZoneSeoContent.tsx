@@ -45,7 +45,7 @@ export function NineZoneSeoContent({
   const crossHubTools = TOOLS_CATALOG.filter((t) => t.hubId !== tool.hubId).slice(0, 2);
   const relatedMesh = [...siblingTools, ...crossHubTools];
 
-  const embedSnippet = `<iframe src="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}?embed=1" width="100%" height="520" style="border:1px solid #E8E6F2;border-radius:16px;" loading="lazy" title="Utilix ${tool.name}"></iframe>\n<p style="font-size:12px;color:#64748B;margin-top:6px;">Powered by <a href="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}" target="_blank" rel="noopener">Utilix ${tool.name} (100% Client-Side)</a></p>`;
+  const embedSnippet = `<iframe src="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}?embed=1" width="100%" height="520" style="border:1px solid #E8E6F2;border-radius:16px;" loading="lazy" title="Utilix ${tool.name}"></iframe>\n<p style="font-size:12px;color:#64748B;margin-top:6px;">Powered by <a href="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}" target="_blank" rel="noopener">Utilix ${tool.name} (Browser-Based Utility)</a></p>`;
 
   const handleCopyEmbed = () => {
     navigator.clipboard.writeText(embedSnippet);
