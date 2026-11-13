@@ -26,6 +26,6 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
-Sitemap: https://utilix.tools/sitemap.xml
-# LLMs Directory: https://utilix.tools/llms.txt
-# LLMs Full Spec: https://utilix.tools/llms-full.txt
+Sitemap: https://michaelcarter7861-sudo.github.io/UTILIX/sitemap.xml
+# LLMs Directory: https://michaelcarter7861-sudo.github.io/UTILIX/llms.txt
+# LLMs Full Spec: https://michaelcarter7861-sudo.github.io/UTILIX/llms-full.txt
