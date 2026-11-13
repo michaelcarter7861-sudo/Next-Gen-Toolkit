@@ -148,4 +148,4 @@ for (const filename of ['llms.txt', 'llms-full.txt']) {
 const notFound = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex,follow"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found | UTILIX</title><meta name="description" content="The requested UTILIX page could not be found."></head><body><main><h1>Page not found</h1><p>The requested page does not exist.</p><a href="${escapeHtml(publicPath('/'))}">Return to UTILIX</a></main></body></html>`;
 await writeFile(path.join(DIST, '404.html'), notFound);
 
-console.log(`Generated static SEO HTML for ${allRoutes.length} canonical routes at ${SITE_URL}`);
+console.log(`Generated static SEO HTML at ${SITE_URL}; sitemap.xml is served from the static public asset.`);
