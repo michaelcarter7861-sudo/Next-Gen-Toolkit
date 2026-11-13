@@ -471,7 +471,7 @@ export default function App() {
               </div>
             </section>
 
-            {/* 6 CATEGORY HUB CARDS (Exact Pastel Colors from Reference Screenshot) */}
+            {/* 5 TOOL CATEGORY HUBS + SEPARATE AI SEARCH SHORTCUT */}
             <section className="max-w-[1200px] mx-auto px-4 sm:px-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 {[
