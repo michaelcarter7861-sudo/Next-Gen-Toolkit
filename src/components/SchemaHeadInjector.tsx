@@ -16,74 +16,25 @@ function getSiteUrl(): string {
 export function buildToolJsonLd(tool: ToolDefinition): Record<string, unknown> {
   const hub = getHubById(tool.hubId);
   const baseUrl = getSiteUrl();
-
   return {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'SoftwareApplication',
-        name: `Utilix ${tool.name}`,
-        operatingSystem: 'All (Web Browser - Chrome, Firefox, Safari, Edge)',
+        name: `UTILIX ${tool.name}`,
+        operatingSystem: 'Web browser',
         applicationCategory: 'UtilitiesApplication',
         isAccessibleForFree: true,
         url: `${baseUrl}${tool.canonicalPath}`,
-        description: tool.entityLeadSentence,
-        offers: {
-          '@type': 'Offer',
-          price: '0.00',
-          priceCurrency: 'USD',
-        },
-        featureList: [
-          '100% Client-Side WebAssembly & HTML5 Processing (Zero Server Upload)',
-          tool.valuePropSubtitle,
-          'Unlimited Batch Processing with 1-Click JSZip Export',
-          'No Watermarks and No Account Registration Required',
-        ],
-      },
-      {
-        '@type': 'HowTo',
-        name: tool.aeoQuestionHeading,
         description: tool.aeoSummaryParagraph,
-        totalTime: 'PT10S',
-        step: tool.howToSteps.map((s, idx) => ({
-          '@type': 'HowToStep',
-          position: idx + 1,
-          name: s.name,
-          text: s.text,
-        })),
-      },
-      {
-        '@type': 'FAQPage',
-        mainEntity: tool.faqs.map((f) => ({
-          '@type': 'Question',
-          name: f.q,
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: f.a,
-          },
-        })),
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       },
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          {
-            '@type': 'ListItem',
-            position: 1,
-            name: 'Home',
-            item: `${baseUrl}/`,
-          },
-          {
-            '@type': 'ListItem',
-            position: 2,
-            name: hub?.name || 'Tools',
-            item: `${baseUrl}${hub?.slug || '/'}`,
-          },
-          {
-            '@type': 'ListItem',
-            position: 3,
-            name: tool.name,
-            item: `${baseUrl}${tool.canonicalPath}`,
-          },
+          { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
+          { '@type': 'ListItem', position: 2, name: hub?.name || 'Tools', item: `${baseUrl}${hub?.slug || '/'}` },
+          { '@type': 'ListItem', position: 3, name: tool.name, item: `${baseUrl}${tool.canonicalPath}` },
         ],
       },
     ],
@@ -94,63 +45,65 @@ export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjector
   useEffect(() => {
     const baseUrl = getSiteUrl();
     let title = 'UTILIX — Free Online PDF, Image, Text & Developer Tools';
-    let desc =
-      'Use free online PDF, image, text and developer tools in your browser. Compress files, convert formats, generate QR codes and more.';
+    let description = 'Use free online PDF, image, text and developer tools. Compress files, convert formats, clean text and generate QR codes.';
     let canonical = `${baseUrl}/`;
+    let schema: Record<string, unknown>;
 
     if (activeTool) {
-      title = `${activeTool.primaryKeyword} | Utilix`;
-      desc = activeTool.entityLeadSentence;
+      title = `${activeTool.primaryKeyword} | UTILIX`;
+      description = activeTool.aeoSummaryParagraph;
       canonical = `${baseUrl}${activeTool.canonicalPath}`;
+      schema = buildToolJsonLd(activeTool);
     } else if (activeHub) {
-      title = `${activeHub.name} – 100% Client-Side Utilities | Utilix`;
-      desc = activeHub.description;
+      title = `${activeHub.name} — Free Online Tools | UTILIX`;
+      description = activeHub.description;
       canonical = `${baseUrl}${activeHub.slug}`;
+      schema = {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: activeHub.name,
+        description,
+        url: canonical,
+        isPartOf: { '@type': 'WebSite', name: 'UTILIX', url: `${baseUrl}/` },
+      };
+    } else {
+      schema = {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'UTILIX',
+        url: `${baseUrl}/`,
+        description,
+      };
     }
 
     document.title = title;
+    const setMeta = (selector: string, attribute: string, value: string) => {
+      const element = document.querySelector(selector);
+      if (element) element.setAttribute(attribute, value);
+    };
+    setMeta('meta[name="description"]', 'content', description);
+    setMeta('meta[property="og:title"]', 'content', title);
+    setMeta('meta[property="og:description"]', 'content', description);
+    setMeta('meta[property="og:url"]', 'content', canonical);
+    setMeta('meta[name="twitter:title"]', 'content', title);
+    setMeta('meta[name="twitter:description"]', 'content', description);
 
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute('content', desc);
-
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.setAttribute('content', title);
-
-    const ogDesc = document.querySelector('meta[property="og:description"]');
-    if (ogDesc) ogDesc.setAttribute('content', desc);
-
-    let linkCanonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-    if (!linkCanonical) {
-      linkCanonical = document.createElement('link');
-      linkCanonical.rel = 'canonical';
-      document.head.appendChild(linkCanonical);
+    let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.rel = 'canonical';
+      document.head.appendChild(canonicalLink);
     }
-    linkCanonical.href = canonical;
+    canonicalLink.href = canonical;
 
-    // Inject Multi-Graph JSON-LD Schema
-    let scriptEl = document.getElementById('utilix-jsonld-schema') as HTMLScriptElement | null;
-    if (!scriptEl) {
-      scriptEl = document.createElement('script');
-      scriptEl.id = 'utilix-jsonld-schema';
-      scriptEl.type = 'application/ld+json';
-      document.head.appendChild(scriptEl);
+    let script = document.getElementById('utilix-jsonld-schema') as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement('script');
+      script.id = 'utilix-jsonld-schema';
+      script.type = 'application/ld+json';
+      document.head.appendChild(script);
     }
-
-    if (activeTool) {
-      scriptEl.textContent = JSON.stringify(buildToolJsonLd(activeTool), null, 2);
-    } else {
-      scriptEl.textContent = JSON.stringify(
-        {
-          '@context': 'https://schema.org',
-          '@type': 'WebSite',
-          name: 'Utilix',
-          url: 'https://utilix.tools/',
-          description: desc,
-        },
-        null,
-        2
-      );
-    }
+    script.textContent = JSON.stringify(schema);
   }, [activeTool, activeHub]);
 
   return null;
