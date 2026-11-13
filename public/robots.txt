@@ -1,0 +1,31 @@
+User-agent: *
+Allow: /
+
+# Generative Engine Optimization (GEO) — Explicit Allow Directives for AI Search Crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://utilix.tools/sitemap.xml
+# LLMs Directory: https://utilix.tools/llms.txt
+# LLMs Full Spec: https://utilix.tools/llms-full.txt
