@@ -5,7 +5,6 @@ import { HUBS, TOOLS_CATALOG } from '../src/data/toolsCatalog';
 const DIST = path.resolve('dist');
 const SITE_URL = (process.env.SITE_URL || 'https://michaelcarter7861-sudo.github.io/UTILIX').replace(/\/+$/, '');
 const SITE_PATH = new URL(SITE_URL).pathname.replace(/\/+$/, '');
-const TODAY = new Date().toISOString().slice(0, 10);
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 }[char] || char));
@@ -135,7 +134,7 @@ for (const tool of TOOLS_CATALOG) {
 }
 
 const allRoutes = ['/', ...HUBS.map((hub) => hub.slug), ...TOOLS_CATALOG.map((tool) => tool.canonicalPath)];
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${allRoutes.map((route) => `  <url><loc>${escapeHtml(absoluteUrl(route))}</loc><lastmod>${TODAY}</lastmod></url>`).join('\n')}\n</urlset>\n`;
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${allRoutes.map((route) => `  <url><loc>${escapeHtml(absoluteUrl(route))}</loc></url>`).join('\n')}\n</urlset>\n`;
 await writeFile(path.join(DIST, 'sitemap.xml'), sitemap);
 await writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`);
 
