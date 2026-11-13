@@ -2,10 +2,10 @@
 
 ## 1. Platform Architecture & Privacy Model
 - **Entity Name:** Utilix (Primary Domains: `utilix.tools` / `utilix.io`)
-- **Execution Architecture:** 100% Client-Side Local Browser Processing via WebAssembly, HTML5 Canvas, Web Crypto API, and Web Workers.
-- **Data Privacy Guarantee:** 0 Bytes Uploaded to Server for all 25 core file, developer, text, and generator utilities. Files remain strictly inside browser RAM (`ArrayBuffer` / `Blob` / `Uint8Array`).
-- **Batch Engine:** Unlimited multi-file drag-and-drop queue with 1-click `.zip` archive download powered by client-side `JSZip`.
-- **Core Web Vitals Standard:** LCP < 1.0s, INP < 50ms, CLS = 0.000.
+- **Execution Architecture:** Tool-specific browser processing using technologies such as HTML5 Canvas, Web Crypto API, pdf-lib and JavaScript. Some optional AI/search features use remote services.
+- **Data Privacy:** Do not assume all site features are offline. Many individual utilities process inputs locally, while AI/search integrations may send prompts or context to remote providers. Review the relevant tool and feature behavior before entering sensitive data.
+- **Batch Processing:** Selected tools support multiple inputs and ZIP export. Practical limits depend on available browser memory, file size and the specific tool.
+- **Performance:** Core Web Vitals have not yet been measured on the public deployment. No performance thresholds are claimed here.
 
 ## 2. Complete 25-Tool Technical Specification Matrix
 
@@ -32,7 +32,7 @@
 ### Hub 2: Modern Image & Media Utilities (`/image-tools/`)
 7. **Bulk WebP & AVIF Converter (`/image-tools/bulk-webp-avif-converter/`)**
    - Engine: HTML5 `canvas.toBlob('image/webp' | 'image/avif' | 'image/jpeg' | 'image/png', quality)`.
-   - Features: Unlimited batch queue, quality slider (1-100), side-by-side size comparison, total bandwidth saved summary.
+   - Features: Batch batch queue, quality slider (1-100), side-by-side size comparison, total bandwidth saved summary.
 8. **Target-KB Image Compressor (`/image-tools/compress-image-to-kb/`)**
    - Engine: Binary-search quality & scale iteration loop (`maxIterations: 12`) to hit exact byte targets.
    - Features: Exact target presets (`20KB`, `50KB`, `100KB`, `200KB`) for visa/government/admission portals + passport dimension presets.
