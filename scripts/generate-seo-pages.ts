@@ -133,34 +133,7 @@ for (const tool of TOOLS_CATALOG) {
   }));
 }
 
-const allRoutes = ['/', ...HUBS.map((hub) => hub.slug), ...TOOLS_CATALOG.map((tool) => tool.canonicalPath)];
-const uniqueRoutes = [...new Set(allRoutes)];
-if (uniqueRoutes.length !== allRoutes.length) {
-  throw new Error('Duplicate canonical routes detected; refusing to generate sitemap.');
-}
-const sitemapUrls = uniqueRoutes.map((route) => absoluteUrl(route));
-if (sitemapUrls.some((url) => !url.startsWith(`${SITE_URL}/`) && url !== SITE_URL)) {
-  throw new Error('Generated sitemap contains a URL outside the configured SITE_URL.');
-}
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls.map((url) => `  <url><loc>${escapeHtml(url)}</loc></url>`).join('\n')}\n</urlset>\n`;
-const plainTextSitemap = `${sitemapUrls.join('\n')}\n`;
-await writeFile(path.join(DIST, 'sitemap.xml'), sitemap);
-await writeFile(path.join(DIST, 'sitemap.txt'), plainTextSitemap);
 await writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`);
-
-// Fail the production build if the generated sitemap is not a valid, declared XML document.
-const generatedSitemap = await readFile(path.join(DIST, 'sitemap.xml'), 'utf8');
-if (!generatedSitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n')) {
-  throw new Error('Generated sitemap is missing its XML declaration at byte zero.');
-}
-if (!generatedSitemap.includes('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">') || !generatedSitemap.trimEnd().endsWith('</urlset>')) {
-  throw new Error('Generated sitemap has an invalid urlset document boundary.');
-}
-const generatedUrlCount = [...generatedSitemap.matchAll(/<loc>/g)].length;
-if (generatedUrlCount !== sitemapUrls.length) {
-  throw new Error(`Generated sitemap URL count mismatch: expected ${sitemapUrls.length}, got ${generatedUrlCount}.`);
-}
-console.log(`Validated sitemap.xml: XML declaration present, ${generatedUrlCount} URLs.`);
 for (const filename of ['llms.txt', 'llms-full.txt']) {
   const filePath = path.join(DIST, filename);
   try {
