@@ -6,9 +6,16 @@ interface SchemaHeadInjectorProps {
   activeHub: HubDefinition | null;
 }
 
+function getSiteUrl(): string {
+  const configured = import.meta.env.VITE_SITE_URL;
+  if (configured) return configured.replace(/\/$/, '');
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  return `${window.location.origin}${base}`;
+}
+
 export function buildToolJsonLd(tool: ToolDefinition): Record<string, unknown> {
   const hub = getHubById(tool.hubId);
-  const baseUrl = 'https://utilix.tools';
+  const baseUrl = getSiteUrl();
 
   return {
     '@context': 'https://schema.org',
@@ -85,10 +92,10 @@ export function buildToolJsonLd(tool: ToolDefinition): Record<string, unknown> {
 
 export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjectorProps) {
   useEffect(() => {
-    const baseUrl = 'https://utilix.tools';
-    let title = 'Utilix (utilix.tools) – 25+ Free Client-Side PDF, Image, Dev & Text Tools';
+    const baseUrl = getSiteUrl();
+    let title = 'UTILIX — Free Online PDF, Image, Text & Developer Tools';
     let desc =
-      'Get more done with less effort. Utilix offers 25+ 100% client-side PDF, Image, Developer, AI-Workflow, and Text utilities with zero server uploads.';
+      'Use free online PDF, image, text and developer tools in your browser. Compress files, convert formats, generate QR codes and more.';
     let canonical = `${baseUrl}/`;
 
     if (activeTool) {
