@@ -616,7 +616,7 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row lg:flex-col gap-2 text-xs font-semibold text-[#171927] dark:text-[#E2E8F0] shrink-0">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>No unnecessary uploads (0 Bytes to Server)</span>
+                    <span>No unnecessary uploads for supported browser-based tasks</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -638,11 +638,11 @@ export default function App() {
                     Complete 25-Tool Platform Directory
                   </h2>
                   <p className="text-sm text-[#64748B] mt-0.5">
-                    Organized across five categories with tool-specific processing details.
+                    Organized across five tool categories, with AI Search as a separate feature.
                   </p>
                 </div>
                 <span className="text-xs font-mono text-[#7047EB] font-semibold">
-                  25 Browser-Based Utilities · 5 Categories
+                  25 Browser-Based Utilities · 5 Tool Categories + AI Search
                 </span>
               </div>
 
