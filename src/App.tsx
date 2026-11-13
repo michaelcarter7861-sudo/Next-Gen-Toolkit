@@ -336,7 +336,7 @@ export default function App() {
                 <div className="lg:col-span-7 text-center lg:text-left space-y-5">
                   <div className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-[#7047EB] dark:text-[#A78BFA]">
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>YOUR DIGITAL TOOLKIT · 100% CLIENT-SIDE</span>
+                    <span>YOUR DIGITAL TOOLKIT · 25 PRACTICAL UTILITIES</span>
                   </div>
 
                   <h1
@@ -350,7 +350,7 @@ export default function App() {
                   </h1>
 
                   <p className="text-base sm:text-lg text-[#253044] dark:text-[#CBD5E1] max-w-xl mx-auto lg:mx-0">
-                    Simple, powerful tools for everyday digital work. Zero server uploads, unlimited batch ZIP downloads, and sub-50ms browser execution.
+                    Practical tools for PDF, image, text and developer tasks. Selected utilities process inputs locally in your browser; supported formats and batch capacity vary by tool and device.
                   </p>
 
                   {/* Search Bar matching Screenshot Panel 1 */}
@@ -620,11 +620,11 @@ export default function App() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Faster and more secure via WebAssembly</span>
+                    <span>Browser-based processing for supported tasks</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Works on all devices with unlimited batch ZIP</span>
+                    <span>Works across modern browsers; capacity depends on your device</span>
                   </div>
                 </div>
               </div>
@@ -638,11 +638,11 @@ export default function App() {
                     Complete 25-Tool Platform Directory
                   </h2>
                   <p className="text-sm text-[#64748B] mt-0.5">
-                    Organized across 5 canonical SEO/AEO/GEO topical hubs with 100% client-side execution.
+                    Organized across five categories with tool-specific processing details.
                   </p>
                 </div>
                 <span className="text-xs font-mono text-[#7047EB] font-semibold">
-                  25 Active Client-Side Tools · 5 Topical Hubs
+                  25 Browser-Based Utilities · 5 Categories
                 </span>
               </div>
 
@@ -758,7 +758,7 @@ export default function App() {
               <span>UTILIX</span>
             </div>
             <p className="text-xs text-[#94A3B8] leading-relaxed">
-              Everything you need. Nothing you don't. 100% client-side PDF, Image, Developer, AI-Workflow, and Text utilities.
+              Free browser-based utilities for PDF, image, text, developer and everyday tasks.
             </p>
           </div>
 
