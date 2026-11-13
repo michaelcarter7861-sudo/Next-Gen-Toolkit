@@ -66,7 +66,12 @@ export default function App() {
   // Sync initial route and popstate with canonical URLs (/hub-slug/tool-slug/)
   useEffect(() => {
     const syncFromPath = () => {
-      const path = window.location.pathname.replace(/\/+$/, '');
+      const basePath = import.meta.env.BASE_URL;
+      const publicPath = window.location.pathname;
+      const appPath = basePath !== '/' && publicPath.startsWith(basePath)
+        ? `/${publicPath.slice(basePath.length)}`
+        : publicPath;
+      const path = appPath.replace(/\/+$/, '');
       if (!path || path === '') {
         setActiveView('home');
         return;
@@ -104,9 +109,12 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+  const toPublicPath = (path: string) => `${basePath}${path.replace(/^\/+/, '')}`;
+
   const navigateToHome = () => {
     setActiveView('home');
-    window.history.pushState({}, '', '/');
+    window.history.pushState({}, '', toPublicPath('/'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -114,7 +122,7 @@ export default function App() {
     const hub = getHubById(hubId);
     setSelectedHubId(hubId);
     setActiveView('hub');
-    if (hub) window.history.pushState({}, '', hub.slug);
+    if (hub) window.history.pushState({}, '', toPublicPath(hub.slug));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -124,7 +132,7 @@ export default function App() {
       setSelectedToolId(found.id);
       setSelectedHubId(found.hubId);
       setActiveView('tool');
-      window.history.pushState({}, '', found.canonicalPath);
+      window.history.pushState({}, '', toPublicPath(found.canonicalPath));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
