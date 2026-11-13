@@ -150,7 +150,7 @@ await writeFile(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitem
 
 // Fail the production build if the generated sitemap is not a valid, declared XML document.
 const generatedSitemap = await readFile(path.join(DIST, 'sitemap.xml'), 'utf8');
-if (!generatedSitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>\\n')) {
+if (!generatedSitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n')) {
   throw new Error('Generated sitemap is missing its XML declaration at byte zero.');
 }
 if (!generatedSitemap.includes('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">') || !generatedSitemap.trimEnd().endsWith('</urlset>')) {
