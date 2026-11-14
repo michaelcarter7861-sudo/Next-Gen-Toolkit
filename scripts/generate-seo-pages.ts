@@ -327,12 +327,14 @@ const sitemapTxt = `${sitemapUrls.join('\n')}\n`;
 
 await writeFile(path.join(DIST, 'sitemap.xml'), sitemapXml, 'utf8');
 await writeFile(path.join(DIST, 'sitemap-main.xml'), sitemapXml, 'utf8');
+await writeFile(path.join(DIST, 'sitemap-v2.xml'), sitemapXml, 'utf8');
 await writeFile(path.join(DIST, 'sitemap-index.xml'), sitemapIndexXml, 'utf8');
 await writeFile(path.join(DIST, 'sitemap_index.xml'), sitemapIndexXml, 'utf8');
 await writeFile(path.join(DIST, 'sitemap.txt'), sitemapTxt, 'utf8');
 try {
   await writeFile(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemapXml, 'utf8');
   await writeFile(path.join(PUBLIC_DIR, 'sitemap-main.xml'), sitemapXml, 'utf8');
+  await writeFile(path.join(PUBLIC_DIR, 'sitemap-v2.xml'), sitemapXml, 'utf8');
   await writeFile(path.join(PUBLIC_DIR, 'sitemap-index.xml'), sitemapIndexXml, 'utf8');
   await writeFile(path.join(PUBLIC_DIR, 'sitemap_index.xml'), sitemapIndexXml, 'utf8');
   await writeFile(path.join(PUBLIC_DIR, 'sitemap.txt'), sitemapTxt, 'utf8');
@@ -370,7 +372,7 @@ const robotsTxt = [
 
 await writeFile(path.join(DIST, 'robots.txt'), robotsTxt, 'utf8');
 
-// Ensure Cloudflare Pages _headers and _redirects exist in dist/ so Googlebot never hits SPA HTML fallback or wrong MIME type
+// Ensure Cloudflare Pages _headers exists in dist/ so Googlebot gets strict XML/text MIME headers
 const headersConfig = `/sitemap.xml
   Content-Type: application/xml; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
@@ -379,6 +381,13 @@ const headersConfig = `/sitemap.xml
   Access-Control-Allow-Origin: *
 
 /sitemap-main.xml
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: all
+  Access-Control-Allow-Origin: *
+
+/sitemap-v2.xml
   Content-Type: application/xml; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
@@ -425,17 +434,9 @@ const headersConfig = `/sitemap.xml
   Access-Control-Allow-Origin: *
 `;
 
-const redirectsConfig = `/sitemap.xml/ /sitemap.xml 200
-/sitemap-main.xml/ /sitemap-main.xml 200
-/sitemap_index.xml /sitemap-index.xml 200
-/robots.txt/ /robots.txt 200
-`;
-
 await writeFile(path.join(DIST, '_headers'), headersConfig, 'utf8');
-await writeFile(path.join(DIST, '_redirects'), redirectsConfig, 'utf8');
 try {
   await writeFile(path.join(PUBLIC_DIR, '_headers'), headersConfig, 'utf8');
-  await writeFile(path.join(PUBLIC_DIR, '_redirects'), redirectsConfig, 'utf8');
 } catch {
   // Ignore if public directory is read-only
 }
