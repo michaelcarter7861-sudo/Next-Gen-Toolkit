@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   X,
@@ -11,41 +11,65 @@ import {
   Check,
   ExternalLink,
   Download,
+  Star,
+  CheckCircle2,
+  ShieldCheck,
 } from 'lucide-react';
-import { TOOLS_CATALOG, HUBS, ToolDefinition, HubId } from '../data/toolsCatalog';
+import { TOOLS_CATALOG, HUBS, HubId } from '../data/toolsCatalog';
 
 interface CommandModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectTool: (toolId: string) => void;
   onSelectHub: (hubId: HubId) => void;
+  favoriteIds?: string[];
+  onToggleFavorite?: (toolId: string) => void;
 }
 
-export function CommandModal({ isOpen, onClose, onSelectTool, onSelectHub }: CommandModalProps) {
+export function CommandModal({
+  isOpen,
+  onClose,
+  onSelectTool,
+  onSelectHub,
+  favoriteIds = [],
+  onToggleFavorite,
+}: CommandModalProps) {
   const [query, setQuery] = useState('');
+  const [selectedHubFilter, setSelectedHubFilter] = useState<HubId | 'all' | 'favorites'>('all');
 
   useEffect(() => {
-    if (!isOpen) setQuery('');
+    if (!isOpen) {
+      setQuery('');
+      setSelectedHubFilter('all');
+    }
   }, [isOpen]);
+
+  const q = query.trim().toLowerCase();
+  const filteredTools = useMemo(() => {
+    return TOOLS_CATALOG.filter((t) => {
+      if (selectedHubFilter === 'favorites' && !favoriteIds.includes(t.id)) return false;
+      if (selectedHubFilter !== 'all' && selectedHubFilter !== 'favorites' && t.hubId !== selectedHubFilter) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        t.name.toLowerCase().includes(q) ||
+        t.shortDesc.toLowerCase().includes(q) ||
+        t.primaryKeyword.toLowerCase().includes(q) ||
+        t.lsiKeywords.some((k) => k.toLowerCase().includes(q)) ||
+        t.clusteredQueries.some((cq) => cq.toLowerCase().includes(q))
+      );
+    });
+  }, [q, selectedHubFilter, favoriteIds]);
 
   if (!isOpen) return null;
 
-  const q = query.trim().toLowerCase();
-  const filteredTools = TOOLS_CATALOG.filter(
-    (t) =>
-      !q ||
-      t.name.toLowerCase().includes(q) ||
-      t.shortDesc.toLowerCase().includes(q) ||
-      t.primaryKeyword.toLowerCase().includes(q) ||
-      t.lsiKeywords.some((k) => k.toLowerCase().includes(q))
-  );
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-xs pt-20 px-4"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/55 backdrop-blur-xs pt-16 sm:pt-20 px-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Quick Tool Launcher"
+      aria-label="NextGenToolkit Quick Tool Launcher"
       onClick={onClose}
     >
       <div
@@ -59,7 +83,7 @@ export function CommandModal({ isOpen, onClose, onSelectTool, onSelectHub }: Com
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search all 25 client-side tools by name, keyword, or format (e.g. PDF, 20KB, JSON, QR)..."
+            placeholder="Search 25 utilities by name, LSI keyword, or format (e.g. 20KB, PDF, JSON, JWT, QR)..."
             className="w-full bg-transparent text-sm text-[#171927] dark:text-[#F8F7FC] placeholder-[#64748B] focus:outline-none"
           />
           <button
@@ -71,10 +95,53 @@ export function CommandModal({ isOpen, onClose, onSelectTool, onSelectHub }: Com
           </button>
         </div>
 
-        <div className="max-h-[420px] overflow-y-auto p-3 space-y-4">
-          {!q && (
+        {/* Instant Hub & Favorites Filter Bar */}
+        <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[#F8F7FC] dark:bg-[#151824] border-b border-[#E8E6F2] dark:border-[#2A2E42] overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setSelectedHubFilter('all')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+              selectedHubFilter === 'all'
+                ? 'bg-[#7047EB] text-white'
+                : 'text-[#64748B] hover:text-[#171927] dark:hover:text-white'
+            }`}
+          >
+            All ({TOOLS_CATALOG.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedHubFilter('favorites')}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+              selectedHubFilter === 'favorites'
+                ? 'bg-[#7047EB] text-white'
+                : 'text-[#64748B] hover:text-[#171927] dark:hover:text-white'
+            }`}
+          >
+            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+            <span>Pinned ({favoriteIds.length})</span>
+          </button>
+          {HUBS.map((hub) => (
+            <button
+              key={hub.id}
+              type="button"
+              onClick={() => setSelectedHubFilter(hub.id)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                selectedHubFilter === hub.id
+                  ? 'bg-[#7047EB] text-white'
+                  : 'text-[#64748B] hover:text-[#171927] dark:hover:text-white'
+              }`}
+            >
+              {hub.shortTitle}
+            </button>
+          ))}
+        </div>
+
+        <div className="max-h-[400px] overflow-y-auto p-3 space-y-4">
+          {!q && selectedHubFilter === 'all' && (
             <div>
-              <div className="px-3 py-1 text-xs font-semibold text-[#64748B]">Category Hubs (5)</div>
+              <div className="px-3 py-1 text-xs font-semibold text-[#64748B]">
+                Topical Category Hubs (5)
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-1">
                 {HUBS.map((hub) => (
                   <button
@@ -98,38 +165,70 @@ export function CommandModal({ isOpen, onClose, onSelectTool, onSelectHub }: Com
               Matching Utilities ({filteredTools.length})
             </div>
             <div className="space-y-1 mt-1">
-              {filteredTools.map((tool) => {
-                const hub = HUBS.find((h) => h.id === tool.hubId);
-                return (
-                  <button
-                    key={tool.id}
-                    onClick={() => {
-                      onSelectTool(tool.id);
-                      onClose();
-                    }}
-                    className="w-full flex items-center justify-between gap-4 px-3 py-2.5 rounded-xl hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F] text-left transition-colors group"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#171927] dark:text-[#F8F7FC] group-hover:text-[#7047EB] transition-colors">
-                          {tool.name}
+              {filteredTools.length === 0 ? (
+                <div className="p-6 text-center text-xs text-[#64748B]">
+                  {selectedHubFilter === 'favorites'
+                    ? 'No pinned tools yet. Click the star icon next to any utility to pin it for instant access.'
+                    : `No utilities matched "${query}". Try searching by format (PDF, WebP, JSON, CSV, SVG).`}
+                </div>
+              ) : (
+                filteredTools.map((tool) => {
+                  const hub = HUBS.find((h) => h.id === tool.hubId);
+                  const isFav = favoriteIds.includes(tool.id);
+                  return (
+                    <div
+                      key={tool.id}
+                      className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F] text-left transition-colors group"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSelectTool(tool.id);
+                          onClose();
+                        }}
+                        className="flex-1 min-w-0 text-left cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-[#171927] dark:text-[#F8F7FC] group-hover:text-[#7047EB] transition-colors">
+                            {tool.name}
+                          </span>
+                          <span className="text-xs text-[#64748B]">· {hub?.shortTitle}</span>
+                        </div>
+                        <p className="text-xs text-[#64748B] truncate">{tool.shortDesc}</p>
+                      </button>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="hidden sm:inline text-xs font-mono text-[#64748B] group-hover:text-[#7047EB]">
+                          {tool.canonicalPath}
                         </span>
-                        <span className="text-xs text-[#64748B]">· {hub?.shortTitle}</span>
+                        {onToggleFavorite && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleFavorite(tool.id);
+                            }}
+                            aria-label={isFav ? `Unpin ${tool.name}` : `Pin ${tool.name}`}
+                            className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1C1F2E] text-[#64748B] hover:text-amber-500 transition-colors"
+                          >
+                            <Star
+                              className={`w-4 h-4 ${
+                                isFav ? 'fill-amber-400 text-amber-400' : ''
+                              }`}
+                            />
+                          </button>
+                        )}
                       </div>
-                      <p className="text-xs text-[#64748B] truncate">{tool.shortDesc}</p>
                     </div>
-                    <span className="text-xs font-mono text-[#64748B] group-hover:text-[#7047EB] shrink-0">
-                      {tool.canonicalPath}
-                    </span>
-                  </button>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between px-5 py-3 bg-[#F8F7FC] dark:bg-[#151824] border-t border-[#E8E6F2] dark:border-[#2A2E42] text-xs text-[#64748B]">
-          <span>100% Client-Side Execution · 0 Bytes Uploaded</span>
+          <span>NextGenToolkit · 25 Browser Utilities · LSI Indexed</span>
           <span>Press Esc to close</span>
         </div>
       </div>
@@ -138,7 +237,7 @@ export function CommandModal({ isOpen, onClose, onSelectTool, onSelectHub }: Com
 }
 
 // ============================================================================
-// SEO / GEO Root Files & Design System Inspector Modal
+// SEO / GEO Root Files, GSC Sitemap Validator & Design System Inspector Modal
 // ============================================================================
 
 interface SeoGeoInspectorModalProps {
@@ -156,6 +255,12 @@ export function SeoGeoInspectorModal({
     initialTab
   );
   const [fileContent, setFileContent] = useState<string>('Loading production root file...');
+  const [customDomain, setCustomDomain] = useState<string>(() => {
+    return (import.meta.env.VITE_SITE_URL || window.location.origin || 'https://utilix-5rz.pages.dev').replace(
+      /\/+$/,
+      ''
+    );
+  });
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -179,6 +284,20 @@ export function SeoGeoInspectorModal({
 
   if (!isOpen) return null;
 
+  const generateCustomDomainSitemap = (domainInput: string) => {
+    const cleanOrigin = domainInput.trim().replace(/\/+$/, '') || 'https://utilix-5rz.pages.dev';
+    const lastmod = '2025-02-20';
+    const allLocs = [
+      `${cleanOrigin}/`,
+      ...HUBS.map((h) => `${cleanOrigin}${h.slug}`),
+      ...TOOLS_CATALOG.map((t) => `${cleanOrigin}${t.canonicalPath}`),
+    ];
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${allLocs
+      .map((loc) => `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>`)
+      .join('\n')}\n</urlset>\n`;
+    setFileContent(xml);
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(fileContent);
     setCopied(true);
@@ -192,32 +311,33 @@ export function SeoGeoInspectorModal({
       robots: 'robots.txt',
       sitemap: 'sitemap.xml',
     };
-    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const mime = activeTab === 'sitemap' ? 'application/xml;charset=utf-8' : 'text/plain;charset=utf-8';
+    const blob = new Blob([fileContent], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filenameMap[activeTab] || 'utilix-file.txt';
+    a.download = filenameMap[activeTab] || 'nextgentoolkit-file.txt';
     a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-xs p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Technical SEO, GEO & Design System Inspector"
+      aria-label="NextGenToolkit Technical SEO, GEO & Design System Inspector"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+        className="w-full max-w-4xl rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] shadow-2xl overflow-hidden flex flex-col max-h-[88vh]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6F2] dark:border-[#2A2E42]">
           <div className="flex items-center gap-2.5">
             <FileCode2 className="w-5 h-5 text-[#7047EB]" />
             <h2 className="text-base font-bold text-[#171927] dark:text-[#F8F7FC]">
-              Utilix Technical SEO, GEO Root Files & Design System
+              NextGenToolkit Technical SEO, GSC Sitemap Fix & Design System
             </h2>
           </div>
           <button
@@ -232,11 +352,11 @@ export function SeoGeoInspectorModal({
         <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-3 bg-[#F8F7FC] dark:bg-[#151824] border-b border-[#E8E6F2] dark:border-[#2A2E42]">
           <div className="flex flex-wrap items-center gap-1.5">
             {[
+              { id: 'sitemap', label: '/sitemap.xml (GSC Verified)' },
+              { id: 'robots', label: '/robots.txt' },
               { id: 'llms', label: '/llms.txt (GEO)' },
               { id: 'llms-full', label: '/llms-full.txt (RAG)' },
-              { id: 'robots', label: '/robots.txt' },
-              { id: 'sitemap', label: '/sitemap.xml (31 URLs)' },
-              { id: 'design-system', label: 'Extracted UI Design System' },
+              { id: 'design-system', label: 'UI & LSI Architecture' },
             ].map((t) => (
               <button
                 key={t.id}
@@ -272,20 +392,53 @@ export function SeoGeoInspectorModal({
           )}
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+          {activeTab === 'sitemap' && (
+            <div className="rounded-xl bg-emerald-50/90 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-4 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-emerald-950 dark:text-emerald-200 space-y-1">
+                  <div className="font-bold">
+                    Google Search Console "Couldn't fetch" Sitemap Fix Active (4-Layer Protection)
+                  </div>
+                  <p className="text-emerald-800 dark:text-emerald-300 leading-relaxed">
+                    1) Explicit <code>Content-Type: application/xml; charset=utf-8</code> &amp; <code>X-Content-Type-Options: nosniff</code> in <code>_headers</code> and Express routes. 2) <code>_redirects</code> rule bypassing SPA HTML fallback and trailing-slash loops on <code>/sitemap.xml</code> and <code>/sitemap-index.xml</code>. 3) Standard W3C <code>YYYY-MM-DD</code> <code>&lt;lastmod&gt;</code> dates (prevents future-timestamp rejection). 4) Dynamic origin matching below:
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value)}
+                  placeholder="https://your-verified-domain.com"
+                  className="flex-1 px-3 py-1.5 rounded-lg bg-white dark:bg-[#151824] border border-emerald-300 dark:border-emerald-800 text-xs font-mono text-[#171927] dark:text-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => generateCustomDomainSitemap(customDomain)}
+                  className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  Rebuild Sitemap for This Domain
+                </button>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'design-system' ? (
             <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC] mb-3">
-                  Brand Colors (Extracted 1:1 from Uploaded Design Reference)
+                  NextGenToolkit Brand Palette & Dark/Light Surface Tokens
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {[
-                    { name: 'Primary', hex: '#7047EB' },
-                    { name: 'Deep', hex: '#253044' },
-                    { name: 'Ink', hex: '#171927' },
-                    { name: 'Canvas', hex: '#F8F7FC' },
-                    { name: 'Surface', hex: '#FFFFFF' },
+                    { name: 'Primary Violet', hex: '#7047EB' },
+                    { name: 'Deep Slate', hex: '#253044' },
+                    { name: 'Ink Primary', hex: '#171927' },
+                    { name: 'Canvas Alabaster', hex: '#F8F7FC' },
+                    { name: 'Pure Surface', hex: '#FFFFFF' },
                   ].map((c) => (
                     <div
                       key={c.name}
@@ -304,16 +457,16 @@ export function SeoGeoInspectorModal({
 
               <div>
                 <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC] mb-3">
-                  Category Accents (Extracted 1:1 from Uploaded Design Reference)
+                  Topical Hub Accents (6 Semantic Pastel Channels)
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
                   {[
-                    { name: 'Text', hex: '#EDE7FF' },
-                    { name: 'Images', hex: '#E1F0FF' },
-                    { name: 'PDF', hex: '#FFE7EC' },
+                    { name: 'Text & SEO', hex: '#EDE7FF' },
+                    { name: 'Image Studio', hex: '#E1F0FF' },
+                    { name: 'PDF Studio', hex: '#FFE7EC' },
                     { name: 'Developer', hex: '#E0F7F0' },
-                    { name: 'Calculators', hex: '#FFF1D9' },
-                    { name: 'AI', hex: '#F4E5FF' },
+                    { name: 'Generators', hex: '#FFF1D9' },
+                    { name: 'AI Search', hex: '#F4E5FF' },
                   ].map((c) => (
                     <div
                       key={c.name}
@@ -330,13 +483,30 @@ export function SeoGeoInspectorModal({
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42]">
-                <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC] mb-2">
-                  Typography & Spatial Grid Tokens
+              <div className="p-4 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42] space-y-2">
+                <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
+                  SEO, AEO, GEO & Latent Semantic Indexing (LSI) Architecture
                 </h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">
-                  Heading (700 Bold) · Subheading (600 SemiBold) · Body (400 Regular) · Monospace Telemetry (JetBrains Mono Tabular Numerals). Container Max-Width: 1200px, Workspace Card Radius: 16px (`rounded-2xl`), Dropzone: Dashed `#C7B8F9` border on `#F8F7FC` canvas.
-                </p>
+                <ul className="space-y-1.5 text-xs text-[#64748B] leading-relaxed">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>
+                      <strong>31 Pre-Rendered Static Routes:</strong> Build script generates standalone HTML with canonical tags and server-rendered headings for Home + 5 Hubs + 25 Tools.
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>
+                      <strong>4-Entity Schema.org @graph:</strong> Every tool injects <code>SoftwareApplication</code>, <code>HowTo</code>, <code>FAQPage</code>, and <code>BreadcrumbList</code> JSON-LD.
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>
+                      <strong>Latent Semantic Indexing (LSI) Clusters:</strong> Over 220 domain-specific LSI entities (RFCs, ISO standards, Web APIs, portal KB targets) indexed across all pages.
+                    </span>
+                  </li>
+                </ul>
               </div>
             </div>
           ) : (
@@ -363,7 +533,7 @@ interface AiStudioModalProps {
 export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStudioModalProps) {
   const [mode, setMode] = useState<'search' | 'think'>('search');
   const [query, setQuery] = useState(
-    'What are the latest Core Web Vitals LCP/INP benchmarks and Google Search structured data best practices for web utilities?'
+    'What are the latest Core Web Vitals LCP/INP benchmarks, LSI semantic indexing strategies, and Google Search Console sitemap best practices?'
   );
   const [contextInput, setContextInput] = useState(initialContext);
   const [loading, setLoading] = useState(false);
@@ -381,7 +551,9 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
   const runAiQuery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (import.meta.env.VITE_STATIC_DEPLOYMENT === 'true') {
-      setErrorMsg('AI Search requires the optional server API and is not available in this static hosting build. The browser-based utility tools remain available.');
+      setErrorMsg(
+        'AI Search requires the optional server API and is not available in this static hosting build. All 25 browser-based utility tools remain 100% available.'
+      );
       return;
     }
     if (!query.trim()) {
@@ -422,10 +594,10 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-xs p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="AI Search Grounding and High-Thinking Studio"
+      aria-label="NextGenToolkit AI Search Grounding and High-Thinking Studio"
       onClick={onClose}
     >
       <div
@@ -439,7 +611,7 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
             </div>
             <div>
               <h2 className="text-base font-bold text-[#171927] dark:text-[#F8F7FC]">
-                Utilix Hybrid AI Workflow & Search Grounding Studio
+                NextGenToolkit Hybrid AI Workflow & Search Grounding Studio
               </h2>
               <p className="text-xs text-[#64748B]">
                 Server-side proxy powered by Google Search Grounding (gemini-4-hydrogen) & High Thinking (gemini-4-carbon)
@@ -462,7 +634,7 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
               onClick={() => {
                 setMode('search');
                 setQuery(
-                  'What are the latest Core Web Vitals LCP/INP benchmarks and Google Search structured data best practices for web utilities?'
+                  'What are the latest Core Web Vitals LCP/INP benchmarks, LSI semantic indexing strategies, and Google Search Console sitemap best practices?'
                 );
               }}
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-colors ${

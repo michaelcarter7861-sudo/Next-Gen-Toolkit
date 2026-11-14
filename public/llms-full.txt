@@ -1,11 +1,11 @@
-# UTILIX — Technical Documentation for Search and AI Assistants (llms-full.txt)
+# NextGenToolkit — Technical Documentation for Search and AI Assistants (llms-full.txt)
 
 ## 1. Platform Architecture & Privacy Model
-- **Entity Name:** UTILIX
+- **Entity Name:** NextGenToolkit (nextgentoolkit)
 - **Execution Architecture:** Tool-specific browser processing using technologies such as HTML5 Canvas, Web Crypto API, pdf-lib and JavaScript. Some optional AI/search features use remote services.
 - **Data Privacy:** Do not assume all site features are offline. Many individual utilities process inputs locally, while AI/search integrations may send prompts or context to remote providers. Review the relevant tool and feature behavior before entering sensitive data.
 - **Batch Processing:** Selected tools support multiple inputs and ZIP export. Practical limits depend on available browser memory, file size and the specific tool.
-- **Performance:** Core Web Vitals have not yet been measured on the public deployment. No performance thresholds are claimed here.
+- **Performance:** Static pre-rendered HTML routes (`index.html` per hub and tool) with Schema.org `@graph` JSON-LD and Latent Semantic Indexing (LSI) entity coverage.
 
 ## 2. Complete 25-Tool Technical Specification Matrix
 
@@ -30,52 +30,52 @@
    - Features: Displays forensic table of hidden Author, Creator, Producer, CreationDate, ModificationDate, and strips 100% of tracking tags in one click.
 
 ### Hub 2: Modern Image & Media Utilities (`/image-tools/`)
-7. **Bulk WebP & AVIF Converter (`/image-tools/bulk-webp-avif-converter/`)**
-   - Engine: HTML5 `canvas.toBlob('image/webp' | 'image/avif' | 'image/jpeg' | 'image/png', quality)`.
-   - Features: Batch batch queue, quality slider (1-100), side-by-side size comparison, total bandwidth saved summary.
+7. **Bulk WebP & Format Converter (`/image-tools/bulk-webp-avif-converter/`)**
+   - Engine: HTML5 `canvas.toBlob('image/webp' | 'image/jpeg' | 'image/png', quality)`.
+   - Features: Batch queue, quality slider (1-100), side-by-side size comparison, total bandwidth saved summary.
 8. **Target-KB Image Compressor (`/image-tools/compress-image-to-kb/`)**
-   - Engine: Binary-search quality & scale iteration loop (`maxIterations: 12`) to hit exact byte targets.
-   - Features: Exact target presets (`20KB`, `50KB`, `100KB`, `200KB`) for visa/government/admission portals + passport dimension presets.
+   - Engine: Binary-search quality & scale iteration loop (`maxIterations: 8`) to hit exact byte targets.
+   - Features: Exact target presets (`20KB`, `50KB`, `100KB`, `200KB`) for visa/government/admission portals.
 9. **EXIF & GPS Privacy Scrubber (`/image-tools/exif-metadata-remover/`)**
    - Engine: Binary APP1/EXIF header parser (`0xFFE1`) + clean pixel Canvas re-encoding.
    - Features: Forensic inspection of camera model, exposure, and GPS coordinates before stripping 100% of metadata.
 10. **Social & E-Com Bulk Resizer (`/image-tools/social-media-image-resizer/`)**
-    - Engine: Multi-canvas smart center-crop and blurred-pad resizer.
-    - Features: 1-click export of a single upload into YouTube Thumbnail (`1280x720`), Instagram Square (`1080x1080`), Story (`1080x1920`), LinkedIn Banner (`1584x396`), Amazon Product (`1000x1000`), and Favicon pack (`16x16`, `32x32`, `180x180`) in one ZIP.
+    - Engine: Multi-canvas smart center-crop resizer.
+    - Features: 1-click export of a single upload into YouTube Thumbnail (`1280x720`), Instagram Square (`1080x1080`), Story (`1080x1920`), LinkedIn Banner (`1584x396`), Amazon Product (`1000x1000`), and Favicon (`180x180`) in one ZIP.
 11. **Browser OCR (Image to Text) (`/image-tools/image-to-text-ocr/`)**
     - Engine: Client-side OCR pipeline + clipboard paste (`Ctrl+V`) handler.
-    - Features: Extract text from uploaded images or pasted screenshots, word/line confidence analysis, export to `.txt`, `.md`, or `.json`.
+    - Features: Extract text from uploaded images or pasted screenshots, export to `.txt`, `.md`, or `.json`.
 
 ### Hub 3: Developer, Data & AI-Workflow Tools (`/dev-tools/`)
 12. **JSON Formatter & Converter (`/dev-tools/json-formatter-validator/`)**
     - Engine: Native JSON AST parser with line/column error pinning + `jsonrepair` auto-fixer.
     - Features: 1-click "Auto-Fix Broken JSON" (fixes trailing commas, single quotes, unquoted keys, Python constants) + instant conversion to CSV, YAML, TypeScript Interfaces, and SQL `INSERT` statements.
 13. **LLM Token Counter & Packer (`/dev-tools/llm-token-counter/`)**
-    - Engine: Client-side BPE token estimator (`o200k_base` / `cl100k_base` / Gemini tokenizer rules) + Repomix-style multi-file XML/Markdown context packer.
+    - Engine: Client-side BPE token estimator + Repomix-style multi-file XML/Markdown context packer.
     - Features: Real-time token count + API pricing matrix across Gemini, GPT-4o, and Claude Sonnet + context window saturation bars.
 14. **Live Regex Tester & Library (`/dev-tools/regex-tester/`)**
     - Engine: Real-time `RegExp` execution with capture-group highlighting and token-by-token AST explanation.
     - Features: 1-click preset library (Email, IPv4, Strong Password, URL, Credit Card, ISO Date) + code snippet generator (JavaScript, Python, Go).
 15. **JWT Decoder & Inspector (`/dev-tools/jwt-decoder/`)**
-    - Engine: Base64Url decoder + Web Crypto API (`crypto.subtle`) HMAC SHA-256/384/512 signature verifier.
+    - Engine: Base64Url decoder + temporal claim analyzer.
     - Features: Human-readable translation of `exp`, `iat`, and `nbf` claims with live expiration countdown badge.
 16. **Code & Text Diff Checker (`/dev-tools/code-diff-checker/`)**
-    - Engine: Myers diff algorithm (`diffLines`, `diffWordsWithSpace`, `createPatch`).
-    - Features: Split-view and unified-view toggle, Ignore Whitespace / Ignore Case switches, and 1-click Git `.patch` download.
+    - Engine: Myers diff algorithm (`diffLines`, `createPatch`).
+    - Features: Unified-view and patch toggle, Ignore Whitespace / Ignore Case switches, and 1-click Git `.patch` download.
 17. **Base64, URL & Entity Codec (`/dev-tools/base64-url-encoder/`)**
     - Engine: UTF-8 safe `TextEncoder` / `Uint8Array` pipeline.
-    - Features: Auto-detects format, encodes/decodes Base64, Base64Url, URL Percent-Encoding, and HTML Entities + file-to-Data-URI generator.
+    - Features: Encodes/decodes Base64, Base64 Data URI, URL Percent-Encoding, and HTML Entities.
 
 ### Hub 4: Text, Writing & Content SEO Utilities (`/text-tools/`)
 18. **Text to TXT & Clean Markdown (`/text-tools/text-to-txt-markdown/`)**
     - Engine: `Turndown` HTML-to-Markdown + zero-width watermark regex scrubber (`\u200B`, `\u200C`, `\u200D`, `\uFEFF`, `\u00A0`).
-    - Features: Strips hidden LLM/Word formatting and watermarks, converts rich text to Markdown, exports `.txt` or `.md` with UTF-8/ASCII CRLF/LF line ending controls.
+    - Features: Strips hidden LLM/Word formatting and watermarks, converts rich text to Markdown, exports `.txt` or `.md` with CRLF/LF line ending controls.
 19. **Word Counter & SEO Density (`/text-tools/word-counter-density/`)**
-    - Engine: Lexical N-gram tokenizer (1-word, 2-word, 3-word phrases) + Flesch reading ease & SERP pixel width calculator.
-    - Features: Live Google SERP Title (600px) & Meta Description (960px) pixel meters, social media character limit bars (X, LinkedIn, Instagram), reading/speaking time, and stop-word filtered keyword density table.
+    - Engine: Lexical N-gram tokenizer (1-word, 2-word, 3-word phrases) + SERP pixel width calculator.
+    - Features: Live Google SERP Title (580px) & Meta Description (920px) pixel meters, reading/speaking time, and stop-word filtered keyword density table.
 20. **Case Converter & Slug Maker (`/text-tools/case-converter-slug-generator/`)**
     - Engine: Unicode-aware string transformer with diacritic transliteration and stop-word removal.
-    - Features: Simultaneous conversion across 12 cases (`UPPERCASE`, `lowercase`, `Title Case`, `Sentence case`, `camelCase`, `PascalCase`, `snake_case`, `kebab-case`, `CONSTANT_CASE`, `dot.case`, `path/case`, `aLtErNaTiNg`) + bulk SEO URL slug generator.
+    - Features: Simultaneous conversion across 12 cases + bulk SEO URL slug generator.
 21. **Duplicate Line & List Cleaner (`/text-tools/duplicate-line-remover/`)**
     - Engine: `O(N)` `Set`-based deduplication engine.
     - Features: Case-sensitive toggle, trim whitespace, remove empty lines, prefix/suffix line wrapper, and natural alphanumeric/length sorting.
@@ -83,13 +83,13 @@
 ### Hub 5: Everyday Micro-Utilities & Link Magnets (`/generators/`)
 22. **Custom SVG/PNG QR Studio (`/generators/custom-qr-code-generator/`)**
     - Engine: Reed-Solomon error-corrected (`L`, `M`, `Q`, `H`) vector SVG & high-res Canvas QR generator.
-    - Features: 100% permanent static QR codes (never expire), URL/Wi-Fi/vCard/UPI payload tabs, custom foreground/background colors, center badge/logo overlay, and print-ready `.svg` / `.png` download.
+    - Features: 100% permanent static QR codes (never expire), URL/Wi-Fi/vCard payload tabs, custom foreground/background colors, and print-ready `.svg` / `.png` download.
 23. **Crypto Password & Key Gen (`/generators/password-api-key-generator/`)**
     - Engine: Hardware-backed `window.crypto.getRandomValues()` CSPRNG.
-    - Features: Generates high-entropy passwords, BIP39-style memorable passphrases, UUID v4/v7, and 256-bit/512-bit JWT/API secrets with real-time bits-of-entropy and offline crack-time calculation.
+    - Features: Generates high-entropy passwords, memorable passphrases, UUID v4, and 256-bit JWT/API secrets with real-time bits-of-entropy and offline crack-time calculation.
 24. **Epoch & Timezone Converter (`/generators/unix-timestamp-converter/`)**
     - Engine: `Intl.DateTimeFormat` temporal engine handling seconds (10-digit), milliseconds (13-digit), and nanoseconds (19-digit).
-    - Features: Live Unix clock, ISO-8601, RFC 2822, UTC, local time, relative time, and a multi-city developer timezone comparison matrix (UTC, New York, London, Berlin, Tokyo, Sydney, San Francisco).
+    - Features: ISO-8601, UTC, local time, relative time, and a multi-city developer timezone comparison matrix.
 25. **Cron Expression Studio (`/generators/cron-expression-generator/`)**
-    - Engine: Cron AST parser translating 5-field and 6-field cron expressions into plain English.
-    - Features: Interactive visual schedule builder, preset schedules, human-readable explanation, and exact calculation of the next 10 execution dates/times.
+    - Engine: Cron AST parser translating 5-field cron expressions into plain English.
+    - Features: Preset schedules, human-readable explanation, and exact calculation of the next 10 execution dates/times.

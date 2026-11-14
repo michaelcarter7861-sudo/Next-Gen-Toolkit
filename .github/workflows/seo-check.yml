@@ -1,4 +1,4 @@
-name: UTILIX SEO Build Check
+name: NextGenToolkit SEO Build Check
 
 on:
   push:

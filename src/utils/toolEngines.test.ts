@@ -21,7 +21,7 @@ import {
 } from './toolEngines';
 
 test('JSON processor auto-fixes broken JSON and converts to CSV/YAML/TS', () => {
-  const broken = "{ name: 'Utilix', tools: 25, active: true, }";
+  const broken = "{ name: 'NextGenToolkit', tools: 25, active: true, }";
   const failed = processJsonInput(broken, 2, false);
   assert.equal(failed.valid, false);
 
@@ -31,24 +31,24 @@ test('JSON processor auto-fixes broken JSON and converts to CSV/YAML/TS', () => 
 
   const csv = jsonToCsv([repaired.parsedValue]);
   assert.match(csv, /name,tools,active/);
-  assert.match(csv, /Utilix,25,true/);
+  assert.match(csv, /NextGenToolkit,25,true/);
 
   const yaml = jsonToYaml(repaired.parsedValue);
-  assert.match(yaml, /name: Utilix/);
+  assert.match(yaml, /name: NextGenToolkit/);
 
   const ts = jsonToTypeScript(repaired.parsedValue, 'PlatformConfig');
   assert.match(ts, /export interface PlatformConfig/);
 });
 
 test('LLM BPE token estimator computes counts and pricing matrix across 4 models', () => {
-  const result = estimateBpeTokens('Utilix processes 100% of files inside browser RAM with zero server uploads.');
+  const result = estimateBpeTokens('NextGenToolkit processes 100% of files inside browser RAM with zero server uploads.');
   assert.ok(result.tokens > 8);
   assert.equal(result.models.length, 4);
   assert.ok(result.models[0].estimatedTokens > 0);
 });
 
 test('Live Regex evaluator finds capture groups and explains AST tokens', () => {
-  const res = evaluateRegex('(\\w+)@([a-z]+\\.[a-z]+)', 'gi', 'Contact dev@utilix.tools or support@utilix.io');
+  const res = evaluateRegex('(\\w+)@([a-z]+\\.[a-z]+)', 'gi', 'Contact dev@nextgentoolkit.tools or support@nextgentoolkit.io');
   assert.equal(res.valid, true);
   assert.equal(res.matches.length, 2);
   assert.equal(res.matches[0].groups[0], 'dev');
@@ -73,9 +73,9 @@ test('Myers text diff computes added/removed counts and Unified patch', () => {
 });
 
 test('UTF-8 safe Base64 and URL codec handles Unicode symbols cleanly', () => {
-  const encoded = encodeDecodeCodec('Utilix ✓ 100% Client-Side', 'base64-encode');
+  const encoded = encodeDecodeCodec('NextGenToolkit ✓ 100% Client-Side', 'base64-encode');
   const decoded = encodeDecodeCodec(encoded, 'base64-decode');
-  assert.equal(decoded, 'Utilix ✓ 100% Client-Side');
+  assert.equal(decoded, 'NextGenToolkit ✓ 100% Client-Side');
 });
 
 test('AI watermark scrubber removes zero-width spaces and non-breaking spaces', () => {
@@ -87,7 +87,7 @@ test('AI watermark scrubber removes zero-width spaces and non-breaking spaces', 
 });
 
 test('SEO Word Counter & N-Gram analyzer calculates SERP pixel width and density', () => {
-  const sample = 'Compress PDF online free with Utilix offline PDF compressor. Compress PDF fast.';
+  const sample = 'Compress PDF online free with NextGenToolkit offline PDF compressor. Compress PDF fast.';
   const stats = analyzeSeoWordDensity(sample);
   assert.equal(stats.words, 12);
   assert.ok(stats.titlePixelWidth > 100);

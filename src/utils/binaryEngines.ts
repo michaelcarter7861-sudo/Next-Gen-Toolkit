@@ -26,16 +26,16 @@ export interface ProcessedFileItem {
 // 1. Sample File Generators ("Load Sample Data" for PDF & Image Tools)
 // ============================================================================
 
-export async function createSamplePdfFile(filename = 'utilix-sample-document.pdf', pageCount = 4): Promise<File> {
+export async function createSamplePdfFile(filename = 'nextgentoolkit-sample-document.pdf', pageCount = 4): Promise<File> {
   const pdfDoc = await PDFDocument.create();
-  pdfDoc.setTitle('Utilix Architecture & Q4 Financial Report');
-  pdfDoc.setAuthor('Utilix Privacy Lab (sabirarain552)');
+  pdfDoc.setTitle('NextGenToolkit Architecture & Q4 Financial Report');
+  pdfDoc.setAuthor('NextGenToolkit Privacy Lab (sabirarain552)');
   pdfDoc.setSubject('Confidential Client-Side WebAssembly Processing Benchmark');
-  pdfDoc.setKeywords(['utilix', 'pdf-lib', 'webassembly', 'zero-upload', 'seo']);
-  pdfDoc.setProducer('Adobe PDF Library 17.0 / Utilix Test Harness');
+  pdfDoc.setKeywords(['nextgentoolkit', 'pdf-lib', 'webassembly', 'zero-upload', 'seo']);
+  pdfDoc.setProducer('Adobe PDF Library 17.0 / NextGenToolkit Test Harness');
   pdfDoc.setCreator('Microsoft Word for Microsoft 365 (Tracking ID: 9841-AX)');
-  pdfDoc.setCreationDate(new Date('2026-02-15T10:30:00Z'));
-  pdfDoc.setModificationDate(new Date('2026-11-10T14:22:00Z'));
+  pdfDoc.setCreationDate(new Date('2025-02-15T10:30:00Z'));
+  pdfDoc.setModificationDate(new Date('2025-02-20T14:22:00Z'));
 
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -53,7 +53,7 @@ export async function createSamplePdfFile(filename = 'utilix-sample-document.pdf
       color: rgb(0.44, 0.28, 0.92),
     });
 
-    page.drawText(`UTILIX CLIENT-SIDE BENCHMARK — PAGE ${i} OF ${pageCount}`, {
+    page.drawText(`NEXTGENTOOLKIT CLIENT-SIDE BENCHMARK — PAGE ${i} OF ${pageCount}`, {
       x: 56,
       y: height - 72,
       size: 13,
@@ -116,7 +116,7 @@ export async function createSamplePdfFile(filename = 'utilix-sample-document.pdf
   return new File([blob], filename, { type: 'application/pdf' });
 }
 
-export async function createSampleImageFile(filename = 'utilix-sample-photo.jpg'): Promise<File> {
+export async function createSampleImageFile(filename = 'nextgentoolkit-sample-photo.jpg'): Promise<File> {
   const canvas = document.createElement('canvas');
   canvas.width = 1200;
   canvas.height = 800;
@@ -137,17 +137,17 @@ export async function createSampleImageFile(filename = 'utilix-sample-photo.jpg'
   ctx.fill();
 
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 54px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('UTILIX LOCAL IMAGE ENGINE', 130, 200);
+  ctx.font = 'bold 50px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('NEXTGENTOOLKIT IMAGE ENGINE', 130, 200);
 
   ctx.fillStyle = '#E1F0FF';
   ctx.font = '600 30px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('100% Client-Side WebP / AVIF / Target-KB / OCR Test Card', 130, 265);
+  ctx.fillText('100% Client-Side WebP / Target-KB / OCR Test Card', 130, 265);
 
   ctx.fillStyle = '#F8F7FC';
   ctx.font = '24px monospace';
   const ocrLines = [
-    'INVOICE #UTX-2026-8841   DATE: 2026-11-13',
+    'INVOICE #NGT-2025-8841   DATE: 2025-02-20',
     'GPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)',
     'DEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100',
     'PORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop',
@@ -689,7 +689,7 @@ export async function generateCustomQrCode(options: {
   lightColor: string;
   margin: number;
 }): Promise<{ svgString: string; pngDataUrl: string }> {
-  const safePayload = options.payload.trim() || 'https://utilix.tools';
+  const safePayload = options.payload.trim() || 'https://utilix-5rz.pages.dev';
   const svgString = await QRCode.toString(safePayload, {
     type: 'svg',
     errorCorrectionLevel: options.errorCorrectionLevel,

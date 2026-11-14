@@ -8,6 +8,7 @@ import {
   ChevronDown,
   FileCode2,
   Sparkles,
+  Tag,
 } from 'lucide-react';
 import {
   ToolDefinition,
@@ -38,14 +39,14 @@ export function NineZoneSeoContent({
   const nextTool = getToolById(tool.nextStepToolId) || TOOLS_CATALOG[0];
   const parentHub = getHubById(tool.hubId);
 
-  // 4 sibling tools from same category hub + 2 cross-hub tools (Section 8.3 of Blueprint)
+  // 4 sibling tools from same category hub + 2 cross-hub tools
   const siblingTools = TOOLS_CATALOG.filter(
     (t) => t.hubId === tool.hubId && t.id !== tool.id
   ).slice(0, 4);
   const crossHubTools = TOOLS_CATALOG.filter((t) => t.hubId !== tool.hubId).slice(0, 2);
   const relatedMesh = [...siblingTools, ...crossHubTools];
 
-  const embedSnippet = `<iframe src="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}?embed=1" width="100%" height="520" style="border:1px solid #E8E6F2;border-radius:16px;" loading="lazy" title="Utilix ${tool.name}"></iframe>\n<p style="font-size:12px;color:#64748B;margin-top:6px;">Powered by <a href="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}" target="_blank" rel="noopener">Utilix ${tool.name} (Browser-Based Utility)</a></p>`;
+  const embedSnippet = `<iframe src="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}?embed=1" width="100%" height="520" style="border:1px solid #E8E6F2;border-radius:16px;" loading="lazy" title="NextGenToolkit ${tool.name}"></iframe>\n<p style="font-size:12px;color:#64748B;margin-top:6px;">Powered by <a href="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}" target="_blank" rel="noopener">NextGenToolkit ${tool.name} (Browser-Based Utility)</a></p>`;
 
   const handleCopyEmbed = () => {
     navigator.clipboard.writeText(embedSnippet);
@@ -56,7 +57,7 @@ export function NineZoneSeoContent({
   return (
     <div className="space-y-10 mt-10">
       {/* =====================================================================
-          ZONE 4: Workflow Chaining Bar + Phase 3 Embeddable Link Magnet
+          ZONE 4: Workflow Chaining Bar + Embeddable Link Magnet
       ===================================================================== */}
       <section
         aria-label="Workflow Next-Step Chaining"
@@ -74,7 +75,7 @@ export function NineZoneSeoContent({
           <button
             type="button"
             onClick={() => setShowEmbedCode(!showEmbedCode)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#253044] dark:text-[#E2E8F0] hover:border-[#7047EB] transition-colors whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#253044] dark:text-[#E2E8F0] hover:border-[#7047EB] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Code className="w-3.5 h-3.5 text-[#7047EB]" />
             <span>Free Embed Widget</span>
@@ -82,7 +83,7 @@ export function NineZoneSeoContent({
           <button
             type="button"
             onClick={() => onSelectTool(nextTool.id)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7047EB] hover:bg-[#5E35D9] text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7047EB] hover:bg-[#5E35D9] text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <span>Open {nextTool.name}</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -94,7 +95,7 @@ export function NineZoneSeoContent({
         <div className="rounded-2xl bg-[#131520] text-[#E2E8F0] p-5 border border-[#2A2E42] space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#A78BFA]">
-              Embed {tool.name} on Your Website or Developer Docs (Phase 3 Link Magnet)
+              Embed {tool.name} on Your Website or Developer Docs
             </span>
             <button
               type="button"
@@ -196,7 +197,7 @@ export function NineZoneSeoContent({
           <button
             type="button"
             onClick={() => setShowSchemaPreview(!showSchemaPreview)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#7047EB] hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F] whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#7047EB] hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F] whitespace-nowrap shrink-0 cursor-pointer"
           >
             <FileCode2 className="w-3.5 h-3.5" />
             <span>{showSchemaPreview ? 'Hide JSON-LD Schema' : 'Inspect Head JSON-LD Schema'}</span>
@@ -215,7 +216,7 @@ export function NineZoneSeoContent({
               <tr className="border-b border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]">
                 <th className="py-3 pr-4 font-semibold">Benchmark Dimension</th>
                 <th className="py-3 px-4 font-semibold text-[#7047EB]">
-                  Utilix ({tool.name})
+                  NextGenToolkit ({tool.name})
                 </th>
                 <th className="py-3 pl-4 font-semibold">Other providers (varies)</th>
               </tr>
@@ -293,41 +294,67 @@ export function NineZoneSeoContent({
       </section>
 
       {/* =====================================================================
-          ZONE 7: Deep Technical & LSI Use-Case Guide
+          ZONE 7: Deep Technical & Latent Semantic Indexing (LSI) Use-Case Guide
       ===================================================================== */}
       <section className="rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] p-6 space-y-5">
-        <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
-          Technical Architecture & Real-World Use Cases for {tool.name}
-        </h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
+            Technical Architecture & Latent Semantic Indexing (LSI) Guide for {tool.name}
+          </h2>
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#EDE7FF] dark:bg-[#7047EB]/20 text-xs font-semibold text-[#7047EB] dark:text-[#C4B5FD]">
+            <Tag className="w-3.5 h-3.5" />
+            <span>{tool.lsiKeywords.length} LSI Entities</span>
+          </span>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-[#253044] dark:text-[#CBD5E1] leading-relaxed">
           <div className="space-y-2.5">
             <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
               01. How this tool processes data
             </h3>
             <p>
-              <strong>Utilix {tool.name}</strong> uses <code>{tool.specTable.executionEngine}</code>. Its listed processing model is: {tool.specTable.privacyModel}. Browser extensions, external libraries, and optional network-powered features may still make separate requests; avoid entering highly sensitive information unless you have verified the behavior of the specific tool.
+              <strong>NextGenToolkit {tool.name}</strong> uses <code>{tool.specTable.executionEngine}</code>. Its listed processing model is: {tool.specTable.privacyModel}. Browser extensions, external libraries, and optional network-powered features may still make separate requests; avoid entering highly sensitive information unless you have verified the behavior of the specific tool.
             </p>
           </div>
           <div className="space-y-2.5">
             <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
-              02. Supported workflow and limits
+              02. Supported workflow and search intent clusters
             </h3>
             <p>
-              This tool supports the workflow and batch behavior listed in its specification. Actual capacity and responsiveness depend on browser support, available memory, device performance and input size. Common use cases include {tool.clusteredQueries.join(', ')}.
+              This tool supports the workflow and batch behavior listed in its specification. Actual capacity and responsiveness depend on browser support, available memory, device performance and input size. High-intent queries addressed include {tool.clusteredQueries.join(', ')}.
             </p>
           </div>
         </div>
 
-        <div className="pt-3 border-t border-[#E8E6F2] dark:border-[#2A2E42] flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748B]">
-          <span className="font-semibold text-[#171927] dark:text-[#F8F7FC]">
-            Semantic Entities & LSI Coverage:
-          </span>
-          {tool.lsiKeywords.map((kw, i) => (
-            <React.Fragment key={kw}>
-              <span>{kw}</span>
-              {i < tool.lsiKeywords.length - 1 && <span aria-hidden="true">·</span>}
-            </React.Fragment>
-          ))}
+        {/* Structured LSI Entities & Long-Tail Query Matrix */}
+        <div className="pt-4 border-t border-[#E8E6F2] dark:border-[#2A2E42] space-y-3">
+          <div className="text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
+            Latent Semantic Indexing (LSI) Entities & Technical Concepts:
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tool.lsiKeywords.map((kw) => (
+              <span
+                key={kw}
+                className="px-2.5 py-1 rounded-lg bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-medium text-[#253044] dark:text-[#CBD5E1]"
+              >
+                {kw}
+              </span>
+            ))}
+          </div>
+
+          <div className="text-xs font-bold text-[#171927] dark:text-[#F8F7FC] pt-1">
+            Clustered Long-Tail Search Intents (AEO / GEO):
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tool.clusteredQueries.map((cq) => (
+              <span
+                key={cq}
+                className="px-2.5 py-1 rounded-lg bg-[#EDE7FF]/60 dark:bg-[#7047EB]/15 text-xs font-mono text-[#6D28D9] dark:text-[#C4B5FD]"
+              >
+                "{cq}"
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -340,7 +367,7 @@ export function NineZoneSeoContent({
             Frequently Asked Questions — {tool.name}
           </h2>
           <p className="text-xs text-[#64748B]">
-            Answers to common questions about using this tool. Search engines decide independently how page content appears in results.
+            Answers to common questions about using this tool. Synced with Schema.org FAQPage structured data.
           </p>
         </div>
 
@@ -366,17 +393,17 @@ export function NineZoneSeoContent({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
-              Related Client-Side Utilities & Internal Workflow Mesh
+              Related Browser Utilities & Internal Workflow Mesh
             </h2>
             <p className="text-xs text-[#64748B]">
-              Explore sibling tools in {parentHub?.name} and cross-hub utilities.
+              Explore sibling tools in {parentHub?.name} and cross-hub utilities on NextGenToolkit.
             </p>
           </div>
           {parentHub && (
             <button
               type="button"
               onClick={() => onSelectHub(parentHub.id)}
-              className="text-xs font-semibold text-[#7047EB] hover:underline flex items-center gap-1 whitespace-nowrap shrink-0"
+              className="text-xs font-semibold text-[#7047EB] hover:underline flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer"
             >
               <span>View All {parentHub.name}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -392,7 +419,7 @@ export function NineZoneSeoContent({
                 key={rel.id}
                 type="button"
                 onClick={() => onSelectTool(rel.id)}
-                className="group p-4 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB] text-left transition-all flex items-center justify-between gap-3"
+                className="group p-4 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB] text-left transition-all flex items-center justify-between gap-3 cursor-pointer"
               >
                 <div className="min-w-0">
                   <div className="text-xs text-[#64748B] mb-0.5">{relHub?.name}</div>
@@ -409,11 +436,27 @@ export function NineZoneSeoContent({
 
         <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-[#64748B]">
           <div className="flex flex-wrap items-center gap-3">
-            <span>GEO Crawler Directories:</span>
+            <span>GEO & Search Crawler Files:</span>
+            <button
+              type="button"
+              onClick={() => onOpenSeoModal('sitemap')}
+              className="font-mono text-[#7047EB] hover:underline cursor-pointer"
+            >
+              /sitemap.xml
+            </button>
+            <span>·</span>
+            <button
+              type="button"
+              onClick={() => onOpenSeoModal('robots')}
+              className="font-mono text-[#7047EB] hover:underline cursor-pointer"
+            >
+              /robots.txt
+            </button>
+            <span>·</span>
             <button
               type="button"
               onClick={() => onOpenSeoModal('llms')}
-              className="font-mono text-[#7047EB] hover:underline"
+              className="font-mono text-[#7047EB] hover:underline cursor-pointer"
             >
               /llms.txt
             </button>
@@ -421,28 +464,12 @@ export function NineZoneSeoContent({
             <button
               type="button"
               onClick={() => onOpenSeoModal('llms-full')}
-              className="font-mono text-[#7047EB] hover:underline"
+              className="font-mono text-[#7047EB] hover:underline cursor-pointer"
             >
               /llms-full.txt
             </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => onOpenSeoModal('robots')}
-              className="font-mono text-[#7047EB] hover:underline"
-            >
-              /robots.txt
-            </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => onOpenSeoModal('sitemap')}
-              className="font-mono text-[#7047EB] hover:underline"
-            >
-              /sitemap.xml
-            </button>
           </div>
-          <span>100% Permissive MIT / ISC / BSD Open-Source Engines</span>
+          <span>NextGenToolkit · Permissive Open-Source Browser Engines</span>
         </div>
       </section>
     </div>

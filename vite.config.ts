@@ -9,7 +9,33 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname, '.'),
+      },
+    },
+    build: {
+      chunkSizeWarningLimit: 700,
+      rolldownOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (id.includes('node_modules/pdf-lib') || id.includes('node_modules/pako')) {
+              return 'vendor-pdf';
+            }
+            if (id.includes('node_modules/jszip')) {
+              return 'vendor-zip';
+            }
+            if (
+              id.includes('node_modules/qrcode') ||
+              id.includes('node_modules/jsonrepair') ||
+              id.includes('node_modules/turndown') ||
+              id.includes('node_modules/diff')
+            ) {
+              return 'vendor-codecs';
+            }
+            if (id.includes('node_modules/lucide-react')) {
+              return 'vendor-icons';
+            }
+          },
+        },
       },
     },
     server: {

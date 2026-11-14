@@ -18,6 +18,7 @@ import {
   Type,
   Calculator,
   Wrench,
+  Star,
 } from 'lucide-react';
 import { ToolDefinition, HubId, getHubById } from '../data/toolsCatalog';
 import {
@@ -66,22 +67,24 @@ interface ToolWorkspaceProps {
   onSelectTool: (toolId: string) => void;
   onOpenAiModal: (context: string) => void;
   onOpenSeoModal: (tab: 'llms' | 'llms-full' | 'robots' | 'sitemap' | 'design-system') => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (toolId: string) => void;
 }
 
 const SAMPLE_TEXT_PRESETS: Record<string, string> = {
-  'json-formatter-validator': `{\n  // Malformed JSON with single quotes, unquoted keys & trailing comma\n  platform: 'Utilix',\n  domain: 'https://utilix.tools',\n  clientSidePercent: 100,\n  serverBytesUploaded: 0,\n  hubs: ['PDF Tools', 'Image Tools', 'Developer Tools', 'Text Tools', 'Generators'],\n  coreWebVitals: { lcpMs: 420, inpMs: 18, cls: 0.000, },\n}`,
-  'llm-token-counter': `import { PDFDocument } from 'pdf-lib';\n\n// Utilix Zero-Upload PDF Compressor Worker\nexport async function compressPdfInBrowser(buffer: ArrayBuffer, targetKb: number) {\n  const doc = await PDFDocument.load(buffer);\n  doc.setTitle('');\n  doc.setAuthor('');\n  return await doc.save({ useObjectStreams: true });\n}`,
-  'regex-tester': `Contact our engineering team at architecture@utilix.tools or security@utilix.io.\nServer nodes: 192.168.1.104 and 10.24.88.12.\nRelease date: 2026-11-13T09:30:00Z — Order #UTX-99412.`,
-  'jwt-decoder': `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzk4NDEyIiwibmFtZSI6IlNhYmlyIEFyYWluIChVdGlsaXggQXJjaGl0ZWN0KSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTczMTQ4MDAwMCwiZXhwIjoxOTk5OTk5OTk5fQ.utilix_client_side_verified_signature`,
+  'json-formatter-validator': `{\n  // Malformed JSON with single quotes, unquoted keys & trailing comma\n  platform: 'NextGenToolkit',\n  domain: 'https://utilix-5rz.pages.dev',\n  clientSidePercent: 100,\n  serverBytesUploaded: 0,\n  hubs: ['PDF Tools', 'Image Tools', 'Developer Tools', 'Text Tools', 'Generators'],\n  coreWebVitals: { lcpMs: 420, inpMs: 18, cls: 0.000, },\n}`,
+  'llm-token-counter': `import { PDFDocument } from 'pdf-lib';\n\n// NextGenToolkit Zero-Upload PDF Compressor Worker\nexport async function compressPdfInBrowser(buffer: ArrayBuffer, targetKb: number) {\n  const doc = await PDFDocument.load(buffer);\n  doc.setTitle('');\n  doc.setAuthor('');\n  return await doc.save({ useObjectStreams: true });\n}`,
+  'regex-tester': `Contact our engineering team at architecture@nextgentoolkit.dev or security@nextgentoolkit.io.\nServer nodes: 192.168.1.104 and 10.24.88.12.\nRelease date: 2025-02-20T09:30:00Z — Order #NGT-99412.`,
+  'jwt-decoder': `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzk4NDEyIiwibmFtZSI6IlNhYmlyIEFyYWluIChOZXh0R2VuVG9vbGtpdCBBcmNoaXRlY3QpIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzMxNDgwMDAwLCJleHAiOjE5OTk5OTk5OTl9.nextgentoolkit_client_side_verified_signature`,
   'code-diff-checker': `function calculateCompressionTarget(sizeKb) {\n  const maxUpload = 50;\n  return sizeKb * 0.85;\n}`,
-  'base64-url-encoder': `Utilix — 100% Client-Side WebAssembly Utilities (0 Bytes Uploaded) ✓`,
-  'text-to-txt-markdown': `## Executive Summary\u200B\uFEFF\n\nCopied from **ChatGPT / Claude** with hidden\u00A0zero-width watermarks (\u200B) and “smart quotes”.\n\n- 100% Local Browser Processing\n- Unlimited Batch ZIP Export`,
-  'word-counter-density': `Compress PDF online free with Utilix Offline PDF Compressor. Unlike legacy cloud PDF tools that upload your confidential documents to remote servers, Utilix compresses PDF files to exact 100KB and 200KB targets directly inside your browser RAM using WebAssembly and pdf-lib.`,
-  'case-converter-slug-generator': `How to Compress a PDF Under 200KB Online Without Uploading\nBulk WebP and AVIF Image Converter for Core Web Vitals\nJSON Formatter Validator and Broken Syntax Auto Fixer`,
+  'base64-url-encoder': `NextGenToolkit — 100% Client-Side Browser Utilities (0 Bytes Uploaded) ✓`,
+  'text-to-txt-markdown': `## Executive Summary\u200B\uFEFF\n\nCopied from **ChatGPT / Claude** with hidden\u00A0zero-width watermarks (\u200B) and “smart quotes”.\n\n- 100% Local Browser Processing\n- Multi-File Batch ZIP Export`,
+  'word-counter-density': `Compress PDF online free with NextGenToolkit Offline PDF Compressor. Unlike legacy cloud PDF tools that upload your confidential documents to remote servers, NextGenToolkit compresses PDF files to exact 100KB and 200KB targets directly inside your browser RAM using WebAssembly and pdf-lib.`,
+  'case-converter-slug-generator': `How to Compress a PDF Under 200KB Online Without Uploading\nBulk WebP and Image Format Converter for Core Web Vitals\nJSON Formatter Validator and Broken Syntax Auto Fixer`,
   'duplicate-line-remover': `compress-pdf\njson-formatter\nmerge-pdf\ncompress-pdf\nllm-token-counter\njson-formatter\ncustom-qr-code-generator\nmerge-pdf`,
-  'custom-qr-code-generator': `https://utilix.tools`,
+  'custom-qr-code-generator': `https://utilix-5rz.pages.dev`,
   'password-api-key-generator': `24`,
-  'unix-timestamp-converter': `1763029544`,
+  'unix-timestamp-converter': `1740052800`,
   'cron-expression-generator': `*/15 * * * *`,
 };
 
@@ -92,6 +95,8 @@ export function ToolWorkspace({
   onSelectTool,
   onOpenAiModal,
   onOpenSeoModal,
+  isFavorite = false,
+  onToggleFavorite,
 }: ToolWorkspaceProps) {
   const hub = getHubById(tool.hubId);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -215,9 +220,9 @@ export function ToolWorkspace({
             } else if (jsonFormatTab === 'yaml') {
               setOutputText(jsonToYaml(res.parsedValue));
             } else if (jsonFormatTab === 'ts') {
-              setOutputText(jsonToTypeScript(res.parsedValue, 'UtilixDataPayload'));
+              setOutputText(jsonToTypeScript(res.parsedValue, 'NextGenToolkitPayload'));
             } else if (jsonFormatTab === 'sql') {
-              setOutputText(jsonToSql(res.parsedValue, 'utilix_dataset'));
+              setOutputText(jsonToSql(res.parsedValue, 'nextgentoolkit_dataset'));
             }
           }
           break;
@@ -358,11 +363,11 @@ export function ToolWorkspace({
           break;
         }
         case 'custom-qr-code-generator': {
-          let payload = inputText || 'https://utilix.tools';
+          let payload = inputText || 'https://utilix-5rz.pages.dev';
           if (qrMode === 'wifi' && !payload.startsWith('WIFI:')) {
-            payload = `WIFI:T:WPA;S:${payload};P:UtilixSecurePass2026;;`;
+            payload = `WIFI:T:WPA;S:${payload};P:NextGenSecurePass2025;;`;
           } else if (qrMode === 'vcard' && !payload.startsWith('BEGIN:VCARD')) {
-            payload = `BEGIN:VCARD\nVERSION:3.0\nFN:${payload}\nURL:https://utilix.tools\nEND:VCARD`;
+            payload = `BEGIN:VCARD\nVERSION:3.0\nFN:${payload}\nURL:https://utilix-5rz.pages.dev\nEND:VCARD`;
           }
           generateCustomQrCode({
             payload,
@@ -514,7 +519,7 @@ export function ToolWorkspace({
           const res = await mergePdfFilesClient(filesToProcess, pdfRotation);
           results.push({
             id: `merged-${Date.now()}`,
-            name: `utilix-merged-${filesToProcess.length}-files.pdf`,
+            name: `nextgentoolkit-merged-${filesToProcess.length}-files.pdf`,
             originalSize: res.totalOriginalBytes,
             outputSize: res.blob.size,
             mimeType: 'application/pdf',
@@ -554,7 +559,7 @@ export function ToolWorkspace({
           const totalOrig = filesToProcess.reduce((acc, f) => acc + f.size, 0);
           results.push({
             id: `images-to-pdf-${Date.now()}`,
-            name: `utilix-compiled-${res.pageCount}-pages.pdf`,
+            name: `nextgentoolkit-compiled-${res.pageCount}-pages.pdf`,
             originalSize: totalOrig,
             outputSize: res.blob.size,
             mimeType: 'application/pdf',
@@ -635,20 +640,20 @@ export function ToolWorkspace({
   // Load Sample Data Handler (Mandatory UX Upgrade #3)
   const handleLoadSampleData = async () => {
     if (tool.hubId === 'pdf-tools' && tool.id !== 'image-to-pdf') {
-      const samplePdf1 = await createSamplePdfFile('utilix-financial-report-q4.pdf', 4);
-      const samplePdf2 = await createSamplePdfFile('utilix-architecture-annex.pdf', 2);
+      const samplePdf1 = await createSamplePdfFile('nextgentoolkit-financial-report-q4.pdf', 4);
+      const samplePdf2 = await createSamplePdfFile('nextgentoolkit-architecture-annex.pdf', 2);
       const batch = tool.id === 'merge-pdf' ? [samplePdf1, samplePdf2] : [samplePdf1];
       setUploadedFiles(batch);
     } else if (tool.hubId === 'image-tools' || tool.id === 'image-to-pdf') {
-      const sampleImg = await createSampleImageFile('utilix-highres-sample.jpg');
+      const sampleImg = await createSampleImageFile('nextgentoolkit-highres-sample.jpg');
       setUploadedFiles([sampleImg]);
       if (tool.id === 'image-to-text-ocr') {
         setInputText(
-          `INVOICE #UTX-2026-8841   DATE: 2026-11-13\nGPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)\nDEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100\nPORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop\nOCR VERIFICATION LINE: Pack my box with five dozen liquor jugs.`
+          `INVOICE #NGT-2025-8841   DATE: 2025-02-20\nGPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)\nDEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100\nPORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop\nOCR VERIFICATION LINE: Pack my box with five dozen liquor jugs.`
         );
       }
     } else {
-      setInputText(SAMPLE_TEXT_PRESETS[tool.id] || 'Utilix Sample Input');
+      setInputText(SAMPLE_TEXT_PRESETS[tool.id] || 'NextGenToolkit Sample Input');
     }
   };
 
@@ -709,7 +714,7 @@ export function ToolWorkspace({
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `utilix-${tool.slug}-batch.zip`;
+      a.download = `nextgentoolkit-${tool.slug}-batch.zip`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } else if (outputText) {
@@ -722,12 +727,12 @@ export function ToolWorkspace({
               ? jsonFormatTab
               : 'txt';
       const zipBlob = await createBatchZipBlob([
-        { name: `utilix-${tool.slug}-output.${ext}`, content: outputText },
+        { name: `nextgentoolkit-${tool.slug}-output.${ext}`, content: outputText },
       ]);
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `utilix-${tool.slug}-archive.zip`;
+      a.download = `nextgentoolkit-${tool.slug}-archive.zip`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     }
@@ -747,7 +752,7 @@ export function ToolWorkspace({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `utilix-${tool.slug}.${ext}`;
+    a.download = `nextgentoolkit-${tool.slug}.${ext}`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
@@ -816,12 +821,26 @@ export function ToolWorkspace({
           </div>
         </div>
 
-        {/* Tool-specific processing information */}
+        {/* Tool-specific processing information & Pin to Favorites */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {onToggleFavorite && (
+            <button
+              type="button"
+              onClick={() => onToggleFavorite(tool.id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                isFavorite
+                  ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+                  : 'bg-white dark:bg-[#1C1F2E] border-[#E8E6F2] dark:border-[#2A2E42] text-[#253044] dark:text-[#CBD5E1] hover:border-amber-400'
+              }`}
+            >
+              <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-amber-400 text-amber-400' : ''}`} />
+              <span>{isFavorite ? 'Pinned' : 'Pin Tool'}</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setShowZeroUploadVerify(!showZeroUploadVerify)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:border-emerald-500 transition-colors whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:border-emerald-500 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Processing details</span>
@@ -829,7 +848,7 @@ export function ToolWorkspace({
           <button
             type="button"
             onClick={() => onOpenAiModal(outputText || inputText)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F4E5FF] dark:bg-[#7047EB]/20 text-[#7E22CE] dark:text-[#C4B5FD] text-xs font-semibold hover:bg-[#EDE7FF] transition-colors whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F4E5FF] dark:bg-[#7047EB]/20 text-[#7E22CE] dark:text-[#C4B5FD] text-xs font-semibold hover:bg-[#EDE7FF] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>AI Grounded Inspect</span>

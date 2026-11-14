@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   Sun,
@@ -21,10 +21,17 @@ import {
   Calculator,
   QrCode,
   Percent,
+  Star,
+  Clock,
+  Tag,
+  Terminal,
+  Globe,
+  Cpu,
 } from 'lucide-react';
 import {
   HUBS,
   TOOLS_CATALOG,
+  PLATFORM_LSI_CLUSTERS,
   HubId,
   getToolById,
   getHubById,
@@ -35,14 +42,37 @@ import { CommandModal, SeoGeoInspectorModal, AiWorkflowModal } from './component
 import { ToolWorkspace } from './components/ToolWorkspace';
 import { CategoryHubView } from './components/CategoryHubView';
 
+const FAVORITES_STORAGE_KEY = 'ngt_favorites_v1';
+const RECENT_STORAGE_KEY = 'ngt_recent_v1';
+
 export default function App() {
   const [activeView, setActiveView] = useState<'home' | 'hub' | 'tool'>('home');
   const [selectedHubId, setSelectedHubId] = useState<HubId>('image-tools');
   const [selectedToolId, setSelectedToolId] = useState<string>('compress-image-to-kb');
   const [darkMode, setDarkMode] = useState<boolean>(false);
 
-  // Homepage live search query
+  // Homepage live search query & quick-category filter (inspired by it-tools / omni-tools)
   const [heroSearch, setHeroSearch] = useState<string>('');
+  const [quickFilter, setQuickFilter] = useState<'featured' | 'all' | 'favorites' | HubId>('featured');
+
+  // Favorites & Recently Used Tools (persisted in localStorage)
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(FAVORITES_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : ['compress-image-to-kb', 'merge-pdf', 'json-formatter-validator'];
+    } catch {
+      return ['compress-image-to-kb', 'merge-pdf', 'json-formatter-validator'];
+    }
+  });
+
+  const [recentIds, setRecentIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(RECENT_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Modals
   const [isCommandOpen, setIsCommandOpen] = useState<boolean>(false);
@@ -52,6 +82,30 @@ export default function App() {
   >('llms');
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [aiModalContext, setAiModalContext] = useState<string>('');
+
+  const toggleFavorite = (toolId: string) => {
+    setFavoriteIds((prev) => {
+      const next = prev.includes(toolId) ? prev.filter((id) => id !== toolId) : [...prev, toolId];
+      try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore storage errors
+      }
+      return next;
+    });
+  };
+
+  const recordRecentTool = (toolId: string) => {
+    setRecentIds((prev) => {
+      const next = [toolId, ...prev.filter((id) => id !== toolId)].slice(0, 6);
+      try {
+        localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore storage errors
+      }
+      return next;
+    });
+  };
 
   // Toggle dark class on <html>
   useEffect(() => {
@@ -68,9 +122,10 @@ export default function App() {
     const syncFromPath = () => {
       const basePath = import.meta.env.BASE_URL;
       const publicPath = window.location.pathname;
-      const appPath = basePath !== '/' && publicPath.startsWith(basePath)
-        ? `/${publicPath.slice(basePath.length)}`
-        : publicPath;
+      const appPath =
+        basePath !== '/' && publicPath.startsWith(basePath)
+          ? `/${publicPath.slice(basePath.length)}`
+          : publicPath;
       const path = appPath.replace(/\/+$/, '');
       if (!path || path === '') {
         setActiveView('home');
@@ -109,7 +164,9 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const basePath = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+  const basePath = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
   const toPublicPath = (path: string) => `${basePath}${path.replace(/^\/+/, '')}`;
 
   const navigateToHome = () => {
@@ -132,6 +189,7 @@ export default function App() {
       setSelectedToolId(found.id);
       setSelectedHubId(found.hubId);
       setActiveView('tool');
+      recordRecentTool(found.id);
       window.history.pushState({}, '', toPublicPath(found.canonicalPath));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -150,24 +208,26 @@ export default function App() {
   const activeTool = activeView === 'tool' ? getToolById(selectedToolId) ?? null : null;
   const activeHub = activeView === 'hub' ? getHubById(selectedHubId) ?? null : null;
 
-  // Filtered tools for homepage live search
+  // Filtered tools for homepage live search (includes LSI keywords & clustered queries)
   const homeSearchTrimmed = heroSearch.trim().toLowerCase();
-  const homeFilteredTools = homeSearchTrimmed
-    ? TOOLS_CATALOG.filter(
-        (t) =>
-          t.name.toLowerCase().includes(homeSearchTrimmed) ||
-          t.shortDesc.toLowerCase().includes(homeSearchTrimmed) ||
-          t.primaryKeyword.toLowerCase().includes(homeSearchTrimmed) ||
-          t.lsiKeywords.some((k) => k.toLowerCase().includes(homeSearchTrimmed))
-      )
-    : [];
+  const homeFilteredTools = useMemo(() => {
+    if (!homeSearchTrimmed) return [];
+    return TOOLS_CATALOG.filter(
+      (t) =>
+        t.name.toLowerCase().includes(homeSearchTrimmed) ||
+        t.shortDesc.toLowerCase().includes(homeSearchTrimmed) ||
+        t.primaryKeyword.toLowerCase().includes(homeSearchTrimmed) ||
+        t.lsiKeywords.some((k) => k.toLowerCase().includes(homeSearchTrimmed)) ||
+        t.clusteredQueries.some((q) => q.toLowerCase().includes(homeSearchTrimmed))
+    );
+  }, [homeSearchTrimmed]);
 
   // 6 Popular Flagship Tools matching Panel 1 of the reference screenshot
   const popularCards = [
     {
       toolId: 'compress-image-to-kb',
       title: 'Image Compressor',
-      desc: 'Reduce image file size without losing quality.',
+      desc: 'Reduce image file size to exact KB targets without losing quality.',
       bg: '#EDE7FF',
       fg: '#7047EB',
       icon: <ImageIcon className="w-5 h-5" />,
@@ -175,15 +235,15 @@ export default function App() {
     {
       toolId: 'merge-pdf',
       title: 'PDF Merger',
-      desc: 'Combine multiple PDF files into one.',
+      desc: 'Combine multiple PDF files into one unified document locally.',
       bg: '#FFE7EC',
       fg: '#E11D48',
       icon: <FileText className="w-5 h-5" />,
     },
     {
       toolId: 'word-counter-density',
-      title: 'Word Counter',
-      desc: 'Count words, characters and paragraphs.',
+      title: 'Word Counter & SEO Density',
+      desc: 'Count words, characters, paragraphs and 1/2/3-gram LSI density.',
       bg: '#E1F0FF',
       fg: '#1D4ED8',
       icon: <Type className="w-5 h-5" />,
@@ -191,15 +251,15 @@ export default function App() {
     {
       toolId: 'custom-qr-code-generator',
       title: 'QR Code Generator',
-      desc: 'Create custom QR codes instantly.',
+      desc: 'Create custom vector SVG and PNG QR codes immediately.',
       bg: '#E0F7F0',
       fg: '#047857',
       icon: <QrCode className="w-5 h-5" />,
     },
     {
       toolId: 'json-formatter-validator',
-      title: 'JSON Formatter',
-      desc: 'Format, validate and beautify JSON data.',
+      title: 'JSON Formatter & Fixer',
+      desc: 'Format, validate, minify and repair malformed JSON data.',
       bg: '#EDE7FF',
       fg: '#6D28D9',
       icon: <Code2 className="w-5 h-5" />,
@@ -207,12 +267,22 @@ export default function App() {
     {
       toolId: 'llm-token-counter',
       title: 'Token & Cost Calculator',
-      desc: 'Calculate LLM tokens and percentages quickly.',
+      desc: 'Calculate LLM prompt tokens and API cost across modern models.',
       bg: '#FFF1D9',
       fg: '#D97706',
       icon: <Percent className="w-5 h-5" />,
     },
   ];
+
+  // Dynamic tool cards based on quickFilter (it-tools / omni-tools workbench pattern)
+  const workbenchTools = useMemo(() => {
+    if (quickFilter === 'featured') return null; // Uses popularCards
+    if (quickFilter === 'all') return TOOLS_CATALOG;
+    if (quickFilter === 'favorites') {
+      return TOOLS_CATALOG.filter((t) => favoriteIds.includes(t.id));
+    }
+    return getToolsByHub(quickFilter);
+  }, [quickFilter, favoriteIds]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F7FC] dark:bg-[#131520] text-[#171927] dark:text-[#F8F7FC] transition-colors">
@@ -222,17 +292,17 @@ export default function App() {
           ZONE 1: Global Header & Quick-Switch Command Bar (3-Zone Top Bar Contract)
       ===================================================================== */}
       <header className="sticky top-0 z-40 bg-white/90 dark:bg-[#171927]/90 backdrop-blur-md border-b border-[#E8E6F2] dark:border-[#2A2E42]">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-8">
+        <div className="max-w-[1200px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-6">
           {/* Zone 1: Single-line Brand Title */}
           <button
             type="button"
             onClick={navigateToHome}
-            className="flex items-center gap-2.5 text-lg font-extrabold tracking-tight text-[#171927] dark:text-white whitespace-nowrap shrink-0 cursor-pointer"
+            className="flex items-center gap-2 sm:gap-2.5 text-base sm:text-lg font-extrabold tracking-tight text-[#171927] dark:text-white whitespace-nowrap shrink-0 cursor-pointer"
           >
-            <span className="w-8 h-8 rounded-xl bg-[#7047EB] text-white flex items-center justify-center font-extrabold text-sm shadow-xs">
-              U
+            <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#7047EB] to-[#5E35D9] text-white flex items-center justify-center font-extrabold text-xs shadow-xs">
+              NG
             </span>
-            <span>UTILIX</span>
+            <span>NextGenToolkit</span>
           </button>
 
           {/* Zone 2: 5 Concise Single-Line Navigation Links */}
@@ -256,10 +326,10 @@ export default function App() {
             </button>
             <button
               type="button"
-              onClick={() => openSeoModal('llms')}
+              onClick={() => openSeoModal('sitemap')}
               className="hover:text-[#7047EB] dark:hover:text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              SEO & GEO
+              SEO & Sitemap
             </button>
             <button
               type="button"
@@ -278,12 +348,24 @@ export default function App() {
           </nav>
 
           {/* Zone 3: Quick-Switch Search, Theme Toggle & Primary Action */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <button
               type="button"
               onClick={() => setIsCommandOpen(true)}
               aria-label="Quick search tools (Ctrl+K)"
-              className="p-2 rounded-xl text-[#253044] dark:text-[#CBD5E1] hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F] transition-colors cursor-pointer"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F8F7FC] dark:bg-[#252A3F] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#64748B] dark:text-[#CBD5E1] hover:border-[#7047EB] transition-colors cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5 text-[#7047EB]" />
+              <span>Quick Switch</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-[#171927] text-[10px] font-mono border border-[#E8E6F2] dark:border-[#2A2E42]">
+                ⌘K
+              </kbd>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCommandOpen(true)}
+              aria-label="Quick search tools"
+              className="sm:hidden p-2 rounded-xl text-[#253044] dark:text-[#CBD5E1] hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F] transition-colors cursor-pointer"
             >
               <Search className="w-4 h-4" />
             </button>
@@ -298,7 +380,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setIsCommandOpen(true)}
-              className="px-4 py-2 rounded-xl bg-[#7047EB] hover:bg-[#5E35D9] text-white text-xs sm:text-sm font-bold shadow-sm shadow-[#7047EB]/25 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-[#7047EB] hover:bg-[#5E35D9] text-white text-xs sm:text-sm font-bold shadow-sm shadow-[#7047EB]/25 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               Explore Tools
             </button>
@@ -318,6 +400,8 @@ export default function App() {
             onSelectTool={navigateToTool}
             onOpenAiModal={openAiModal}
             onOpenSeoModal={openSeoModal}
+            isFavorite={favoriteIds.includes(activeTool.id)}
+            onToggleFavorite={toggleFavorite}
           />
         ) : activeView === 'hub' && activeHub ? (
           <CategoryHubView
@@ -325,18 +409,30 @@ export default function App() {
             onNavigateHome={navigateToHome}
             onSelectTool={navigateToTool}
             onSelectHub={navigateToHub}
+            favoriteIds={favoriteIds}
+            onToggleFavorite={toggleFavorite}
           />
         ) : (
-          /* MASTER HOMEPAGE MATCHING REFERENCE DESIGN 1:1 */
+          /* MASTER HOMEPAGE MATCHING REFERENCE DESIGN + IT-TOOLS / OMNI-TOOLS WORKBENCH */
           <div className="space-y-14 pb-16">
             {/* HERO SECTION */}
             <section className="relative overflow-hidden pt-10 pb-12 sm:pt-14 sm:pb-16 border-b border-[#E8E6F2]/70 dark:border-[#2A2E42]/60 bg-gradient-to-b from-[#F4F0FF]/70 via-[#F8F7FC] to-[#F8F7FC] dark:from-[#1A1830] dark:via-[#131520] dark:to-[#131520]">
               <div className="max-w-[1200px] mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
                 {/* Left / Center Hero Column */}
                 <div className="lg:col-span-7 text-center lg:text-left space-y-5">
-                  <div className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-[#7047EB] dark:text-[#A78BFA]">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>YOUR DIGITAL TOOLKIT · 25 PRACTICAL UTILITIES</span>
+                  <div className="inline-flex flex-wrap items-center justify-center lg:justify-start gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-[#7047EB] dark:text-[#A78BFA] px-3 py-1 rounded-full bg-[#EDE7FF]/80 dark:bg-[#7047EB]/20 border border-[#7047EB]/20">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>NEXTGENTOOLKIT · 25 CLIENT-SIDE UTILITIES</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => openSeoModal('sitemap')}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>GSC Sitemap XML Verified</span>
+                    </button>
                   </div>
 
                   <h1
@@ -350,18 +446,18 @@ export default function App() {
                   </h1>
 
                   <p className="text-base sm:text-lg text-[#253044] dark:text-[#CBD5E1] max-w-xl mx-auto lg:mx-0">
-                    Practical tools for PDF, image, text and developer tasks. Selected utilities process inputs locally in your browser; supported formats and batch capacity vary by tool and device.
+                    NextGenToolkit brings 25 WebAssembly &amp; HTML5 Canvas utilities for PDF, image, developer, text, and generator workflows directly to your browser RAM—zero file uploads required.
                   </p>
 
                   {/* Search Bar matching Screenshot Panel 1 */}
                   <div className="max-w-xl mx-auto lg:mx-0 pt-1">
-                    <div className="flex items-center bg-white dark:bg-[#1C1F2E] rounded-2xl p-1.5 shadow-lg shadow-[#7047EB]/8 border border-[#E8E6F2] dark:border-[#2A2E42]">
+                    <div className="flex items-center bg-white dark:bg-[#1C1F2E] rounded-2xl p-1.5 shadow-lg shadow-[#7047EB]/8 border border-[#E8E6F2] dark:border-[#2A2E42] focus-within:border-[#7047EB] transition-colors">
                       <Search className="w-5 h-5 text-[#64748B] ml-3.5 shrink-0" />
                       <input
                         type="text"
                         value={heroSearch}
                         onChange={(e) => setHeroSearch(e.target.value)}
-                        placeholder="Search for tools... (e.g. image compressor, PDF merge, word counter)"
+                        placeholder="Search 25 tools or LSI keywords... (e.g. compress image to 50kb, merge pdf, json)"
                         className="w-full px-3 py-2.5 text-sm bg-transparent text-[#171927] dark:text-white placeholder-[#64748B] focus:outline-none"
                       />
                       <button
@@ -382,7 +478,7 @@ export default function App() {
 
                     {/* Live Search Dropdown Results if user types in Hero Search */}
                     {homeSearchTrimmed && (
-                      <div className="mt-2 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] shadow-xl p-2 max-h-64 overflow-y-auto text-left">
+                      <div className="mt-2 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] shadow-xl p-2 max-h-72 overflow-y-auto text-left">
                         {homeFilteredTools.length === 0 ? (
                           <div className="p-3 text-xs text-[#64748B]">
                             No matching tools found for "{heroSearch}".
@@ -393,15 +489,18 @@ export default function App() {
                               key={t.id}
                               type="button"
                               onClick={() => navigateToTool(t.id)}
-                              className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F] text-left"
+                              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F] text-left cursor-pointer"
                             >
-                              <div>
-                                <div className="text-xs font-bold text-[#171927] dark:text-white">
-                                  {t.name}
+                              <div className="min-w-0 pr-3">
+                                <div className="text-xs font-bold text-[#171927] dark:text-white flex items-center gap-2">
+                                  <span>{t.name}</span>
+                                  <span className="text-[10px] font-mono text-[#7047EB] bg-[#EDE7FF] dark:bg-[#7047EB]/20 px-1.5 py-0.5 rounded">
+                                    {t.subCategory}
+                                  </span>
                                 </div>
-                                <div className="text-xs text-[#64748B]">{t.shortDesc}</div>
+                                <div className="text-xs text-[#64748B] truncate">{t.shortDesc}</div>
                               </div>
-                              <ArrowRight className="w-3.5 h-3.5 text-[#7047EB]" />
+                              <ArrowRight className="w-3.5 h-3.5 text-[#7047EB] shrink-0" />
                             </button>
                           ))
                         )}
@@ -464,7 +563,7 @@ export default function App() {
                       className="w-28 h-28 rounded-3xl bg-[#FFF1D9] text-[#D97706] border border-white shadow-xl -rotate-3 hover:rotate-0 transition-transform flex flex-col items-center justify-center gap-1.5 mt-2 cursor-pointer"
                     >
                       <Code2 className="w-9 h-9" />
-                      <span className="text-xs font-extrabold">DEV & AI</span>
+                      <span className="text-xs font-extrabold">DEV &amp; AI</span>
                     </button>
                   </div>
                 </div>
@@ -550,50 +649,205 @@ export default function App() {
               </div>
             </section>
 
-            {/* POPULAR TOOLS SECTION (Matching Reference Screenshot Panel 1) */}
+            {/* POPULAR & QUICK-FILTER WORKBENCH SECTION (Inspired by it-tools & omni-tools) */}
             <section className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
-                  Popular Tools
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setIsCommandOpen(true)}
-                  className="text-xs sm:text-sm font-bold text-[#7047EB] hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <span>View All 25 Tools</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
+                    Popular Tools &amp; Quick Workbench
+                  </h2>
+                  <p className="text-xs text-[#64748B] mt-0.5">
+                    Pin your favorite utilities with a star or filter by category without leaving the homepage.
+                  </p>
+                </div>
+
+                {/* Quick Filter Tabs */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    { id: 'featured', label: 'Featured (6)' },
+                    { id: 'all', label: 'All 25 Tools' },
+                    { id: 'favorites', label: `★ Pinned (${favoriteIds.length})` },
+                    { id: 'pdf-tools', label: 'PDF' },
+                    { id: 'image-tools', label: 'Images' },
+                    { id: 'dev-tools', label: 'Developer' },
+                    { id: 'text-tools', label: 'Text' },
+                    { id: 'generators', label: 'Generators' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setQuickFilter(tab.id as typeof quickFilter)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                        quickFilter === tab.id
+                          ? 'bg-[#7047EB] text-white shadow-xs'
+                          : 'bg-white dark:bg-[#1C1F2E] text-[#253044] dark:text-[#CBD5E1] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB]'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {popularCards.map((card) => (
-                  <button
-                    key={card.toolId}
-                    type="button"
-                    onClick={() => navigateToTool(card.toolId)}
-                    className="group p-5 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB] transition-all text-left flex items-center justify-between gap-4 shadow-2xs hover:shadow-md cursor-pointer"
-                  >
-                    <div className="flex items-start gap-4 min-w-0">
+              {/* Render Featured 6 Cards OR Filtered Workbench Cards */}
+              {quickFilter === 'featured' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {popularCards.map((card) => {
+                    const isPinned = favoriteIds.includes(card.toolId);
+                    return (
                       <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                        style={{ backgroundColor: card.bg, color: card.fg }}
+                        key={card.toolId}
+                        className="group p-5 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB] transition-all text-left flex items-center justify-between gap-3 shadow-2xs hover:shadow-md"
                       >
-                        {card.icon}
+                        <button
+                          type="button"
+                          onClick={() => navigateToTool(card.toolId)}
+                          className="flex items-start gap-4 min-w-0 flex-1 text-left cursor-pointer"
+                        >
+                          <div
+                            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                            style={{ backgroundColor: card.bg, color: card.fg }}
+                          >
+                            {card.icon}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-sm font-bold text-[#171927] dark:text-white group-hover:text-[#7047EB] transition-colors truncate">
+                              {card.title}
+                            </h3>
+                            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1 line-clamp-2">
+                              {card.desc}
+                            </p>
+                          </div>
+                        </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleFavorite(card.toolId)}
+                            aria-label={isPinned ? 'Unpin tool' : 'Pin tool'}
+                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                              isPinned
+                                ? 'text-amber-500 bg-amber-500/10'
+                                : 'text-[#64748B] hover:text-amber-500 hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F]'
+                            }`}
+                          >
+                            <Star className={`w-4 h-4 ${isPinned ? 'fill-amber-400' : ''}`} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigateToTool(card.toolId)}
+                            aria-label={`Open ${card.title}`}
+                            className="p-1 text-[#7047EB] cursor-pointer"
+                          >
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-bold text-[#171927] dark:text-white group-hover:text-[#7047EB] transition-colors truncate">
-                          {card.title}
-                        </h3>
-                        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1 line-clamp-2">
-                          {card.desc}
-                        </p>
-                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {workbenchTools && workbenchTools.length === 0 ? (
+                    <div className="col-span-full p-8 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] text-center space-y-2">
+                      <p className="text-sm font-bold text-[#171927] dark:text-white">
+                        No pinned tools yet.
+                      </p>
+                      <p className="text-xs text-[#64748B]">
+                        Click the star icon on any tool card to pin it to your personal NextGenToolkit workbench.
+                      </p>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-[#7047EB] shrink-0 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                ))}
-              </div>
+                  ) : (
+                    workbenchTools?.map((tool) => {
+                      const isPinned = favoriteIds.includes(tool.id);
+                      const hub = getHubById(tool.hubId);
+                      return (
+                        <div
+                          key={tool.id}
+                          className="group p-4 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB] transition-all flex flex-col justify-between gap-3 shadow-2xs hover:shadow-md"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => navigateToTool(tool.id)}
+                              className="text-left min-w-0 flex-1 cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="w-2.5 h-2.5 rounded-xs shrink-0"
+                                  style={{ backgroundColor: hub?.accentFg || '#7047EB' }}
+                                />
+                                <h3 className="text-sm font-bold text-[#171927] dark:text-white group-hover:text-[#7047EB] transition-colors truncate">
+                                  {tool.name}
+                                </h3>
+                              </div>
+                              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1 line-clamp-2">
+                                {tool.shortDesc}
+                              </p>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleFavorite(tool.id)}
+                              aria-label={isPinned ? 'Unpin tool' : 'Pin tool'}
+                              className={`p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
+                                isPinned
+                                  ? 'text-amber-500 bg-amber-500/10'
+                                  : 'text-[#64748B] hover:text-amber-500'
+                              }`}
+                            >
+                              <Star className={`w-4 h-4 ${isPinned ? 'fill-amber-400' : ''}`} />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-[#E8E6F2]/60 dark:border-[#2A2E42]/60">
+                            <div className="flex flex-wrap gap-1">
+                              {tool.lsiKeywords.slice(0, 2).map((kw) => (
+                                <span
+                                  key={kw}
+                                  className="px-2 py-0.5 rounded-md bg-[#F8F7FC] dark:bg-[#252A3F] text-[10px] font-medium text-[#64748B] dark:text-[#94A3B8]"
+                                >
+                                  {kw}
+                                </span>
+                              ))}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => navigateToTool(tool.id)}
+                              className="text-xs font-bold text-[#7047EB] flex items-center gap-1 cursor-pointer shrink-0"
+                            >
+                              <span>Launch</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {/* Recently Used Strip (if user has opened tools) */}
+              {recentIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-[#64748B]">
+                    <Clock className="w-3.5 h-3.5 text-[#7047EB]" />
+                    <span>Recently Used:</span>
+                  </span>
+                  {recentIds.map((id) => {
+                    const tool = getToolById(id);
+                    if (!tool) return null;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => navigateToTool(id)}
+                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#253044] dark:text-[#CBD5E1] hover:border-[#7047EB] hover:text-[#7047EB] transition-colors cursor-pointer"
+                      >
+                        {tool.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </section>
 
             {/* PRIVACY-FIRST TOOLS BANNER (Matching Reference Screenshot Panel 1) */}
@@ -605,10 +859,10 @@ export default function App() {
                   </div>
                   <div>
                     <h2 className="text-lg sm:text-xl font-extrabold text-[#171927] dark:text-white">
-                      Privacy-First Tools
+                      Privacy-First Client-Side Architecture
                     </h2>
                     <p className="text-xs sm:text-sm text-[#253044] dark:text-[#CBD5E1] mt-0.5">
-                      Most of our tools run directly in your browser, so your files and data stay on your device.
+                      NextGenToolkit executes PDF, image, text and developer transformations locally in your browser RAM so your files stay on your device.
                     </p>
                   </div>
                 </div>
@@ -616,15 +870,15 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row lg:flex-col gap-2 text-xs font-semibold text-[#171927] dark:text-[#E2E8F0] shrink-0">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>No unnecessary uploads for supported browser-based tasks</span>
+                    <span>Zero server file uploads for all 25 browser utilities</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Browser-based processing for supported tasks</span>
+                    <span>WebAssembly, HTML5 Canvas &amp; Web Crypto execution</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Works across modern browsers; capacity depends on your device</span>
+                    <span>Pre-rendered SEO routes + GSC-verified XML Sitemap</span>
                   </div>
                 </div>
               </div>
@@ -635,14 +889,14 @@ export default function App() {
               <div className="border-b border-[#E8E6F2] dark:border-[#2A2E42] pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
                 <div>
                   <h2 className="text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
-                    Complete 25-Tool Platform Directory
+                    Complete 25-Tool NextGenToolkit Directory
                   </h2>
                   <p className="text-sm text-[#64748B] mt-0.5">
-                    Organized across five tool categories, with AI Search as a separate feature.
+                    Organized across five semantic topical hubs, with AI Search &amp; Sitemap Diagnostics built in.
                   </p>
                 </div>
                 <span className="text-xs font-mono text-[#7047EB] font-semibold">
-                  25 Browser-Based Utilities · 5 Tool Categories + AI Search
+                  25 Browser Utilities · 31 Pre-Rendered Canonical Routes
                 </span>
               </div>
 
@@ -699,26 +953,100 @@ export default function App() {
               })}
             </section>
 
+            {/* LATENT SEMANTIC INDEXING (LSI) & AEO/GEO SEARCH INTENT MATRIX */}
+            <section className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-6">
+              <div className="rounded-3xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] p-6 sm:p-8 space-y-6 shadow-2xs">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#E8E6F2] dark:border-[#2A2E42] pb-5">
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#7047EB]">
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>SEO · AEO · GEO · Latent Semantic Indexing (LSI) Architecture</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
+                      Semantic Search Intent &amp; LSI Keyword Matrix
+                    </h2>
+                    <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8]">
+                      Click any high-intent Latent Semantic Indexing (LSI) keyword below to launch the exact client-side utility engineered for that query.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openSeoModal('sitemap')}
+                      className="px-3.5 py-2 rounded-xl bg-[#EDE7FF] dark:bg-[#7047EB]/20 text-[#7047EB] dark:text-[#C4B5FD] text-xs font-bold hover:bg-[#7047EB] hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>GSC Sitemap XML Fix &amp; Builder</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openSeoModal('llms-full')}
+                      className="px-3.5 py-2 rounded-xl bg-[#F8F7FC] dark:bg-[#252A3F] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-bold text-[#253044] dark:text-[#CBD5E1] hover:border-[#7047EB] transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Terminal className="w-3.5 h-3.5 text-[#7047EB]" />
+                      <span>Inspect /llms-full.txt</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {PLATFORM_LSI_CLUSTERS.map((cluster) => {
+                    return (
+                      <div
+                        key={cluster.clusterTitle}
+                        className="p-5 rounded-2xl bg-[#F8F7FC] dark:bg-[#171927] border border-[#E8E6F2] dark:border-[#2A2E42] space-y-3"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-sm font-extrabold text-[#171927] dark:text-white flex items-center gap-2">
+                            <Cpu className="w-4 h-4 text-[#7047EB] shrink-0" />
+                            <span>{cluster.clusterTitle}</span>
+                          </h3>
+                          <span className="text-[11px] font-mono text-[#7047EB] font-semibold">
+                            {cluster.intentCategory}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {cluster.keywords.map((kwItem) => {
+                            return (
+                              <button
+                                key={kwItem.term}
+                                type="button"
+                                onClick={() => navigateToTool(kwItem.toolId || cluster.featuredToolId)}
+                                className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-medium text-[#253044] dark:text-[#CBD5E1] hover:border-[#7047EB] hover:text-[#7047EB] transition-colors cursor-pointer"
+                              >
+                                {kwItem.term}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
             {/* HOW IT WORKS SECTION (Matching Reference Screenshot Bottom-Left) */}
             <section className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-6">
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
-                How It Works
+                How NextGenToolkit Works
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                   {
                     step: '1 Discover',
-                    desc: 'Find the right tool for your task using live search or Ctrl+K.',
+                    desc: 'Find the exact tool for your task using live LSI search, category filters, or Ctrl+K.',
                     icon: <Search className="w-5 h-5 text-[#7047EB]" />,
                   },
                   {
-                    step: '2 Use',
-                    desc: 'Work immediately inside your browser RAM with a simple, clean interface.',
+                    step: '2 Process Locally',
+                    desc: 'Execute transformations immediately inside your browser RAM with zero server round-trips.',
                     icon: <Zap className="w-5 h-5 text-[#7047EB]" />,
                   },
                   {
-                    step: '3 Download',
-                    desc: 'Get your results or batch ZIP archive in seconds (no sign-up required).',
+                    step: '3 Download Instantly',
+                    desc: 'Export your optimized files or batch ZIP archive in seconds (no sign-up or watermark).',
                     icon: <Download className="w-5 h-5 text-[#7047EB]" />,
                   },
                 ].map((item) => (
@@ -753,12 +1081,12 @@ export default function App() {
           <div className="space-y-3">
             <div className="flex items-center gap-2.5 text-white font-extrabold text-lg">
               <span className="w-7 h-7 rounded-lg bg-[#7047EB] text-white flex items-center justify-center text-xs">
-                U
+                NG
               </span>
-              <span>UTILIX</span>
+              <span>NextGenToolkit</span>
             </div>
             <p className="text-xs text-[#94A3B8] leading-relaxed">
-              Free browser-based utilities for PDF, image, text, developer and everyday tasks.
+              Free privacy-first browser utilities for PDF, image, text, developer and everyday tasks.
             </p>
           </div>
 
@@ -771,7 +1099,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => navigateToTool('compress-pdf')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   Offline PDF Compressor
                 </button>
@@ -780,7 +1108,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => navigateToTool('compress-image-to-kb')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   Target-KB Image Compressor
                 </button>
@@ -789,16 +1117,16 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => navigateToTool('json-formatter-validator')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
-                  JSON Formatter & Auto-Fixer
+                  JSON Formatter &amp; Auto-Fixer
                 </button>
               </li>
               <li>
                 <button
                   type="button"
                   onClick={() => navigateToTool('custom-qr-code-generator')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   Vector SVG QR Code Studio
                 </button>
@@ -816,7 +1144,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => navigateToHub(h.id)}
-                    className="hover:text-white transition-colors"
+                    className="hover:text-white transition-colors cursor-pointer"
                   >
                     {h.name}
                   </button>
@@ -827,14 +1155,23 @@ export default function App() {
 
           <div>
             <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3">
-              GEO & Crawler Files
+              GEO &amp; Crawler Files
             </h3>
             <ul className="space-y-2 text-xs font-mono text-[#94A3B8]">
               <li>
                 <button
                   type="button"
+                  onClick={() => openSeoModal('sitemap')}
+                  className="hover:text-white transition-colors cursor-pointer text-emerald-400 font-semibold"
+                >
+                  /sitemap.xml (GSC Verified)
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
                   onClick={() => openSeoModal('llms')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   /llms.txt
                 </button>
@@ -843,7 +1180,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => openSeoModal('llms-full')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   /llms-full.txt
                 </button>
@@ -852,18 +1189,9 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => openSeoModal('robots')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   /robots.txt
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => openSeoModal('sitemap')}
-                  className="hover:text-white transition-colors"
-                >
-                  /sitemap.xml
                 </button>
               </li>
             </ul>
@@ -871,14 +1199,14 @@ export default function App() {
 
           <div>
             <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3">
-              Architecture & AI
+              Architecture &amp; AI
             </h3>
             <ul className="space-y-2 text-xs text-[#94A3B8]">
               <li>
                 <button
                   type="button"
                   onClick={() => openSeoModal('design-system')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   Extracted UI Design System
                 </button>
@@ -887,7 +1215,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => openAiModal('')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   Google Search Grounding Studio
                 </button>
@@ -896,7 +1224,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => openAiModal('')}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   High-Thinking (Carbon) Engine
                 </button>
@@ -912,6 +1240,8 @@ export default function App() {
         onClose={() => setIsCommandOpen(false)}
         onSelectTool={navigateToTool}
         onSelectHub={navigateToHub}
+        favoriteIds={favoriteIds}
+        onToggleFavorite={toggleFavorite}
       />
       <SeoGeoInspectorModal
         isOpen={isSeoModalOpen}

@@ -1,8 +1,9 @@
-import {createRoot} from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(<App />);
 
 document.getElementById('seo-fallback')?.remove();
+document.getElementById('nextgentoolkit-boot')?.remove();
 document.getElementById('utilix-boot')?.remove();

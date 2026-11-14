@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: MIT
  *
- * Utilix Pure Client-Side Execution Engines
+ * NextGenToolkit Pure Client-Side Execution Engines
  * Refactored from permissive MIT/ISC/BSD open-source algorithms (IT-Tools, Omni-Tools,
  * jsonrepair, jsdiff, Turndown) with zero UI framework coupling.
  */
@@ -188,7 +188,7 @@ export function jsonToTypeScript(data: unknown, rootName = 'RootObject'): string
   return `export type ${rootName} = ${body};`;
 }
 
-export function jsonToSql(data: unknown, tableName = 'utilix_records'): string {
+export function jsonToSql(data: unknown, tableName = 'nextgentoolkit_records'): string {
   const rows: Record<string, unknown>[] = Array.isArray(data)
     ? data.filter((r): r is Record<string, unknown> => typeof r === 'object' && r !== null)
     : typeof data === 'object' && data !== null
