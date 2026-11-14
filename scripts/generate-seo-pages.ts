@@ -7,7 +7,7 @@ const PUBLIC_DIR = path.resolve('public');
 const SITE_URL = (
   process.env.SITE_URL ||
   process.env.VITE_SITE_URL ||
-  'https://utilix-5rz.pages.dev'
+  'https://nextgentoolkit.pages.dev'
 ).replace(/\/+$/, '');
 const SITE_PATH = new URL(SITE_URL).pathname.replace(/\/+$/, '');
 
@@ -323,11 +323,19 @@ const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http:
 
 const sitemapIndexXml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap>\n    <loc>${escapeHtml(`${SITE_URL}/sitemap.xml`)}</loc>\n  </sitemap>\n</sitemapindex>\n`;
 
+const sitemapTxt = `${sitemapUrls.join('\n')}\n`;
+
 await writeFile(path.join(DIST, 'sitemap.xml'), sitemapXml, 'utf8');
+await writeFile(path.join(DIST, 'sitemap-main.xml'), sitemapXml, 'utf8');
 await writeFile(path.join(DIST, 'sitemap-index.xml'), sitemapIndexXml, 'utf8');
+await writeFile(path.join(DIST, 'sitemap_index.xml'), sitemapIndexXml, 'utf8');
+await writeFile(path.join(DIST, 'sitemap.txt'), sitemapTxt, 'utf8');
 try {
   await writeFile(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemapXml, 'utf8');
+  await writeFile(path.join(PUBLIC_DIR, 'sitemap-main.xml'), sitemapXml, 'utf8');
   await writeFile(path.join(PUBLIC_DIR, 'sitemap-index.xml'), sitemapIndexXml, 'utf8');
+  await writeFile(path.join(PUBLIC_DIR, 'sitemap_index.xml'), sitemapIndexXml, 'utf8');
+  await writeFile(path.join(PUBLIC_DIR, 'sitemap.txt'), sitemapTxt, 'utf8');
 } catch {
   // Ignore if public directory is read-only in CI
 }
@@ -355,6 +363,8 @@ const robotsTxt = [
   'Allow: /',
   '',
   `Sitemap: ${SITE_URL}/sitemap.xml`,
+  `Sitemap: ${SITE_URL}/sitemap-main.xml`,
+  `Sitemap: ${SITE_URL}/sitemap.txt`,
   '',
 ].join('\n');
 
@@ -368,8 +378,29 @@ const headersConfig = `/sitemap.xml
   X-Robots-Tag: all
   Access-Control-Allow-Origin: *
 
+/sitemap-main.xml
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: all
+  Access-Control-Allow-Origin: *
+
 /sitemap-index.xml
   Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: all
+  Access-Control-Allow-Origin: *
+
+/sitemap_index.xml
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: all
+  Access-Control-Allow-Origin: *
+
+/sitemap.txt
+  Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
   X-Robots-Tag: all
@@ -395,24 +426,33 @@ const headersConfig = `/sitemap.xml
 `;
 
 const redirectsConfig = `/sitemap.xml/ /sitemap.xml 200
+/sitemap-main.xml/ /sitemap-main.xml 200
 /sitemap_index.xml /sitemap-index.xml 200
 /robots.txt/ /robots.txt 200
 `;
 
 await writeFile(path.join(DIST, '_headers'), headersConfig, 'utf8');
 await writeFile(path.join(DIST, '_redirects'), redirectsConfig, 'utf8');
+try {
+  await writeFile(path.join(PUBLIC_DIR, '_headers'), headersConfig, 'utf8');
+  await writeFile(path.join(PUBLIC_DIR, '_redirects'), redirectsConfig, 'utf8');
+} catch {
+  // Ignore if public directory is read-only
+}
 
 for (const filename of ['llms.txt', 'llms-full.txt']) {
-  const filePath = path.join(DIST, filename);
-  try {
-    const source = await readFile(filePath, 'utf8');
-    const rewritten = source
-      .replaceAll('https://utilix.tools', SITE_URL)
-      .replaceAll('https://utilix.io', SITE_URL)
-      .replaceAll('https://utilix-5rz.pages.dev', SITE_URL);
-    await writeFile(filePath, rewritten, 'utf8');
-  } catch {
-    // Optional AI-crawler documentation should not fail a production build.
+  for (const dir of [DIST, PUBLIC_DIR]) {
+    const filePath = path.join(dir, filename);
+    try {
+      const source = await readFile(filePath, 'utf8');
+      const rewritten = source
+        .replaceAll('https://utilix.tools', SITE_URL)
+        .replaceAll('https://utilix.io', SITE_URL)
+        .replaceAll('https://utilix-5rz.pages.dev', SITE_URL);
+      await writeFile(filePath, rewritten, 'utf8');
+    } catch {
+      // Optional AI-crawler documentation should not fail a production build.
+    }
   }
 }
 

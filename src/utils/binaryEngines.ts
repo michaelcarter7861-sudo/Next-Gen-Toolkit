@@ -689,7 +689,7 @@ export async function generateCustomQrCode(options: {
   lightColor: string;
   margin: number;
 }): Promise<{ svgString: string; pngDataUrl: string }> {
-  const safePayload = options.payload.trim() || 'https://utilix-5rz.pages.dev';
+  const safePayload = options.payload.trim() || 'https://nextgentoolkit.pages.dev';
   const svgString = await QRCode.toString(safePayload, {
     type: 'svg',
     errorCorrectionLevel: options.errorCorrectionLevel,

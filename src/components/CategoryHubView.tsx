@@ -156,7 +156,7 @@ export function CategoryHubView({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search ${hub.name.toLowerCase()} or LSI keyword...`}
+            placeholder={`Search ${hub.name.toLowerCase()}...`}
             className="w-full pl-9 pr-4 py-2 rounded-xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs text-[#171927] dark:text-[#F8F7FC] placeholder-[#64748B] focus:outline-none focus:border-[#7047EB]"
           />
         </div>
@@ -245,7 +245,7 @@ export function CategoryHubView({
               }`}
             >
               <div className="text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">{h.name}</div>
-              <div className="text-xs font-mono text-[#64748B] mt-0.5">{h.slug}</div>
+              <div className="text-xs text-[#64748B] mt-0.5">{getToolsByHub(h.id).length} Utilities</div>
             </button>
           ))}
         </div>

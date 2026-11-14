@@ -66,13 +66,12 @@ interface ToolWorkspaceProps {
   onSelectHub: (hubId: HubId) => void;
   onSelectTool: (toolId: string) => void;
   onOpenAiModal: (context: string) => void;
-  onOpenSeoModal: (tab: 'llms' | 'llms-full' | 'robots' | 'sitemap' | 'design-system') => void;
   isFavorite?: boolean;
   onToggleFavorite?: (toolId: string) => void;
 }
 
 const SAMPLE_TEXT_PRESETS: Record<string, string> = {
-  'json-formatter-validator': `{\n  // Malformed JSON with single quotes, unquoted keys & trailing comma\n  platform: 'NextGenToolkit',\n  domain: 'https://utilix-5rz.pages.dev',\n  clientSidePercent: 100,\n  serverBytesUploaded: 0,\n  hubs: ['PDF Tools', 'Image Tools', 'Developer Tools', 'Text Tools', 'Generators'],\n  coreWebVitals: { lcpMs: 420, inpMs: 18, cls: 0.000, },\n}`,
+  'json-formatter-validator': `{\n  // Malformed JSON with single quotes, unquoted keys & trailing comma\n  platform: 'NextGenToolkit',\n  domain: 'https://nextgentoolkit.pages.dev',\n  clientSidePercent: 100,\n  serverBytesUploaded: 0,\n  hubs: ['PDF Tools', 'Image Tools', 'Developer Tools', 'Text Tools', 'Generators'],\n  coreWebVitals: { lcpMs: 420, inpMs: 18, cls: 0.000, },\n}`,
   'llm-token-counter': `import { PDFDocument } from 'pdf-lib';\n\n// NextGenToolkit Zero-Upload PDF Compressor Worker\nexport async function compressPdfInBrowser(buffer: ArrayBuffer, targetKb: number) {\n  const doc = await PDFDocument.load(buffer);\n  doc.setTitle('');\n  doc.setAuthor('');\n  return await doc.save({ useObjectStreams: true });\n}`,
   'regex-tester': `Contact our engineering team at architecture@nextgentoolkit.dev or security@nextgentoolkit.io.\nServer nodes: 192.168.1.104 and 10.24.88.12.\nRelease date: 2025-02-20T09:30:00Z — Order #NGT-99412.`,
   'jwt-decoder': `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzk4NDEyIiwibmFtZSI6IlNhYmlyIEFyYWluIChOZXh0R2VuVG9vbGtpdCBBcmNoaXRlY3QpIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzMxNDgwMDAwLCJleHAiOjE5OTk5OTk5OTl9.nextgentoolkit_client_side_verified_signature`,
@@ -82,7 +81,7 @@ const SAMPLE_TEXT_PRESETS: Record<string, string> = {
   'word-counter-density': `Compress PDF online free with NextGenToolkit Offline PDF Compressor. Unlike legacy cloud PDF tools that upload your confidential documents to remote servers, NextGenToolkit compresses PDF files to exact 100KB and 200KB targets directly inside your browser RAM using WebAssembly and pdf-lib.`,
   'case-converter-slug-generator': `How to Compress a PDF Under 200KB Online Without Uploading\nBulk WebP and Image Format Converter for Core Web Vitals\nJSON Formatter Validator and Broken Syntax Auto Fixer`,
   'duplicate-line-remover': `compress-pdf\njson-formatter\nmerge-pdf\ncompress-pdf\nllm-token-counter\njson-formatter\ncustom-qr-code-generator\nmerge-pdf`,
-  'custom-qr-code-generator': `https://utilix-5rz.pages.dev`,
+  'custom-qr-code-generator': `https://nextgentoolkit.pages.dev`,
   'password-api-key-generator': `24`,
   'unix-timestamp-converter': `1740052800`,
   'cron-expression-generator': `*/15 * * * *`,
@@ -94,7 +93,6 @@ export function ToolWorkspace({
   onSelectHub,
   onSelectTool,
   onOpenAiModal,
-  onOpenSeoModal,
   isFavorite = false,
   onToggleFavorite,
 }: ToolWorkspaceProps) {
@@ -363,11 +361,11 @@ export function ToolWorkspace({
           break;
         }
         case 'custom-qr-code-generator': {
-          let payload = inputText || 'https://utilix-5rz.pages.dev';
+          let payload = inputText || 'https://nextgentoolkit.pages.dev';
           if (qrMode === 'wifi' && !payload.startsWith('WIFI:')) {
             payload = `WIFI:T:WPA;S:${payload};P:NextGenSecurePass2025;;`;
           } else if (qrMode === 'vcard' && !payload.startsWith('BEGIN:VCARD')) {
-            payload = `BEGIN:VCARD\nVERSION:3.0\nFN:${payload}\nURL:https://utilix-5rz.pages.dev\nEND:VCARD`;
+            payload = `BEGIN:VCARD\nVERSION:3.0\nFN:${payload}\nURL:https://nextgentoolkit.pages.dev\nEND:VCARD`;
           }
           generateCustomQrCode({
             payload,
@@ -1989,7 +1987,6 @@ export function ToolWorkspace({
         tool={tool}
         onSelectTool={onSelectTool}
         onSelectHub={onSelectHub}
-        onOpenSeoModal={onOpenSeoModal}
       />
     </div>
   );

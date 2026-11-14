@@ -31,30 +31,29 @@ function resolveRequestOrigin(req: express.Request): string {
     return process.env.SITE_URL.replace(/\/+$/, '');
   }
   const proto = (req.headers['x-forwarded-proto'] as string)?.split(',')[0]?.trim() || req.protocol || 'https';
-  const host = (req.headers['x-forwarded-host'] as string)?.split(',')[0]?.trim() || req.get('host') || 'utilix-5rz.pages.dev';
+  const host = (req.headers['x-forwarded-host'] as string)?.split(',')[0]?.trim() || req.get('host') || 'nextgentoolkit.pages.dev';
   return `${proto}://${host}`.replace(/\/+$/, '');
 }
 
-function buildDynamicSitemapXml(baseUrl: string): string {
-  const lastmod = '2025-02-20';
-  const urls = [
+function getAllSitemapUrls(baseUrl: string): string[] {
+  return [
     `${baseUrl}/`,
     ...HUBS.map((hub) => `${baseUrl}${hub.slug}`),
     ...TOOLS_CATALOG.map((tool) => `${baseUrl}${tool.canonicalPath}`),
   ];
+}
 
+function buildDynamicSitemapXml(baseUrl: string): string {
+  const urls = getAllSitemapUrls(baseUrl);
   const entries = urls
-    .map(
-      (loc) => `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>`
-    )
+    .map((loc) => `  <url>\n    <loc>${loc}</loc>\n  </url>`)
     .join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>\n`;
 }
 
 function buildDynamicSitemapIndexXml(baseUrl: string): string {
-  const lastmod = '2025-02-20';
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap>\n    <loc>${baseUrl}/sitemap.xml</loc>\n    <lastmod>${lastmod}</lastmod>\n  </sitemap>\n</sitemapindex>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap>\n    <loc>${baseUrl}/sitemap.xml</loc>\n  </sitemap>\n</sitemapindex>\n`;
 }
 
 async function startServer() {
@@ -66,7 +65,7 @@ async function startServer() {
   // =========================================================================
   // Dedicated SEO / Google Search Console Routes (Prevents SPA Catch-All & MIME Errors)
   // =========================================================================
-  app.get(['/sitemap.xml', '/sitemap.xml/'], (req, res) => {
+  app.get(['/sitemap.xml', '/sitemap.xml/', '/sitemap-main.xml', '/sitemap-main.xml/'], (req, res) => {
     const origin = resolveRequestOrigin(req);
     const xml = buildDynamicSitemapXml(origin);
     res.status(200);
@@ -88,6 +87,18 @@ async function startServer() {
     res.setHeader('X-Robots-Tag', 'all');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.send(xml);
+  });
+
+  app.get(['/sitemap.txt', '/sitemap.txt/'], (req, res) => {
+    const origin = resolveRequestOrigin(req);
+    const txt = `${getAllSitemapUrls(origin).join('\n')}\n`;
+    res.status(200);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Robots-Tag', 'all');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(txt);
   });
 
   app.get(['/robots.txt', '/robots.txt/'], (req, res) => {
@@ -115,6 +126,8 @@ async function startServer() {
       'Allow: /',
       '',
       `Sitemap: ${origin}/sitemap.xml`,
+      `Sitemap: ${origin}/sitemap-main.xml`,
+      `Sitemap: ${origin}/sitemap.txt`,
       '',
     ].join('\n');
     res.status(200);

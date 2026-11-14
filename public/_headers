@@ -5,8 +5,29 @@
   X-Robots-Tag: all
   Access-Control-Allow-Origin: *
 
+/sitemap-main.xml
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: all
+  Access-Control-Allow-Origin: *
+
 /sitemap-index.xml
   Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: all
+  Access-Control-Allow-Origin: *
+
+/sitemap_index.xml
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: all
+  Access-Control-Allow-Origin: *
+
+/sitemap.txt
+  Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
   X-Robots-Tag: all

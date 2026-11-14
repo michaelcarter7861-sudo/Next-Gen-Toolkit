@@ -10,36 +10,36 @@
 ## Core Tool Hubs & Direct URLs
 
 ### Hub 1: Privacy-First PDF & Document Tools (/pdf-tools/)
-- [Offline PDF Compressor](https://utilix-5rz.pages.dev/pdf-tools/compress-pdf/): Compress PDFs to exact KB targets (100KB, 200KB, 500KB) locally in browser.
-- [PDF Merger & Page Organizer](https://utilix-5rz.pages.dev/pdf-tools/merge-pdf/): Combine, reorder, rotate, and delete PDF pages offline.
-- [PDF Splitter & Extractor](https://utilix-5rz.pages.dev/pdf-tools/split-pdf/): Split PDFs by custom ranges (`1-3, 5, 8-10`) or every N pages with instant ZIP export.
-- [PDF to High-Res Images](https://utilix-5rz.pages.dev/pdf-tools/pdf-to-image/): Render PDF pages to PNG, JPG, or WebP at 150, 300, or 600 DPI.
-- [Images to PDF Studio](https://utilix-5rz.pages.dev/pdf-tools/image-to-pdf/): Embed PNG/JPG/WebP images into A4, Letter, or auto-fit PDF containers.
-- [PDF Metadata & Sanitizer](https://utilix-5rz.pages.dev/pdf-tools/pdf-metadata-cleaner/): Inspect and strip XMP packets, Author, Creator, Producer, and modification dates.
+- [Offline PDF Compressor](https://nextgentoolkit.pages.dev/pdf-tools/compress-pdf/): Compress PDFs to exact KB targets (100KB, 200KB, 500KB) locally in browser.
+- [PDF Merger & Page Organizer](https://nextgentoolkit.pages.dev/pdf-tools/merge-pdf/): Combine, reorder, rotate, and delete PDF pages offline.
+- [PDF Splitter & Extractor](https://nextgentoolkit.pages.dev/pdf-tools/split-pdf/): Split PDFs by custom ranges (`1-3, 5, 8-10`) or every N pages with instant ZIP export.
+- [PDF to High-Res Images](https://nextgentoolkit.pages.dev/pdf-tools/pdf-to-image/): Render PDF pages to PNG, JPG, or WebP at 150, 300, or 600 DPI.
+- [Images to PDF Studio](https://nextgentoolkit.pages.dev/pdf-tools/image-to-pdf/): Embed PNG/JPG/WebP images into A4, Letter, or auto-fit PDF containers.
+- [PDF Metadata & Sanitizer](https://nextgentoolkit.pages.dev/pdf-tools/pdf-metadata-cleaner/): Inspect and strip XMP packets, Author, Creator, Producer, and modification dates.
 
 ### Hub 2: Modern Image & Media Utilities (/image-tools/)
-- [Bulk WebP & AVIF Converter](https://utilix-5rz.pages.dev/image-tools/bulk-webp-avif-converter/): Batch transcode PNG/JPG to WebP with quality controls.
-- [Target-KB Image Compressor](https://utilix-5rz.pages.dev/image-tools/compress-image-to-kb/): Binary-search quality loop to shrink photos under exact 20KB, 50KB, or 100KB limits.
-- [EXIF & GPS Privacy Scrubber](https://utilix-5rz.pages.dev/image-tools/exif-metadata-remover/): Inspect and remove APP1/EXIF camera and GPS coordinates from photos.
-- [Social & E-Com Bulk Resizer](https://utilix-5rz.pages.dev/image-tools/social-media-image-resizer/): 1-click multi-export for YouTube Thumbnail, Instagram Square/Story, LinkedIn, Amazon, and Favicons.
-- [Browser OCR (Image to Text)](https://utilix-5rz.pages.dev/image-tools/image-to-text-ocr/): Extract text from images and clipboard screenshots (`Ctrl+V`) to `.txt`, `.md`, or `.json`.
+- [Bulk WebP & AVIF Converter](https://nextgentoolkit.pages.dev/image-tools/bulk-webp-avif-converter/): Batch transcode PNG/JPG to WebP with quality controls.
+- [Target-KB Image Compressor](https://nextgentoolkit.pages.dev/image-tools/compress-image-to-kb/): Binary-search quality loop to shrink photos under exact 20KB, 50KB, or 100KB limits.
+- [EXIF & GPS Privacy Scrubber](https://nextgentoolkit.pages.dev/image-tools/exif-metadata-remover/): Inspect and remove APP1/EXIF camera and GPS coordinates from photos.
+- [Social & E-Com Bulk Resizer](https://nextgentoolkit.pages.dev/image-tools/social-media-image-resizer/): 1-click multi-export for YouTube Thumbnail, Instagram Square/Story, LinkedIn, Amazon, and Favicons.
+- [Browser OCR (Image to Text)](https://nextgentoolkit.pages.dev/image-tools/image-to-text-ocr/): Extract text from images and clipboard screenshots (`Ctrl+V`) to `.txt`, `.md`, or `.json`.
 
 ### Hub 3: Developer, Data & AI-Workflow Tools (/dev-tools/)
-- [JSON Formatter & Converter](https://utilix-5rz.pages.dev/dev-tools/json-formatter-validator/): Auto-fix broken JSON and convert to CSV, YAML, TypeScript Interfaces, and SQL.
-- [LLM Token Counter & Packer](https://utilix-5rz.pages.dev/dev-tools/llm-token-counter/): Count tokens and estimate API costs across Gemini, GPT, and Claude + pack multi-file code context.
-- [Live Regex Tester & Library](https://utilix-5rz.pages.dev/dev-tools/regex-tester/): Real-time RegExp testing with capture group highlighting, AST explanation, and JS/Python/Go code gen.
-- [JWT Decoder & Inspector](https://utilix-5rz.pages.dev/dev-tools/jwt-decoder/): Base64Url decoding and live `exp`/`iat`/`nbf` countdowns.
-- [Code & Text Diff Checker](https://utilix-5rz.pages.dev/dev-tools/code-diff-checker/): Myers line/word diff algorithm with split/unified views and `.patch` export.
-- [Base64, URL & Entity Codec](https://utilix-5rz.pages.dev/dev-tools/base64-url-encoder/): UTF-8 safe binary-to-text encoding, Data URI generator, and bulk line decoding.
+- [JSON Formatter & Converter](https://nextgentoolkit.pages.dev/dev-tools/json-formatter-validator/): Auto-fix broken JSON and convert to CSV, YAML, TypeScript Interfaces, and SQL.
+- [LLM Token Counter & Packer](https://nextgentoolkit.pages.dev/dev-tools/llm-token-counter/): Count tokens and estimate API costs across Gemini, GPT, and Claude + pack multi-file code context.
+- [Live Regex Tester & Library](https://nextgentoolkit.pages.dev/dev-tools/regex-tester/): Real-time RegExp testing with capture group highlighting, AST explanation, and JS/Python/Go code gen.
+- [JWT Decoder & Inspector](https://nextgentoolkit.pages.dev/dev-tools/jwt-decoder/): Base64Url decoding and live `exp`/`iat`/`nbf` countdowns.
+- [Code & Text Diff Checker](https://nextgentoolkit.pages.dev/dev-tools/code-diff-checker/): Myers line/word diff algorithm with split/unified views and `.patch` export.
+- [Base64, URL & Entity Codec](https://nextgentoolkit.pages.dev/dev-tools/base64-url-encoder/): UTF-8 safe binary-to-text encoding, Data URI generator, and bulk line decoding.
 
 ### Hub 4: Text, Writing & Content SEO Utilities (/text-tools/)
-- [Text to TXT & Clean Markdown](https://utilix-5rz.pages.dev/text-tools/text-to-txt-markdown/): Strip hidden AI watermarks and zero-width characters, convert rich text to Markdown, and export `.txt`/`.md`.
-- [Word Counter & SEO Density](https://utilix-5rz.pages.dev/text-tools/word-counter-density/): N-gram phrase frequency (1/2/3-word), Google SERP pixel width meter, and reading time calculator.
-- [Case Converter & Slug Maker](https://utilix-5rz.pages.dev/text-tools/case-converter-slug-generator/): Convert between 12 cases and generate bulk SEO URL slugs with stop-word filtering.
-- [Duplicate Line & List Cleaner](https://utilix-5rz.pages.dev/text-tools/duplicate-line-remover/): High-speed Set deduplication with case/whitespace toggles, prefix/suffix injection, and natural sorting.
+- [Text to TXT & Clean Markdown](https://nextgentoolkit.pages.dev/text-tools/text-to-txt-markdown/): Strip hidden AI watermarks and zero-width characters, convert rich text to Markdown, and export `.txt`/`.md`.
+- [Word Counter & SEO Density](https://nextgentoolkit.pages.dev/text-tools/word-counter-density/): N-gram phrase frequency (1/2/3-word), Google SERP pixel width meter, and reading time calculator.
+- [Case Converter & Slug Maker](https://nextgentoolkit.pages.dev/text-tools/case-converter-slug-generator/): Convert between 12 cases and generate bulk SEO URL slugs with stop-word filtering.
+- [Duplicate Line & List Cleaner](https://nextgentoolkit.pages.dev/text-tools/duplicate-line-remover/): High-speed Set deduplication with case/whitespace toggles, prefix/suffix injection, and natural sorting.
 
 ### Hub 5: Everyday Micro-Utilities & Link Magnets (/generators/)
-- [Custom SVG/PNG QR Studio](https://utilix-5rz.pages.dev/generators/custom-qr-code-generator/): Permanent non-expiring vector SVG QR codes with custom colors, Wi-Fi/vCard tabs, and Reed-Solomon error correction.
-- [Crypto Password & Key Gen](https://utilix-5rz.pages.dev/generators/password-api-key-generator/): Hardware CSPRNG passwords, BIP39 passphrases, UUID v4, and 256-bit JWT secrets with entropy calculation.
-- [Epoch & Timezone Converter](https://utilix-5rz.pages.dev/generators/unix-timestamp-converter/): Auto-detects 10-digit (s) vs 13-digit (ms) timestamps with ISO-8601, UTC, and multi-city comparison grid.
-- [Cron Expression Studio](https://utilix-5rz.pages.dev/generators/cron-expression-generator/): Interactive cron schedule builder with plain-English AST translation and next 10 execution timestamps.
+- [Custom SVG/PNG QR Studio](https://nextgentoolkit.pages.dev/generators/custom-qr-code-generator/): Permanent non-expiring vector SVG QR codes with custom colors, Wi-Fi/vCard tabs, and Reed-Solomon error correction.
+- [Crypto Password & Key Gen](https://nextgentoolkit.pages.dev/generators/password-api-key-generator/): Hardware CSPRNG passwords, BIP39 passphrases, UUID v4, and 256-bit JWT secrets with entropy calculation.
+- [Epoch & Timezone Converter](https://nextgentoolkit.pages.dev/generators/unix-timestamp-converter/): Auto-detects 10-digit (s) vs 13-digit (ms) timestamps with ISO-8601, UTC, and multi-city comparison grid.
+- [Cron Expression Studio](https://nextgentoolkit.pages.dev/generators/cron-expression-generator/): Interactive cron schedule builder with plain-English AST translation and next 10 execution timestamps.
