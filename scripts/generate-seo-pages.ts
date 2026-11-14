@@ -308,38 +308,20 @@ for (const tool of TOOLS_CATALOG) {
 }
 
 // ============================================================================
-// Generate 100% Google Search Console Compliant Sitemap XML & Sitemap Index
-// Uses a clean W3C YYYY-MM-DD date ('2025-02-20') to prevent GSC "Invalid date"
-// or future-timestamp rejection errors, and zero BOM / leading whitespace.
-// ============================================================================
-const lastmod = '2025-02-20';
+// Generate sitemap XML & sitemap index.
+// lastmod is omitted because a build timestamp is not a reliable per-URL
+// modification date; publishing a fabricated timestamp would be misleading.
 const sitemapUrls = [
   absoluteUrl('/'),
   ...HUBS.map((hub) => absoluteUrl(hub.slug)),
   ...TOOLS_CATALOG.map((tool) => absoluteUrl(tool.canonicalPath)),
 ];
 
-const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${sitemapUrls
-  .map(
-    (loc) => `  <url>
-    <loc>${escapeHtml(loc)}</loc>
-    <lastmod>${lastmod}</lastmod>
-  </url>`
-  )
-  .join('\n')}
-</urlset>
-`;
+const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls
+  .map((loc) => `  <url>\n    <loc>${escapeHtml(loc)}</loc>\n  </url>`)
+  .join('\n')}\n</urlset>\n`;
 
-const sitemapIndexXml = `<?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <sitemap>
-    <loc>${escapeHtml(`${SITE_URL}/sitemap.xml`)}</loc>
-    <lastmod>${lastmod}</lastmod>
-  </sitemap>
-</sitemapindex>
-`;
+const sitemapIndexXml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap>\n    <loc>${escapeHtml(`${SITE_URL}/sitemap.xml`)}</loc>\n  </sitemap>\n</sitemapindex>\n`;
 
 await writeFile(path.join(DIST, 'sitemap.xml'), sitemapXml, 'utf8');
 await writeFile(path.join(DIST, 'sitemap-index.xml'), sitemapIndexXml, 'utf8');
