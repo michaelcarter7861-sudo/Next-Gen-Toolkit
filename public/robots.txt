@@ -19,4 +19,4 @@ Allow: /
 User-agent: ClaudeBot
 Allow: /
 
-Sitemap: https://utilix-5rz.pages.dev/sitemap.xml
+Sitemap: https://nextgentoolkit.pages.dev/sitemap.xml
