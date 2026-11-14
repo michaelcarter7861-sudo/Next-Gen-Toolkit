@@ -1164,7 +1164,7 @@ export default function App() {
                   onClick={() => openSeoModal('sitemap')}
                   className="hover:text-white transition-colors cursor-pointer text-emerald-400 font-semibold"
                 >
-                  /sitemap.xml (GSC Verified)
+                  /sitemap.xml
                 </button>
               </li>
               <li>
