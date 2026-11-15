@@ -7,7 +7,9 @@ import {
   ShieldCheck,
   ChevronDown,
   Sparkles,
-  Tag,
+  ExternalLink,
+  Link2,
+  BookOpen,
 } from 'lucide-react';
 import {
   ToolDefinition,
@@ -16,6 +18,8 @@ import {
   getHubById,
   HubId,
 } from '../data/toolsCatalog';
+import { TOOL_EDITORIAL_LINKS } from '../data/seoSchemaData';
+import { RichSeoText } from './RichSeoText';
 
 interface NineZoneSeoContentProps {
   tool: ToolDefinition;
@@ -33,13 +37,28 @@ export function NineZoneSeoContent({
 
   const nextTool = getToolById(tool.nextStepToolId) || TOOLS_CATALOG[0];
   const parentHub = getHubById(tool.hubId);
+  const editorialPack = TOOL_EDITORIAL_LINKS[tool.id];
 
-  // 4 sibling tools from same category hub + 2 cross-hub tools
+  const basePath = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+  const resolveHref = (path: string) => `${basePath}${path.replace(/^\/+/, '')}`;
+
+  // Closed-Loop Hub-and-Spoke + Workflow Companion Spokes (Omni Calculator / Smallpdf pattern)
   const siblingTools = TOOLS_CATALOG.filter(
     (t) => t.hubId === tool.hubId && t.id !== tool.id
-  ).slice(0, 4);
-  const crossHubTools = TOOLS_CATALOG.filter((t) => t.hubId !== tool.hubId).slice(0, 2);
-  const relatedMesh = [...siblingTools, ...crossHubTools];
+  );
+  const companionIds = [
+    tool.nextStepToolId,
+    ...(editorialPack?.internalLinks.map((l) => l.toolId).filter(Boolean) as string[] || []),
+  ];
+  const companionTools = companionIds
+    .map((id) => getToolById(id))
+    .filter(
+      (t): t is ToolDefinition =>
+        Boolean(t) && t!.id !== tool.id && !siblingTools.some((s) => s.id === t!.id)
+    );
+  const relatedMesh = [...siblingTools, ...companionTools].slice(0, 6);
 
   const embedSnippet = `<iframe src="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}?embed=1" width="100%" height="520" style="border:1px solid #E8E6F2;border-radius:16px;" loading="lazy" title="NextGenToolkit ${tool.name}"></iframe>\n<p style="font-size:12px;color:#64748B;margin-top:6px;">Powered by <a href="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}" target="_blank" rel="noopener">NextGenToolkit ${tool.name}</a></p>`;
 
@@ -51,6 +70,61 @@ export function NineZoneSeoContent({
 
   return (
     <div className="space-y-10 mt-10">
+      {/* =====================================================================
+          IN-PAGE TABLE OF CONTENTS (Jump-To Anchor Bar for Sitelinks & UX)
+      ===================================================================== */}
+      <nav
+        aria-label="Page sections"
+        className="rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs"
+      >
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+          <span className="font-extrabold text-[#171927] dark:text-[#F8F7FC]">On this page:</span>
+          <a
+            href="#how-to-use"
+            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+          >
+            How to Use
+          </a>
+          <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
+          <a
+            href="#specifications"
+            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+          >
+            Specifications
+          </a>
+          <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
+          <a
+            href="#technical-guide"
+            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+          >
+            Methodology &amp; Workflows
+          </a>
+          <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
+          <a
+            href="#tool-faq"
+            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+          >
+            FAQ
+          </a>
+          <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
+          <a
+            href="#related-tools"
+            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+          >
+            Related Tools
+          </a>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowEmbedCode(!showEmbedCode)}
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-[#E8E6F2] dark:border-[#2A2E42] font-semibold text-[#253044] dark:text-[#E2E8F0] hover:border-[#7047EB] transition-colors cursor-pointer"
+        >
+          <Code className="w-3.5 h-3.5 text-[#7047EB]" aria-hidden="true" />
+          <span>Embed Tool</span>
+        </button>
+      </nav>
+
       {/* =====================================================================
           ZONE 4: Workflow Chaining Bar + Embeddable Widget
       ===================================================================== */}
@@ -67,22 +141,17 @@ export function NineZoneSeoContent({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowEmbedCode(!showEmbedCode)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#253044] dark:text-[#E2E8F0] hover:border-[#7047EB] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            <Code className="w-3.5 h-3.5 text-[#7047EB]" />
-            <span>Embed Tool</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectTool(nextTool.id)}
+          <a
+            href={resolveHref(nextTool.canonicalPath)}
+            onClick={(e) => {
+              e.preventDefault();
+              onSelectTool(nextTool.id);
+            }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7047EB] hover:bg-[#5E35D9] text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <span>Open {nextTool.name}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </a>
         </div>
       </section>
 
@@ -108,20 +177,33 @@ export function NineZoneSeoContent({
       )}
 
       {/* =====================================================================
-          ZONE 5: How It Works & Privacy Summary
+          ZONE 5: How It Works & Privacy Summary (With Inline Internal + Authority Links)
       ===================================================================== */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <section
+        id="how-to-use"
+        className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch scroll-mt-20"
+      >
         <div className="lg:col-span-7 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] p-6 space-y-4">
           <div className="flex items-center gap-2 text-xs font-semibold text-[#7047EB]">
-            <Sparkles className="w-4 h-4" />
-            <span>How It Works</span>
+            <Sparkles className="w-4 h-4" aria-hidden="true" />
+            <span>Step-by-Step Guide</span>
           </div>
           <h2 className="text-xl font-bold text-[#171927] dark:text-[#F8F7FC] tracking-tight">
             {tool.aeoQuestionHeading}
           </h2>
-          <p className="text-sm text-[#253044] dark:text-[#CBD5E1] leading-relaxed">
-            {tool.aeoSummaryParagraph}
-          </p>
+          <div className="p-4 rounded-xl bg-[#F8F7FC] dark:bg-[#171927] border border-[#E8E6F2] dark:border-[#2A2E42] space-y-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-[#7047EB] dark:text-[#A78BFA]">
+              Direct Answer
+            </div>
+            <p className="text-sm text-[#253044] dark:text-[#CBD5E1] leading-relaxed">
+              <RichSeoText
+                text={tool.aeoSummaryParagraph}
+                excludeToolId={tool.id}
+                onSelectTool={onSelectTool}
+                onSelectHub={onSelectHub}
+              />
+            </p>
+          </div>
           <ol className="space-y-3 pt-2">
             {tool.howToSteps.map((step, idx) => (
               <li key={idx} className="flex items-start gap-3">
@@ -132,7 +214,15 @@ export function NineZoneSeoContent({
                   <span className="font-semibold text-[#171927] dark:text-[#F8F7FC]">
                     {step.name}:{' '}
                   </span>
-                  <span className="text-[#64748B] dark:text-[#94A3B8]">{step.text}</span>
+                  <span className="text-[#64748B] dark:text-[#94A3B8]">
+                    <RichSeoText
+                      text={step.text}
+                      excludeToolId={tool.id}
+                      onSelectTool={onSelectTool}
+                      onSelectHub={onSelectHub}
+                      maxLinks={2}
+                    />
+                  </span>
                 </div>
               </li>
             ))}
@@ -143,29 +233,57 @@ export function NineZoneSeoContent({
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-[#7047EB] text-white flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5" />
+                <ShieldCheck className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
-                  Your Privacy Matters
+                  Your Privacy &amp; Standards
                 </h3>
                 <p className="text-xs text-[#6D28D9] dark:text-[#A78BFA]">
-                  Local browser execution
+                  100% Local Browser Execution
                 </p>
               </div>
             </div>
             <p className="text-xs sm:text-sm text-[#253044] dark:text-[#E2E8F0] leading-relaxed">
-              {tool.entityLeadSentence}
+              <RichSeoText
+                text={tool.entityLeadSentence}
+                excludeToolId={tool.id}
+                onSelectTool={onSelectTool}
+                onSelectHub={onSelectHub}
+              />
             </p>
           </div>
 
           <div className="pt-3 border-t border-[#DDD6FE] dark:border-[#37306B] space-y-2 text-xs">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#64748B] dark:text-[#94A3B8]">Privacy guarantee:</span>
-              <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                {tool.specTable.privacyModel}
-              </span>
+              <span className="text-[#64748B] dark:text-[#94A3B8]">Category Hub:</span>
+              {parentHub && (
+                <a
+                  href={resolveHref(parentHub.slug)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectHub(parentHub.id);
+                  }}
+                  className="font-semibold text-[#7047EB] dark:text-[#A78BFA] underline decoration-[#7047EB]/40 hover:decoration-[#7047EB]"
+                >
+                  {parentHub.name}
+                </a>
+              )}
             </div>
+            {editorialPack && editorialPack.externalLinks[0] && (
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[#64748B] dark:text-[#94A3B8]">Official Standard:</span>
+                <a
+                  href={editorialPack.externalLinks[0].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-[#7047EB] dark:text-[#A78BFA] underline decoration-[#7047EB]/40 hover:decoration-[#7047EB] text-right"
+                >
+                  <span>{editorialPack.externalLinks[0].sourceName}</span>
+                  <ExternalLink className="w-3 h-3 shrink-0" aria-hidden="true" />
+                </a>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-2">
               <span className="text-[#64748B] dark:text-[#94A3B8]">Supported formats:</span>
               <span className="font-medium text-[#171927] dark:text-[#F8F7FC] text-right">
@@ -179,10 +297,13 @@ export function NineZoneSeoContent({
       {/* =====================================================================
           ZONE 6: Specifications & Feature Comparison Table
       ===================================================================== */}
-      <section className="rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] p-6 space-y-5">
+      <section
+        id="specifications"
+        className="rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] p-6 space-y-5 scroll-mt-20"
+      >
         <div>
           <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
-            Specifications &amp; Capabilities — {tool.name}
+            Specifications &amp; Capabilities for {tool.name}
           </h2>
           <p className="text-xs text-[#64748B]">
             Overview of supported file formats, batch processing, and browser privacy features.
@@ -262,76 +383,151 @@ export function NineZoneSeoContent({
       </section>
 
       {/* =====================================================================
-          ZONE 7: Features, Use Cases & Related Topics (Natural SEO + LSI Coverage)
+          ZONE 7: Connected Workflows & Technical Methodology (Contextual Links)
       ===================================================================== */}
-      <section className="rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] p-6 space-y-5">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
-            Features &amp; Supported Use Cases for {tool.name}
-          </h2>
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#EDE7FF] dark:bg-[#7047EB]/20 text-xs font-semibold text-[#7047EB] dark:text-[#C4B5FD]">
-            <Tag className="w-3.5 h-3.5" />
-            <span>{tool.subCategory}</span>
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-[#253044] dark:text-[#CBD5E1] leading-relaxed">
-          <div className="space-y-2.5">
-            <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
-              Fast In-Browser Processing
-            </h3>
-            <p>
-              <strong>NextGenToolkit {tool.name}</strong> is powered by {tool.specTable.executionEngine} ({tool.specTable.privacyModel}). Because everything runs directly on your device, your documents, photos, and code snippets never wait in a server upload queue.
+      <section
+        id="technical-guide"
+        className="rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] p-6 space-y-6 scroll-mt-20"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E8E6F2] dark:border-[#2A2E42] pb-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
+              Connected Workflows &amp; Technical Methodology for {tool.name}
+            </h2>
+            <p className="text-xs text-[#64748B]">
+              Multi-step workflows across NextGenToolkit and official specifications governing {tool.name}.
             </p>
           </div>
-          <div className="space-y-2.5">
-            <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
-              Common Workflows &amp; Applications
-            </h3>
-            <p>
-              Designed for everyday productivity and developer workflows including {tool.clusteredQueries.join(', ')}. Works seamlessly across desktop and mobile browsers with {tool.specTable.batchSupport}.
-            </p>
-          </div>
+          {parentHub && (
+            <a
+              href={resolveHref(parentHub.slug)}
+              onClick={(e) => {
+                e.preventDefault();
+                onSelectHub(parentHub.id);
+              }}
+              className="text-xs font-semibold text-[#7047EB] dark:text-[#C4B5FD] hover:underline shrink-0"
+            >
+              Browse All {parentHub.name} →
+            </a>
+          )}
         </div>
 
-        <div className="pt-4 border-t border-[#E8E6F2] dark:border-[#2A2E42] space-y-3">
-          <div className="text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
-            Key Capabilities &amp; Topics:
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {tool.lsiKeywords.map((kw) => (
-              <span
-                key={kw}
-                className="px-2.5 py-1 rounded-lg bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-medium text-[#253044] dark:text-[#CBD5E1]"
-              >
-                {kw}
-              </span>
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm text-[#253044] dark:text-[#CBD5E1] leading-relaxed">
+          {/* Left Panel: Contextual Workflow Weaving */}
+          <div className="p-5 rounded-2xl bg-[#F8F7FC] dark:bg-[#171927] border border-[#E8E6F2] dark:border-[#2A2E42] space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#7047EB]">
+              <Link2 className="w-4 h-4" aria-hidden="true" />
+              <span>Connected Workflows</span>
+            </div>
+
+            {editorialPack && (
+              <p className="text-xs sm:text-sm leading-relaxed">
+                {editorialPack.leadIntro}{' '}
+                {editorialPack.internalLinks.map((item, idx) => (
+                  <React.Fragment key={item.href}>
+                    <a
+                      href={resolveHref(item.href)}
+                      onClick={(e) => {
+                        if (item.toolId) {
+                          e.preventDefault();
+                          onSelectTool(item.toolId);
+                        }
+                      }}
+                      className="font-semibold text-[#7047EB] dark:text-[#A78BFA] underline decoration-[#7047EB]/40 hover:decoration-[#7047EB] underline-offset-2 transition-colors"
+                    >
+                      {item.keywordAnchor}
+                    </a>{' '}
+                    {item.contextAfter}
+                    {idx < editorialPack.internalLinks.length - 1 ? ' ' : ''}
+                  </React.Fragment>
+                ))}{' '}
+                Explore our complete{' '}
+                {parentHub && (
+                  <a
+                    href={resolveHref(parentHub.slug)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onSelectHub(parentHub.id);
+                    }}
+                    className="font-semibold text-[#7047EB] dark:text-[#A78BFA] underline decoration-[#7047EB]/40 hover:decoration-[#7047EB] underline-offset-2"
+                  >
+                    {parentHub.name} collection
+                  </a>
+                )}{' '}
+                for more browser utilities.
+              </p>
+            )}
           </div>
 
-          <div className="text-xs font-bold text-[#171927] dark:text-[#F8F7FC] pt-1">
-            Popular Tasks:
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {tool.clusteredQueries.map((cq) => (
-              <span
-                key={cq}
-                className="px-2.5 py-1 rounded-lg bg-[#EDE7FF]/60 dark:bg-[#7047EB]/15 text-xs font-medium text-[#6D28D9] dark:text-[#C4B5FD]"
-              >
-                {cq}
-              </span>
-            ))}
+          {/* Right Panel: Technical Methodology & Primary Specifications */}
+          <div className="p-5 rounded-2xl bg-[#F8F7FC] dark:bg-[#171927] border border-[#E8E6F2] dark:border-[#2A2E42] space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#7047EB]">
+              <BookOpen className="w-4 h-4" aria-hidden="true" />
+              <span>Technical Methodology &amp; Open Standards</span>
+            </div>
+
+            {editorialPack && (
+              <div className="space-y-2.5 text-xs sm:text-sm leading-relaxed">
+                {editorialPack.externalLinks.map((ext) => {
+                  const parts = ext.contextSentence.split(ext.keywordAnchor);
+                  return (
+                    <p key={ext.url}>
+                      {parts.length === 2 ? (
+                        <>
+                          {parts[0]}
+                          <a
+                            href={ext.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-0.5 font-semibold text-[#7047EB] dark:text-[#A78BFA] underline decoration-[#7047EB]/40 hover:decoration-[#7047EB] underline-offset-2"
+                          >
+                            <span>{ext.keywordAnchor}</span>
+                            <ExternalLink className="w-3 h-3 inline shrink-0" aria-hidden="true" />
+                          </a>
+                          {parts[1]}{' '}
+                          <span className="text-[11px] font-medium text-[#64748B]">
+                            ({ext.sourceName})
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          {ext.contextSentence}{' '}
+                          <a
+                            href={ext.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-0.5 font-semibold text-[#7047EB] dark:text-[#A78BFA] underline decoration-[#7047EB]/40 hover:decoration-[#7047EB] underline-offset-2"
+                          >
+                            <span>{ext.keywordAnchor}</span>
+                            <ExternalLink className="w-3 h-3 inline shrink-0" aria-hidden="true" />
+                          </a>
+                          .{' '}
+                          <span className="text-[11px] font-medium text-[#64748B]">
+                            ({ext.sourceName})
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </section>
 
       {/* =====================================================================
-          ZONE 8: Frequently Asked Questions
+          ZONE 8: Frequently Asked Questions (With Inline Internal + Authority Links)
       ===================================================================== */}
-      <section className="rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] p-6 space-y-4">
+      <section
+        id="tool-faq"
+        itemScope
+        itemType="https://schema.org/FAQPage"
+        className="rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] p-6 space-y-4 scroll-mt-20"
+      >
         <div>
           <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
-            Frequently Asked Questions — {tool.name}
+            Frequently Asked Questions About {tool.name}
           </h2>
           <p className="text-xs text-[#64748B]">
             Common questions and tips for getting the best results with {tool.name}.
@@ -340,23 +536,45 @@ export function NineZoneSeoContent({
 
         <div className="divide-y divide-[#E8E6F2] dark:divide-[#2A2E42]">
           {tool.faqs.map((faq, idx) => (
-            <details key={idx} className="group py-3.5" open={idx === 0}>
+            <details
+              key={idx}
+              itemScope
+              itemProp="mainEntity"
+              itemType="https://schema.org/Question"
+              className="group py-3.5"
+              open={idx === 0}
+            >
               <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-semibold text-[#171927] dark:text-[#F8F7FC] hover:text-[#7047EB]">
-                <span>{faq.q}</span>
-                <ChevronDown className="w-4 h-4 text-[#64748B] group-open:rotate-180 transition-transform shrink-0 ml-2" />
+                <span itemProp="name">{faq.q}</span>
+                <ChevronDown
+                  className="w-4 h-4 text-[#64748B] group-open:rotate-180 transition-transform shrink-0 ml-2"
+                  aria-hidden="true"
+                />
               </summary>
-              <p className="mt-2 text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-                {faq.a}
-              </p>
+              <div
+                itemScope
+                itemProp="acceptedAnswer"
+                itemType="https://schema.org/Answer"
+                className="mt-2 text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed"
+              >
+                <p itemProp="text">
+                  <RichSeoText
+                    text={faq.a}
+                    excludeToolId={tool.id}
+                    onSelectTool={onSelectTool}
+                    onSelectHub={onSelectHub}
+                  />
+                </p>
+              </div>
             </details>
           ))}
         </div>
       </section>
 
       {/* =====================================================================
-          ZONE 9: Related Tools
+          ZONE 9: Related Tools (Internal Linking Mesh)
       ===================================================================== */}
-      <section className="space-y-4">
+      <section id="related-tools" className="space-y-4 scroll-mt-20">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
@@ -367,25 +585,32 @@ export function NineZoneSeoContent({
             </p>
           </div>
           {parentHub && (
-            <button
-              type="button"
-              onClick={() => onSelectHub(parentHub.id)}
+            <a
+              href={resolveHref(parentHub.slug)}
+              onClick={(e) => {
+                e.preventDefault();
+                onSelectHub(parentHub.id);
+              }}
               className="text-xs font-semibold text-[#7047EB] hover:underline flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer"
             >
               <span>View All {parentHub.name}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+            </a>
           )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {relatedMesh.map((rel) => {
             const relHub = getHubById(rel.hubId);
+            const relHref = resolveHref(rel.canonicalPath);
             return (
-              <button
+              <a
                 key={rel.id}
-                type="button"
-                onClick={() => onSelectTool(rel.id)}
+                href={relHref}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelectTool(rel.id);
+                }}
                 className="group p-4 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB] text-left transition-all flex items-center justify-between gap-3 cursor-pointer"
               >
                 <div className="min-w-0">
@@ -395,8 +620,11 @@ export function NineZoneSeoContent({
                   </div>
                   <p className="text-xs text-[#64748B] line-clamp-1 mt-0.5">{rel.shortDesc}</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#7047EB] shrink-0 group-hover:translate-x-0.5 transition-transform" />
-              </button>
+                <ArrowRight
+                  className="w-4 h-4 text-[#7047EB] shrink-0 group-hover:translate-x-0.5 transition-transform"
+                  aria-hidden="true"
+                />
+              </a>
             );
           })}
         </div>

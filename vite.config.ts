@@ -13,10 +13,13 @@ export default defineConfig(() => {
       },
     },
     build: {
-      chunkSizeWarningLimit: 700,
+      chunkSizeWarningLimit: 600,
       rolldownOptions: {
         output: {
           manualChunks(id: string) {
+            if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
+              return 'vendor-react';
+            }
             if (id.includes('node_modules/pdf-lib') || id.includes('node_modules/pako')) {
               return 'vendor-pdf';
             }
@@ -33,6 +36,12 @@ export default defineConfig(() => {
             }
             if (id.includes('node_modules/lucide-react')) {
               return 'vendor-icons';
+            }
+            if (id.includes('src/data/toolsCatalog')) {
+              return 'catalog-data';
+            }
+            if (id.includes('src/components/ToolWorkspace') || id.includes('src/components/NineZoneSeoContent')) {
+              return 'workspace-ui';
             }
           },
         },

@@ -4,6 +4,6 @@ import './index.css';
 
 createRoot(document.getElementById('root')!).render(<App />);
 
-document.getElementById('seo-fallback')?.remove();
 document.getElementById('nextgentoolkit-boot')?.remove();
-document.getElementById('utilix-boot')?.remove();
+
+

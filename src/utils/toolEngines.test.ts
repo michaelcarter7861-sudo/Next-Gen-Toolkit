@@ -18,6 +18,7 @@ import {
   convertEpochTimestamp,
   parseCronExpression,
   parsePageRanges,
+  inspectImageBinaryMetadata,
 } from './toolEngines';
 
 test('JSON processor auto-fixes broken JSON and converts to CSV/YAML/TS', () => {
@@ -140,4 +141,25 @@ test('Cron AST parser translates 5-field expressions and finds next 10 execution
 test('PDF range parser parses 1-3, 5, 8-10 accurately into 0-indexed page indices', () => {
   const indices = parsePageRanges('1-3, 5, 8-10', 12);
   assert.deepEqual(indices, [0, 1, 2, 4, 7, 8, 9]);
+});
+
+test('Binary image inspector detects real JPEG APP1 EXIF segments and clean buffers', () => {
+  // Construct minimal JPEG with APP1 Exif header + clean JPEG without APP1
+  const exifBytes = new TextEncoder().encode('Exif\0\0Canon EOS R5');
+  const segLen = 2 + exifBytes.length;
+  const jpegWithExif = new Uint8Array(4 + segLen + 2);
+  jpegWithExif.set([0xff, 0xd8, 0xff, 0xe1, (segLen >> 8) & 0xff, segLen & 0xff], 0);
+  jpegWithExif.set(exifBytes, 6);
+  jpegWithExif.set([0xff, 0xd9], 4 + segLen);
+
+  const reportDirty = inspectImageBinaryMetadata(jpegWithExif);
+  assert.equal(reportDirty.container, 'JPEG');
+  assert.equal(reportDirty.hasExif, true);
+  assert.ok(reportDirty.detectedSegments.length >= 1);
+
+  const cleanJpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+  const reportClean = inspectImageBinaryMetadata(cleanJpeg);
+  assert.equal(reportClean.container, 'JPEG');
+  assert.equal(reportClean.hasExif, false);
+  assert.equal(reportClean.detectedSegments.length, 0);
 });

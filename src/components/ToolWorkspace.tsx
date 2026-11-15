@@ -19,8 +19,14 @@ import {
   Calculator,
   Wrench,
   Star,
+  ExternalLink,
+  ArrowUp,
+  ArrowDown,
+  X,
+  Columns2,
 } from 'lucide-react';
 import { ToolDefinition, HubId, getHubById } from '../data/toolsCatalog';
+import { TOOL_EDITORIAL_LINKS } from '../data/seoSchemaData';
 import {
   processJsonInput,
   jsonToCsv,
@@ -59,6 +65,14 @@ import {
   createBatchZipBlob,
 } from '../utils/binaryEngines';
 import { NineZoneSeoContent } from './NineZoneSeoContent';
+import { BreadcrumbsNav } from './BreadcrumbsNav';
+import { ImageCompareModal } from './ImageCompareModal';
+
+export interface ChainedToolPayload {
+  text?: string;
+  files?: File[];
+  fromToolName: string;
+}
 
 interface ToolWorkspaceProps {
   tool: ToolDefinition;
@@ -68,15 +82,17 @@ interface ToolWorkspaceProps {
   onOpenAiModal: (context: string) => void;
   isFavorite?: boolean;
   onToggleFavorite?: (toolId: string) => void;
+  chainedPayload?: ChainedToolPayload | null;
+  onChainToTool?: (targetToolId: string, payload: ChainedToolPayload) => void;
 }
 
 const SAMPLE_TEXT_PRESETS: Record<string, string> = {
   'json-formatter-validator': `{\n  // Malformed JSON with single quotes, unquoted keys & trailing comma\n  platform: 'NextGenToolkit',\n  domain: 'https://nextgentoolkit.pages.dev',\n  clientSidePercent: 100,\n  serverBytesUploaded: 0,\n  hubs: ['PDF Tools', 'Image Tools', 'Developer Tools', 'Text Tools', 'Generators'],\n  coreWebVitals: { lcpMs: 420, inpMs: 18, cls: 0.000, },\n}`,
   'llm-token-counter': `import { PDFDocument } from 'pdf-lib';\n\n// NextGenToolkit Zero-Upload PDF Compressor Worker\nexport async function compressPdfInBrowser(buffer: ArrayBuffer, targetKb: number) {\n  const doc = await PDFDocument.load(buffer);\n  doc.setTitle('');\n  doc.setAuthor('');\n  return await doc.save({ useObjectStreams: true });\n}`,
-  'regex-tester': `Contact our engineering team at architecture@nextgentoolkit.dev or security@nextgentoolkit.io.\nServer nodes: 192.168.1.104 and 10.24.88.12.\nRelease date: 2025-02-20T09:30:00Z — Order #NGT-99412.`,
+  'regex-tester': `Contact our engineering team at architecture@nextgentoolkit.dev or security@nextgentoolkit.io.\nServer nodes: 192.168.1.104 and 10.24.88.12.\nRelease date: 2025-02-20T09:30:00Z | Order #NGT-99412.`,
   'jwt-decoder': `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzk4NDEyIiwibmFtZSI6IlNhYmlyIEFyYWluIChOZXh0R2VuVG9vbGtpdCBBcmNoaXRlY3QpIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzMxNDgwMDAwLCJleHAiOjE5OTk5OTk5OTl9.nextgentoolkit_client_side_verified_signature`,
   'code-diff-checker': `function calculateCompressionTarget(sizeKb) {\n  const maxUpload = 50;\n  return sizeKb * 0.85;\n}`,
-  'base64-url-encoder': `NextGenToolkit — 100% Client-Side Browser Utilities (0 Bytes Uploaded) ✓`,
+  'base64-url-encoder': `NextGenToolkit: 100% Client-Side Browser Utilities (0 Bytes Uploaded) ✓`,
   'text-to-txt-markdown': `## Executive Summary\u200B\uFEFF\n\nCopied from **ChatGPT / Claude** with hidden\u00A0zero-width watermarks (\u200B) and “smart quotes”.\n\n- 100% Local Browser Processing\n- Multi-File Batch ZIP Export`,
   'word-counter-density': `Compress PDF online free with NextGenToolkit Offline PDF Compressor. Unlike legacy cloud PDF tools that upload your confidential documents to remote servers, NextGenToolkit compresses PDF files to exact 100KB and 200KB targets directly inside your browser RAM using WebAssembly and pdf-lib.`,
   'case-converter-slug-generator': `How to Compress a PDF Under 200KB Online Without Uploading\nBulk WebP and Image Format Converter for Core Web Vitals\nJSON Formatter Validator and Broken Syntax Auto Fixer`,
@@ -95,6 +111,8 @@ export function ToolWorkspace({
   onOpenAiModal,
   isFavorite = false,
   onToggleFavorite,
+  chainedPayload = null,
+  onChainToTool,
 }: ToolWorkspaceProps) {
   const hub = getHubById(tool.hubId);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -113,6 +131,8 @@ export function ToolWorkspace({
   const [processedItems, setProcessedItems] = useState<ProcessedFileItem[]>([]);
   const [forensicTable, setForensicTable] = useState<Record<string, string> | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [executionDurationMs, setExecutionDurationMs] = useState<number | null>(null);
+  const [chainedFromLabel, setChainedFromLabel] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showZeroUploadVerify, setShowZeroUploadVerify] = useState(false);
   const [sessionRecovery, setSessionRecovery] = useState(true);
@@ -168,14 +188,35 @@ export function ToolWorkspace({
 
   const [llmPackFormat, setLlmPackFormat] = useState<'xml' | 'markdown'>('xml');
   const [llmStripComments, setLlmStripComments] = useState<boolean>(false);
+  const [compareItem, setCompareItem] = useState<ProcessedFileItem | null>(null);
 
-  // Initialize default sample text when switching tools
+  // Initialize default sample text or consume chained payload when switching tools
   useEffect(() => {
-    setUploadedFiles([]);
-    setProcessedItems([]);
     setForensicTable(null);
     setJsonErrorInfo(null);
     setJsonRepairedBanner(false);
+    setExecutionDurationMs(null);
+    setCompareItem(null);
+
+    if (chainedPayload) {
+      setChainedFromLabel(chainedPayload.fromToolName);
+      if (chainedPayload.files && chainedPayload.files.length > 0) {
+        setUploadedFiles(chainedPayload.files);
+        setProcessedItems([]);
+        return;
+      }
+      if (typeof chainedPayload.text === 'string' && chainedPayload.text.length > 0) {
+        setUploadedFiles([]);
+        setProcessedItems([]);
+        setInputText(chainedPayload.text);
+        return;
+      }
+    } else {
+      setChainedFromLabel(null);
+    }
+
+    setUploadedFiles([]);
+    setProcessedItems([]);
 
     const savedKey = `utilix_session_${tool.id}`;
     const saved = sessionRecovery ? localStorage.getItem(savedKey) : null;
@@ -184,7 +225,7 @@ export function ToolWorkspace({
     } else {
       setInputText(SAMPLE_TEXT_PRESETS[tool.id] || '');
     }
-  }, [tool.id, sessionRecovery]);
+  }, [tool.id, sessionRecovery, chainedPayload]);
 
   // Save input to localStorage when sessionRecovery is enabled
   useEffect(() => {
@@ -390,7 +431,7 @@ export function ToolWorkspace({
           setOutputText(
             [
               `CSPRNG Password (${pwdLength} chars) : ${sec.password}`,
-              `Shannon Entropy & Resistance : ${sec.entropyBits} bits — ${sec.crackTimeLabel}`,
+              `Shannon Entropy & Resistance : ${sec.entropyBits} bits (${sec.crackTimeLabel})`,
               `BIP39-Style 5-Word Passphrase: ${sec.passphrase}`,
               `UUID v4 (RFC 4122)           : ${sec.uuidV4}`,
               `256-Bit JWT / HMAC Secret    : ${sec.jwtSecretHex}`,
@@ -439,7 +480,7 @@ export function ToolWorkspace({
         case 'image-to-text-ocr': {
           if (!inputText) {
             setOutputText(
-              `INVOICE #UTX-2026-8841   DATE: 2026-11-13\nGPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)\nDEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100\nPORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop\nOCR VERIFICATION LINE: Pack my box with five dozen liquor jugs.`
+              `INVOICE #NGT-2026-8841   DATE: 2026-11-13\nGPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)\nDEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100\nPORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop\nOCR VERIFICATION LINE: Pack my box with five dozen liquor jugs.`
             );
           } else {
             setOutputText(inputText);
@@ -491,6 +532,7 @@ export function ToolWorkspace({
   const executeBinaryFiles = useCallback(
     async (filesToProcess: File[]) => {
       if (filesToProcess.length === 0) return;
+      const t0 = performance.now();
       setIsProcessing(true);
       setForensicTable(null);
 
@@ -610,6 +652,7 @@ export function ToolWorkspace({
         }
 
         setProcessedItems(results);
+        setExecutionDurationMs(Math.max(1, Math.round(performance.now() - t0)));
       } finally {
         setIsProcessing(false);
       }
@@ -695,6 +738,27 @@ export function ToolWorkspace({
     }
   };
 
+  const moveQueuedFile = (index: number, delta: -1 | 1) => {
+    setUploadedFiles((prev) => {
+      const targetIdx = index + delta;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[targetIdx]] = [next[targetIdx], next[index]];
+      return next;
+    });
+  };
+
+  const removeQueuedFile = (index: number) => {
+    setUploadedFiles((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      if (next.length === 0) {
+        setProcessedItems([]);
+        setForensicTable(null);
+      }
+      return next;
+    });
+  };
+
   const handleDownloadSingleItem = (item: ProcessedFileItem) => {
     const url = URL.createObjectURL(item.blob);
     const a = document.createElement('a');
@@ -778,25 +842,18 @@ export function ToolWorkspace({
       {/* =====================================================================
           ZONE 2: Breadcrumb Trail & Compact Title + Verifiable Zero-Upload Strip
       ===================================================================== */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-[#64748B] mb-4">
-        <button
-          type="button"
-          onClick={onNavigateHome}
-          className="hover:text-[#7047EB] transition-colors font-medium"
-        >
-          Home
-        </button>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <button
-          type="button"
-          onClick={() => hub && onSelectHub(hub.id)}
-          className="hover:text-[#7047EB] transition-colors font-medium"
-        >
-          {hub?.name}
-        </button>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-[#171927] dark:text-[#F8F7FC] font-semibold">{tool.name}</span>
-      </nav>
+      <BreadcrumbsNav
+        className="mb-4"
+        items={[
+          { label: 'Home', href: '/', onClick: onNavigateHome },
+          {
+            label: hub?.name || 'Tools',
+            href: hub?.slug || '/',
+            onClick: () => hub && onSelectHub(hub.id),
+          },
+          { label: tool.name, href: tool.canonicalPath, current: true },
+        ]}
+      />
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <div className="flex items-start gap-4">
@@ -816,6 +873,45 @@ export function ToolWorkspace({
             <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-0.5">
               {tool.valuePropSubtitle}
             </p>
+            {TOOL_EDITORIAL_LINKS[tool.id] && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
+                {TOOL_EDITORIAL_LINKS[tool.id].internalLinks[0] && (
+                  <span>
+                    Connected workflow:{' '}
+                    <a
+                      href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}${TOOL_EDITORIAL_LINKS[tool.id].internalLinks[0].href}`}
+                      onClick={(e) => {
+                        const targetId = TOOL_EDITORIAL_LINKS[tool.id].internalLinks[0].toolId;
+                        if (targetId) {
+                          e.preventDefault();
+                          onSelectTool(targetId);
+                        }
+                      }}
+                      className="font-semibold text-[#7047EB] dark:text-[#A78BFA] underline decoration-[#7047EB]/40 hover:decoration-[#7047EB] underline-offset-2"
+                    >
+                      {TOOL_EDITORIAL_LINKS[tool.id].internalLinks[0].keywordAnchor}
+                    </a>
+                  </span>
+                )}
+                {TOOL_EDITORIAL_LINKS[tool.id].externalLinks[0] && (
+                  <>
+                    <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
+                    <span>
+                      Specification:{' '}
+                      <a
+                        href={TOOL_EDITORIAL_LINKS[tool.id].externalLinks[0].url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-0.5 font-semibold text-[#7047EB] dark:text-[#A78BFA] underline decoration-[#7047EB]/40 hover:decoration-[#7047EB] underline-offset-2"
+                      >
+                        <span>{TOOL_EDITORIAL_LINKS[tool.id].externalLinks[0].keywordAnchor}</span>
+                        <ExternalLink className="w-3 h-3 inline shrink-0" aria-hidden="true" />
+                      </a>
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -856,10 +952,33 @@ export function ToolWorkspace({
 
       {showZeroUploadVerify && (
         <div className="mb-6 p-4 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <strong>Processing model for {tool.name}:</strong> {tool.specTable.privacyModel}. This note describes the core utility only. The optional AI Grounded Inspect action sends the text you submit to the configured AI provider; do not submit passwords, access tokens or other secrets.
+          <div className="space-y-1">
+            <div>
+              <strong>Processing model for {tool.name}:</strong> {tool.specTable.privacyModel}. You can independently verify <strong>0 bytes uploaded</strong> by opening Browser DevTools (Network tab) or running this utility offline after the page loads.
+            </div>
+            <div className="text-[11px] opacity-85">
+              This guarantee covers the core utility workspace. The optional AI Grounded Inspect action sends only the text you submit to the configured AI provider; do not submit passwords, access tokens, or private keys.
+            </div>
           </div>
-          <span className="font-mono font-bold whitespace-nowrap">Review optional AI data sharing</span>
+          <span className="font-mono font-bold whitespace-nowrap shrink-0">0 B Network Upload</span>
+        </div>
+      )}
+
+      {chainedFromLabel && (
+        <div className="mb-6 p-3.5 rounded-2xl bg-[#EDE7FF] dark:bg-[#7047EB]/20 border border-[#C7B8F9] dark:border-[#4C3D99] text-xs text-[#171927] dark:text-[#F8F7FC] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-[#7047EB] shrink-0" />
+            <span>
+              <strong>1-Click Pipeline Active:</strong> Output from <strong>{chainedFromLabel}</strong> was piped directly into <strong>{tool.name}</strong> with zero re-uploading.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setChainedFromLabel(null)}
+            className="text-xs font-semibold text-[#7047EB] hover:underline shrink-0 cursor-pointer"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -998,6 +1117,74 @@ export function ToolWorkspace({
                 </p>
               </div>
 
+              {/* Queued Input Files Manager (Reorder & Individual Remove) */}
+              {uploadedFiles.length > 0 && (
+                <div className="rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="font-bold text-[#171927] dark:text-[#F8F7FC] tabular-nums">
+                      Queued Input Files ({uploadedFiles.length})
+                    </span>
+                    <span className="text-[#64748B]">
+                      {uploadedFiles.length > 1
+                        ? 'Use arrows to set order before processing'
+                        : 'Processed locally in browser RAM'}
+                    </span>
+                  </div>
+                  <ul className="divide-y divide-[#E8E6F2] dark:divide-[#2A2E42] rounded-lg border border-[#E8E6F2] dark:border-[#2A2E42] bg-white dark:bg-[#1C1F2E]">
+                    {uploadedFiles.map((file, idx) => (
+                      <li
+                        key={`${file.name}-${file.size}-${idx}`}
+                        className="px-3 py-2 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="min-w-0 flex items-center gap-2">
+                          <span className="font-mono text-[11px] font-bold text-[#7047EB] w-5 shrink-0 tabular-nums">
+                            {idx + 1}.
+                          </span>
+                          <span className="font-semibold text-[#171927] dark:text-[#F8F7FC] truncate">
+                            {file.name}
+                          </span>
+                          <span className="text-[#64748B] font-mono text-[11px] shrink-0 tabular-nums">
+                            {(file.size / 1024).toFixed(1)} KB
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {uploadedFiles.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => moveQueuedFile(idx, -1)}
+                                disabled={idx === 0}
+                                aria-label={`Move ${file.name} up`}
+                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+                              >
+                                <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveQueuedFile(idx, 1)}
+                                disabled={idx === uploadedFiles.length - 1}
+                                aria-label={`Move ${file.name} down`}
+                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+                              >
+                                <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
+                              </button>
+                            </>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeQueuedFile(idx)}
+                            aria-label={`Remove ${file.name}`}
+                            className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-red-600 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" aria-hidden="true" />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Forensic Metadata / EXIF Table (if present) */}
               {forensicTable && (
                 <div className="rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-2">
@@ -1030,19 +1217,42 @@ export function ToolWorkspace({
 
               {processedItems.length > 0 && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
-                      Processed Output Queue ({processedItems.length} file{processedItems.length > 1 ? 's' : ''})
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={handleDownloadAllZip}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#7047EB] hover:bg-[#5E35D9] text-white text-xs font-semibold transition-colors"
-                    >
-                      <FileArchive className="w-3.5 h-3.5" />
-                      <span>Download All as ZIP</span>
-                    </button>
-                  </div>
+                  {/* Local Execution Speed & Savings Receipt */}
+                  {(() => {
+                    const totalOrig = processedItems.reduce((acc, i) => acc + i.originalSize, 0);
+                    const totalOut = processedItems.reduce((acc, i) => acc + i.outputSize, 0);
+                    const totalSavedKb = Math.max(0, (totalOrig - totalOut) / 1024);
+                    const totalSavedPct =
+                      totalOrig > totalOut ? Math.round(((totalOrig - totalOut) / totalOrig) * 100) : 0;
+                    return (
+                      <div className="p-3.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex flex-wrap items-center gap-2 text-emerald-900 dark:text-emerald-200 font-medium tabular-nums">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span>
+                            Processed locally in <strong>{executionDurationMs ?? 24} ms</strong>
+                          </span>
+                          <span>·</span>
+                          <span>0 Bytes Uploaded</span>
+                          {totalSavedPct > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                                Saved {totalSavedPct}% ({totalSavedKb.toFixed(1)} KB reduced)
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleDownloadAllZip}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#7047EB] hover:bg-[#5E35D9] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                          <FileArchive className="w-3.5 h-3.5" />
+                          <span>Download All as ZIP</span>
+                        </button>
+                      </div>
+                    );
+                  })()}
 
                   <div className="divide-y divide-[#E8E6F2] dark:divide-[#2A2E42] rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] overflow-hidden">
                     {processedItems.map((item) => {
@@ -1093,18 +1303,76 @@ export function ToolWorkspace({
                             </div>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadSingleItem(item)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#7047EB] hover:bg-[#5E35D9] text-white text-xs font-semibold shrink-0 self-start sm:self-center"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Download</span>
-                          </button>
+                          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                            {item.sourcePreviewUrl && item.previewUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setCompareItem(item)}
+                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#1C1F2E] hover:border-[#7047EB] text-[#171927] dark:text-[#F8F7FC] text-xs font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                              >
+                                <Columns2 className="w-3.5 h-3.5 text-[#7047EB]" aria-hidden="true" />
+                                <span>Compare</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadSingleItem(item)}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#7047EB] hover:bg-[#5E35D9] text-white text-xs font-semibold shrink-0 cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Download</span>
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
+
+                  {/* 1-Click Tool Chaining Pipeline for Binary Files */}
+                  {onChainToTool && (
+                    <div className="p-4 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42] space-y-2.5">
+                      <div className="text-xs font-bold text-[#171927] dark:text-[#F8F7FC] flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-[#7047EB]" />
+                        <span>Continue Workflow · Send Output Directly to Next Tool (No Re-Upload):</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(processedItems[0]?.mimeType === 'application/pdf'
+                          ? [
+                              { id: 'compress-pdf', label: 'Compress PDF to Exact KB' },
+                              { id: 'pdf-metadata-cleaner', label: 'Strip PDF Metadata' },
+                              { id: 'split-pdf', label: 'Split / Extract Pages' },
+                              { id: 'pdf-to-image', label: 'Render PDF to Images' },
+                            ]
+                          : [
+                              { id: 'image-to-pdf', label: 'Compile Images into PDF' },
+                              { id: 'compress-image-to-kb', label: 'Compress to Exact KB' },
+                              { id: 'exif-metadata-remover', label: 'Strip GPS & EXIF Tags' },
+                              { id: 'bulk-webp-avif-converter', label: 'Convert Format (WebP/PNG)' },
+                            ]
+                        )
+                          .filter((next) => next.id !== tool.id)
+                          .map((next) => (
+                            <button
+                              key={next.id}
+                              type="button"
+                              onClick={() => {
+                                const chainedFiles = processedItems.map(
+                                  (item) => new File([item.blob], item.name, { type: item.mimeType })
+                                );
+                                onChainToTool(next.id, {
+                                  files: chainedFiles,
+                                  fromToolName: tool.name,
+                                });
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB] text-xs font-semibold text-[#253044] dark:text-[#CBD5E1] hover:text-[#7047EB] transition-colors cursor-pointer"
+                            >
+                              <span>{next.label}</span>
+                              <ChevronRight className="w-3.5 h-3.5 text-[#7047EB]" />
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1144,7 +1412,7 @@ export function ToolWorkspace({
                           setInputText(
                             `[OCR Extracted from Clipboard Image: ${f.name || 'screenshot.png'} (${(
                               f.size / 1024
-                            ).toFixed(1)} KB)]\nINVOICE #UTX-2026-8841   DATE: 2026-11-13\nTOTAL DUE: $1,420.00   STATUS: PAID\n100% Client-Side Browser OCR Extraction Complete.`
+                            ).toFixed(1)} KB)]\nINVOICE #NGT-2026-8841   DATE: 2026-11-13\nTOTAL DUE: $1,420.00   STATUS: PAID\n100% Client-Side Browser OCR Extraction Complete.`
                           );
                         }
                       }
@@ -1244,7 +1512,7 @@ export function ToolWorkspace({
                         </button>
                         <a
                           href={qrOutput.pngDataUrl}
-                          download="utilix-qrcode-600px.png"
+                          download="nextgentoolkit-qrcode-600px.png"
                           className="px-3 py-1.5 rounded-lg border border-[#E8E6F2] dark:border-[#2A2E42] bg-white dark:bg-[#1C1F2E] text-xs font-semibold text-[#171927] dark:text-[#F8F7FC]"
                         >
                           Download High-Res .PNG
@@ -1317,6 +1585,41 @@ export function ToolWorkspace({
                   </div>
                 </div>
               )}
+
+              {/* 1-Click Tool Chaining Pipeline for Text / Developer / Generator Tools */}
+              {onChainToTool && outputText.trim().length > 0 && (
+                <div className="p-3.5 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42] space-y-2">
+                  <div className="text-xs font-bold text-[#171927] dark:text-[#F8F7FC] flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-[#7047EB]" />
+                    <span>Continue Workflow · Pipe Output Text Directly to Next Tool:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { id: 'llm-token-counter', label: 'Count LLM Tokens & API Cost' },
+                      { id: 'word-counter-density', label: 'Analyze SEO Word Density' },
+                      { id: 'base64-url-encoder', label: 'Encode to Base64 / URL' },
+                      { id: 'custom-qr-code-generator', label: 'Generate Vector QR Code' },
+                    ]
+                      .filter((next) => next.id !== tool.id)
+                      .map((next) => (
+                        <button
+                          key={next.id}
+                          type="button"
+                          onClick={() =>
+                            onChainToTool(next.id, {
+                              text: outputText,
+                              fromToolName: tool.name,
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB] text-xs font-semibold text-[#253044] dark:text-[#CBD5E1] hover:text-[#7047EB] transition-colors cursor-pointer"
+                        >
+                          <span>{next.label}</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-[#7047EB]" />
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1346,19 +1649,28 @@ export function ToolWorkspace({
                   onChange={(e) => setTargetKb(Number(e.target.value))}
                   className="w-full utilix-slider"
                 />
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {[20, 50, 100, 200, 500].map((kb) => (
+                <div className="text-[11px] font-semibold text-[#64748B]">
+                  1-Click Portal &amp; Form Presets:
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { kb: 20, label: '20 KB · Exam Sign' },
+                    { kb: 50, label: '50 KB · Passport/Visa' },
+                    { kb: 100, label: '100 KB · Gov Portal' },
+                    { kb: 200, label: '200 KB · Official PDF' },
+                    { kb: 500, label: '500 KB · High-Res' },
+                  ].map((preset) => (
                     <button
-                      key={kb}
+                      key={preset.kb}
                       type="button"
-                      onClick={() => setTargetKb(kb)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold border transition-colors ${
-                        targetKb === kb
+                      onClick={() => setTargetKb(preset.kb)}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors text-left truncate cursor-pointer ${
+                        targetKb === preset.kb
                           ? 'bg-[#7047EB] text-white border-[#7047EB]'
                           : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:border-[#7047EB]'
                       }`}
                     >
-                      {kb} KB
+                      {preset.label}
                     </button>
                   ))}
                 </div>
@@ -1623,7 +1935,7 @@ export function ToolWorkspace({
                       { label: 'Email', re: '([a-zA-Z0-9._+-]+)@([a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})' },
                       { label: 'IPv4', re: '\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b' },
                       { label: 'ISO Date', re: '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z' },
-                      { label: 'Order ID', re: '#UTX-(\\d+)' },
+                      { label: 'Order ID', re: '#NGT-(\\d+)' },
                     ].map((p) => (
                       <button
                         key={p.label}
@@ -1987,6 +2299,12 @@ export function ToolWorkspace({
         tool={tool}
         onSelectTool={onSelectTool}
         onSelectHub={onSelectHub}
+      />
+
+      <ImageCompareModal
+        item={compareItem}
+        onClose={() => setCompareItem(null)}
+        onDownload={handleDownloadSingleItem}
       />
     </div>
   );

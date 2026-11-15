@@ -1279,7 +1279,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       'NextGenToolkit Case Converter & Slug Maker is a Unicode-aware string transformer that converts text into 12 naming conventions (UPPER, lower, Title Case, camelCase, snake_case, kebab-case) and generates stop-word filtered SEO URL slugs in bulk.',
     aeoQuestionHeading: 'How to Convert Article Titles into Clean SEO URL Slugs and Developer Variable Cases?',
     aeoSummaryParagraph:
-      'Type or paste one or multiple article titles into NextGenToolkit Case Converter & Slug Maker to simultaneously generate 12 case variations—including camelCase, PascalCase, snake_case, CONSTANT_CASE, and stop-word stripped SEO URL slugs.',
+      'Type or paste one or multiple article titles into NextGenToolkit Case Converter & Slug Maker to simultaneously generate 12 case variations, including camelCase, PascalCase, snake_case, CONSTANT_CASE, and stop-word stripped SEO URL slugs.',
     howToSteps: [
       { name: 'Enter Titles or Identifiers', text: 'Paste one or multiple lines of text or click Load Sample Data.' },
       { name: 'Toggle Stop-Word Stripping', text: 'Enable stop-word removal to produce concise, high-ranking SEO URL slugs.' },

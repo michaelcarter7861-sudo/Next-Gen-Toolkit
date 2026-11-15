@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { ToolDefinition, HubDefinition, getHubById, TOOLS_CATALOG, HUBS } from '../data/toolsCatalog';
+import { HOME_FAQS, HUB_FAQS, TOOL_EDITORIAL_LINKS } from '../data/seoSchemaData';
 
 interface SchemaHeadInjectorProps {
   activeTool: ToolDefinition | null;
   activeHub: HubDefinition | null;
+  isSitemapView?: boolean;
 }
 
 export function getSiteUrl(): string {
@@ -16,28 +18,74 @@ export function getSiteUrl(): string {
 export function buildToolJsonLd(tool: ToolDefinition): Record<string, unknown> {
   const hub = getHubById(tool.hubId);
   const baseUrl = getSiteUrl();
+  const canonicalUrl = `${baseUrl}${tool.canonicalPath}`;
+  const editorial = TOOL_EDITORIAL_LINKS[tool.id];
   return {
     '@context': 'https://schema.org',
     '@graph': [
       {
+        '@type': 'Organization',
+        '@id': `${baseUrl}/#organization`,
+        name: 'NextGenToolkit',
+        url: `${baseUrl}/`,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${baseUrl}/favicon.svg`,
+        },
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${baseUrl}/#website`,
+        name: 'NextGenToolkit',
+        url: `${baseUrl}/`,
+        publisher: { '@id': `${baseUrl}/#organization` },
+      },
+      {
+        '@type': 'WebPage',
+        '@id': `${canonicalUrl}#webpage`,
+        url: canonicalUrl,
+        name: `${tool.name} | NextGenToolkit`,
+        description: tool.aeoSummaryParagraph,
+        isPartOf: { '@id': `${baseUrl}/#website` },
+        breadcrumb: { '@id': `${canonicalUrl}#breadcrumb` },
+        ...(editorial
+          ? {
+              relatedLink: editorial.internalLinks.map(
+                (il) => `${baseUrl}${il.href.startsWith('/') ? il.href : `/${il.href}`}`
+              ),
+            }
+          : {}),
+      },
+      {
         '@type': 'SoftwareApplication',
+        '@id': `${canonicalUrl}#software`,
         name: `NextGenToolkit ${tool.name}`,
-        operatingSystem: 'Web browser (Chrome, Firefox, Safari, Edge, Mobile)',
+        operatingSystem: 'Any (Web Browser)',
         applicationCategory: 'UtilitiesApplication',
         isAccessibleForFree: true,
-        url: `${baseUrl}${tool.canonicalPath}`,
+        url: canonicalUrl,
         description: tool.entityLeadSentence,
-        keywords: [tool.primaryKeyword, ...tool.lsiKeywords, ...tool.clusteredQueries].join(', '),
         featureList: [
           tool.valuePropSubtitle,
           `Engine: ${tool.specTable.executionEngine}`,
           `Supported Formats: ${tool.specTable.supportedFormats}`,
           `Privacy Model: ${tool.specTable.privacyModel}`,
         ],
+        ...(editorial
+          ? {
+              isBasedOn: editorial.externalLinks.map((ext) => ({
+                '@type': 'CreativeWork',
+                name: ext.keywordAnchor,
+                url: ext.url,
+                publisher: { '@type': 'Organization', name: ext.sourceName },
+              })),
+            }
+          : {}),
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       },
       {
         '@type': 'HowTo',
+        '@id': `${canonicalUrl}#howto`,
         name: tool.aeoQuestionHeading,
         description: tool.aeoSummaryParagraph,
         step: tool.howToSteps.map((s, idx) => ({
@@ -49,6 +97,7 @@ export function buildToolJsonLd(tool: ToolDefinition): Record<string, unknown> {
       },
       {
         '@type': 'FAQPage',
+        '@id': `${canonicalUrl}#faq`,
         mainEntity: tool.faqs.map((f) => ({
           '@type': 'Question',
           name: f.q,
@@ -60,54 +109,120 @@ export function buildToolJsonLd(tool: ToolDefinition): Record<string, unknown> {
       },
       {
         '@type': 'BreadcrumbList',
+        '@id': `${canonicalUrl}#breadcrumb`,
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
           { '@type': 'ListItem', position: 2, name: hub?.name || 'Tools', item: `${baseUrl}${hub?.slug || '/'}` },
-          { '@type': 'ListItem', position: 3, name: tool.name, item: `${baseUrl}${tool.canonicalPath}` },
+          { '@type': 'ListItem', position: 3, name: tool.name, item: canonicalUrl },
         ],
       },
     ],
   };
 }
 
-export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjectorProps) {
+const formatBrandedSeoTitle = (subject: string): string => {
+  const suffix = ' | NextGenToolkit';
+  const clean = subject.replace(/\s+/g, ' ').trim();
+  if (clean.length + suffix.length <= 60) {
+    return `${clean}${suffix}`;
+  }
+  const maxSubject = 60 - suffix.length;
+  const trimmed = clean.slice(0, maxSubject).replace(/\s+\S*$/, '');
+  return `${trimmed}${suffix}`;
+};
+
+const formatSeoDescription = (rawDesc: string): string => {
+  const clean = rawDesc.replace(/\s+/g, ' ').trim();
+  if (clean.length <= 158) return clean;
+  return `${clean.slice(0, 155).replace(/\s+\S*$/, '')}…`;
+};
+
+export function SchemaHeadInjector({
+  activeTool,
+  activeHub,
+  isSitemapView = false,
+}: SchemaHeadInjectorProps) {
   useEffect(() => {
     const baseUrl = getSiteUrl();
-    let title = 'NextGenToolkit — 25+ Free Online PDF, Image, Text & Developer Tools';
+    const ogImageUrl = `${baseUrl}/og-cover.svg`;
+    let title = 'NextGenToolkit | 25+ Free PDF, Image & Developer Tools';
     let description =
-      'NextGenToolkit provides 25+ browser-based PDF, image, text, developer, and generator utilities. Compress files to exact KB, convert WebP, format JSON, and generate vector QR codes.';
-    let keywords =
-      'NextGenToolkit, nextgentoolkit, client-side web tools, compress PDF to 100KB, target KB image compressor, JSON formatter and validator, LLM token counter, EXIF metadata remover, vector QR code generator';
+      'Compress PDFs & images to exact KB, format broken JSON, count LLM tokens, and run 25+ free privacy-first tools in your browser with NextGenToolkit.';
     let canonical = `${baseUrl}/`;
     let schema: Record<string, unknown>;
 
-    if (activeTool) {
-      title = `${activeTool.primaryKeyword} | NextGenToolkit`;
-      description = activeTool.aeoSummaryParagraph;
-      keywords = [
-        activeTool.primaryKeyword,
-        ...activeTool.lsiKeywords,
-        ...activeTool.clusteredQueries,
-        'NextGenToolkit',
-      ].join(', ');
+    if (isSitemapView) {
+      title = formatBrandedSeoTitle('Complete SEO Sitemap & All 25 Tools Directory');
+      description = formatSeoDescription(
+        'Browse all 31 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.'
+      );
+      canonical = `${baseUrl}/sitemap/`;
+      schema = {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'Organization',
+            '@id': `${baseUrl}/#organization`,
+            name: 'NextGenToolkit',
+            url: `${baseUrl}/`,
+            logo: { '@type': 'ImageObject', url: `${baseUrl}/favicon.svg` },
+          },
+          {
+            '@type': 'CollectionPage',
+            '@id': `${canonical}#webpage`,
+            name: 'NextGenToolkit Complete SEO Sitemap & Directory',
+            description,
+            url: canonical,
+            isPartOf: { '@type': 'WebSite', '@id': `${baseUrl}/#website`, name: 'NextGenToolkit', url: `${baseUrl}/` },
+            mainEntity: {
+              '@type': 'ItemList',
+              numberOfItems: TOOLS_CATALOG.length,
+              itemListElement: TOOLS_CATALOG.map((t, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                name: t.name,
+                url: `${baseUrl}${t.canonicalPath}`,
+              })),
+            },
+          },
+          {
+            '@type': 'BreadcrumbList',
+            '@id': `${canonical}#breadcrumb`,
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
+              { '@type': 'ListItem', position: 2, name: 'SEO Sitemap & Directory', item: canonical },
+            ],
+          },
+        ],
+      };
+    } else if (activeTool) {
+      title = formatBrandedSeoTitle(`${activeTool.name} - Free Online Tool`);
+      description = formatSeoDescription(activeTool.aeoSummaryParagraph);
       canonical = `${baseUrl}${activeTool.canonicalPath}`;
       schema = buildToolJsonLd(activeTool);
     } else if (activeHub) {
       const hubTools = TOOLS_CATALOG.filter((t) => t.hubId === activeHub.id);
-      title = `${activeHub.name} — Free Online Browser Utilities | NextGenToolkit`;
-      description = activeHub.description;
-      keywords = [activeHub.name, ...activeHub.hubLsiKeywords, 'NextGenToolkit'].join(', ');
+      const hubFaqs = HUB_FAQS[activeHub.id] || [];
+      title = formatBrandedSeoTitle(`${activeHub.name} - Free Browser Utilities`);
+      description = formatSeoDescription(activeHub.description);
       canonical = `${baseUrl}${activeHub.slug}`;
       schema = {
         '@context': 'https://schema.org',
         '@graph': [
           {
+            '@type': 'Organization',
+            '@id': `${baseUrl}/#organization`,
+            name: 'NextGenToolkit',
+            url: `${baseUrl}/`,
+            logo: { '@type': 'ImageObject', url: `${baseUrl}/favicon.svg` },
+          },
+          {
             '@type': 'CollectionPage',
+            '@id': `${canonical}#webpage`,
             name: `${activeHub.name} | NextGenToolkit`,
             description,
             url: canonical,
-            keywords,
-            isPartOf: { '@type': 'WebSite', name: 'NextGenToolkit', url: `${baseUrl}/` },
+            isPartOf: { '@type': 'WebSite', '@id': `${baseUrl}/#website`, name: 'NextGenToolkit', url: `${baseUrl}/` },
             mainEntity: {
               '@type': 'ItemList',
               itemListElement: hubTools.map((t, i) => ({
@@ -119,7 +234,20 @@ export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjector
             },
           },
           {
+            '@type': 'FAQPage',
+            '@id': `${canonical}#faq`,
+            mainEntity: hubFaqs.map((f) => ({
+              '@type': 'Question',
+              name: f.q,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: f.a,
+              },
+            })),
+          },
+          {
             '@type': 'BreadcrumbList',
+            '@id': `${canonical}#breadcrumb`,
             itemListElement: [
               { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
               { '@type': 'ListItem', position: 2, name: activeHub.name, item: canonical },
@@ -132,11 +260,23 @@ export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjector
         '@context': 'https://schema.org',
         '@graph': [
           {
+            '@type': 'Organization',
+            '@id': `${baseUrl}/#organization`,
+            name: 'NextGenToolkit',
+            url: `${baseUrl}/`,
+            logo: {
+              '@type': 'ImageObject',
+              url: `${baseUrl}/favicon.svg`,
+            },
+          },
+          {
             '@type': 'WebSite',
+            '@id': `${baseUrl}/#website`,
             name: 'NextGenToolkit',
             alternateName: ['nextgentoolkit', 'NextGen Toolkit'],
             url: `${baseUrl}/`,
             description,
+            publisher: { '@id': `${baseUrl}/#organization` },
             potentialAction: {
               '@type': 'SearchAction',
               target: `${baseUrl}/?q={search_term_string}`,
@@ -144,7 +284,23 @@ export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjector
             },
           },
           {
+            '@type': 'WebApplication',
+            '@id': `${baseUrl}/#webapp`,
+            name: 'NextGenToolkit',
+            applicationCategory: 'UtilitiesApplication',
+            operatingSystem: 'All',
+            isAccessibleForFree: true,
+            url: `${baseUrl}/`,
+            description,
+            offers: {
+              '@type': 'Offer',
+              price: '0',
+              priceCurrency: 'USD',
+            },
+          },
+          {
             '@type': 'ItemList',
+            '@id': `${baseUrl}/#directory`,
             name: 'NextGenToolkit 25 Browser Utilities Directory',
             numberOfItems: TOOLS_CATALOG.length,
             itemListElement: HUBS.map((h, i) => ({
@@ -153,6 +309,25 @@ export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjector
               name: h.name,
               url: `${baseUrl}${h.slug}`,
             })),
+          },
+          {
+            '@type': 'FAQPage',
+            '@id': `${baseUrl}/#faq`,
+            mainEntity: HOME_FAQS.map((f) => ({
+              '@type': 'Question',
+              name: f.q,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: f.a,
+              },
+            })),
+          },
+          {
+            '@type': 'BreadcrumbList',
+            '@id': `${baseUrl}/#breadcrumb`,
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: `${baseUrl}/` },
+            ],
           },
         ],
       };
@@ -173,13 +348,14 @@ export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjector
     };
 
     setMeta('meta[name="description"]', 'content', description);
-    setMeta('meta[name="keywords"]', 'content', keywords);
     setMeta('meta[property="og:title"]', 'content', title);
     setMeta('meta[property="og:description"]', 'content', description);
     setMeta('meta[property="og:url"]', 'content', canonical);
     setMeta('meta[property="og:site_name"]', 'content', 'NextGenToolkit');
+    setMeta('meta[property="og:image"]', 'content', ogImageUrl);
     setMeta('meta[name="twitter:title"]', 'content', title);
     setMeta('meta[name="twitter:description"]', 'content', description);
+    setMeta('meta[name="twitter:image"]', 'content', ogImageUrl);
 
     let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!canonicalLink) {
@@ -191,7 +367,6 @@ export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjector
 
     let script = document.getElementById('nextgentoolkit-jsonld-schema') as HTMLScriptElement | null;
     if (!script) {
-      // Also check legacy id if present
       script = document.getElementById('utilix-jsonld-schema') as HTMLScriptElement | null;
     }
     if (!script) {
@@ -201,7 +376,7 @@ export function SchemaHeadInjector({ activeTool, activeHub }: SchemaHeadInjector
       document.head.appendChild(script);
     }
     script.textContent = JSON.stringify(schema);
-  }, [activeTool, activeHub]);
+  }, [activeTool, activeHub, isSitemapView]);
 
   return null;
 }

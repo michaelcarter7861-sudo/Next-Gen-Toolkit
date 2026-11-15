@@ -1,4 +1,4 @@
-# NextGenToolkit — Technical Documentation for Search and AI Assistants (llms-full.txt)
+# NextGenToolkit: Technical Documentation for Search and AI Assistants (llms-full.txt)
 
 ## 1. Platform Architecture & Privacy Model
 - **Entity Name:** NextGenToolkit (nextgentoolkit)

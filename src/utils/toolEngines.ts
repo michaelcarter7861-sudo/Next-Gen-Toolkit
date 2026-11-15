@@ -1209,3 +1209,139 @@ export function parsePageRanges(rangeStr: string, maxPages: number): number[] {
   }
   return Array.from(pages).sort((a, b) => a - b);
 }
+
+// ============================================================================
+// 15. Forensic Image Binary Segment Inspector (JPEG APPn/COM & PNG Chunks)
+// ============================================================================
+
+export interface ImageBinaryReport {
+  container: 'JPEG' | 'PNG' | 'WebP/Other';
+  hasExif: boolean;
+  hasXmp: boolean;
+  hasIccProfile: boolean;
+  hasPhotoshopOrComment: boolean;
+  detectedSegments: string[];
+  asciiPreviewTokens: string[];
+}
+
+export function inspectImageBinaryMetadata(bytes: Uint8Array): ImageBinaryReport {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const detectedSegments: string[] = [];
+  const asciiTokens = new Set<string>();
+  let hasExif = false;
+  let hasXmp = false;
+  let hasIccProfile = false;
+  let hasPhotoshopOrComment = false;
+
+  const decodeAsciiSlice = (start: number, len: number): string => {
+    const end = Math.min(bytes.length, start + len);
+    let out = '';
+    for (let i = start; i < end; i++) {
+      const c = bytes[i];
+      if (c >= 32 && c <= 126) out += String.fromCharCode(c);
+    }
+    return out;
+  };
+
+  // Check JPEG (0xFFD8)
+  if (bytes.length >= 4 && view.getUint16(0) === 0xffd8) {
+    let offset = 2;
+    while (offset + 4 <= bytes.length) {
+      const marker = view.getUint16(offset);
+      if (marker === 0xffda || marker === 0xffd9) break; // SOS / EOI
+      if ((marker & 0xff00) !== 0xff00) break;
+      const segLen = view.getUint16(offset + 2);
+      if (segLen < 2) break;
+      const payloadStart = offset + 4;
+      const payloadLen = Math.min(segLen - 2, bytes.length - payloadStart);
+      const headerStr = decodeAsciiSlice(payloadStart, Math.min(64, payloadLen));
+
+      if (marker === 0xffe1) {
+        if (headerStr.startsWith('Exif')) {
+          hasExif = true;
+          detectedSegments.push(`APP1 Exif (${segLen} bytes @ 0x${offset.toString(16)})`);
+          const printable = decodeAsciiSlice(payloadStart + 6, Math.min(512, Math.max(0, payloadLen - 6)));
+          const matches = printable.match(/[A-Za-z0-9][A-Za-z0-9 .:/_-]{3,36}/g);
+          matches?.slice(0, 6).forEach((m) => asciiTokens.add(m.trim()));
+        } else if (headerStr.includes('ns.adobe.com/xap') || headerStr.includes('xmpmeta')) {
+          hasXmp = true;
+          detectedSegments.push(`APP1 XMP (${segLen} bytes @ 0x${offset.toString(16)})`);
+        } else {
+          detectedSegments.push(`APP1 Metadata (${segLen} bytes @ 0x${offset.toString(16)})`);
+        }
+      } else if (marker === 0xffe2 && headerStr.includes('ICC_PROFILE')) {
+        hasIccProfile = true;
+        detectedSegments.push(`APP2 ICC_PROFILE (${segLen} bytes)`);
+      } else if (marker === 0xffed) {
+        hasPhotoshopOrComment = true;
+        detectedSegments.push(`APP13 Photoshop/IPTC (${segLen} bytes)`);
+      } else if (marker === 0xfffe) {
+        hasPhotoshopOrComment = true;
+        detectedSegments.push(`COM User Comment (${segLen} bytes)`);
+      }
+
+      offset += 2 + segLen;
+    }
+
+    return {
+      container: 'JPEG',
+      hasExif,
+      hasXmp,
+      hasIccProfile,
+      hasPhotoshopOrComment,
+      detectedSegments,
+      asciiPreviewTokens: Array.from(asciiTokens),
+    };
+  }
+
+  // Check PNG Signature (89 50 4E 47 0D 0A 1A 0A)
+  if (
+    bytes.length > 16 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47
+  ) {
+    let offset = 8;
+    while (offset + 12 <= bytes.length) {
+      const chunkLen = view.getUint32(offset);
+      const chunkType = decodeAsciiSlice(offset + 4, 4);
+      if (chunkType === 'eXIf') {
+        hasExif = true;
+        detectedSegments.push(`PNG eXIf chunk (${chunkLen} bytes)`);
+      } else if (chunkType === 'tEXt' || chunkType === 'iTXt' || chunkType === 'zTXt') {
+        hasXmp = true;
+        hasPhotoshopOrComment = true;
+        const preview = decodeAsciiSlice(offset + 8, Math.min(48, chunkLen));
+        if (preview) asciiTokens.add(preview);
+        detectedSegments.push(`PNG ${chunkType} chunk (${chunkLen} bytes)`);
+      } else if (chunkType === 'iCCP') {
+        hasIccProfile = true;
+        detectedSegments.push(`PNG iCCP color profile (${chunkLen} bytes)`);
+      }
+      if (chunkType === 'IEND') break;
+      offset += 12 + chunkLen;
+    }
+
+    return {
+      container: 'PNG',
+      hasExif,
+      hasXmp,
+      hasIccProfile,
+      hasPhotoshopOrComment,
+      detectedSegments,
+      asciiPreviewTokens: Array.from(asciiTokens),
+    };
+  }
+
+  return {
+    container: 'WebP/Other',
+    hasExif: false,
+    hasXmp: false,
+    hasIccProfile: false,
+    hasPhotoshopOrComment: false,
+    detectedSegments: [],
+    asciiPreviewTokens: [],
+  };
+}
+

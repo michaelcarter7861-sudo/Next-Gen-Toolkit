@@ -1,4 +1,5 @@
 https://nextgentoolkit.pages.dev/
+https://nextgentoolkit.pages.dev/sitemap/
 https://nextgentoolkit.pages.dev/text-tools/
 https://nextgentoolkit.pages.dev/image-tools/
 https://nextgentoolkit.pages.dev/pdf-tools/

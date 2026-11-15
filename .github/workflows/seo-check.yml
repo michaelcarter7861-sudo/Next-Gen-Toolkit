@@ -12,9 +12,8 @@ jobs:
   validate-and-build:
     runs-on: ubuntu-latest
     env:
-      GITHUB_PAGES: 'true'
-      SITE_URL: https://michaelcarter7861-sudo.github.io/UTILIX
-      VITE_SITE_URL: https://michaelcarter7861-sudo.github.io/UTILIX
+      SITE_URL: https://nextgentoolkit.pages.dev
+      VITE_SITE_URL: https://nextgentoolkit.pages.dev
       VITE_STATIC_DEPLOYMENT: 'true'
     steps:
       - name: Checkout repository

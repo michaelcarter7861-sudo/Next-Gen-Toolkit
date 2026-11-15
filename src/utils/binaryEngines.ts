@@ -9,7 +9,7 @@
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
 import JSZip from 'jszip';
 import QRCode from 'qrcode';
-import { parsePageRanges } from './toolEngines';
+import { parsePageRanges, inspectImageBinaryMetadata } from './toolEngines';
 
 export interface ProcessedFileItem {
   id: string;
@@ -19,6 +19,7 @@ export interface ProcessedFileItem {
   mimeType: string;
   blob: Blob;
   previewUrl?: string;
+  sourcePreviewUrl?: string;
   metaSummary?: Record<string, string>;
 }
 
@@ -53,7 +54,7 @@ export async function createSamplePdfFile(filename = 'nextgentoolkit-sample-docu
       color: rgb(0.44, 0.28, 0.92),
     });
 
-    page.drawText(`NEXTGENTOOLKIT CLIENT-SIDE BENCHMARK — PAGE ${i} OF ${pageCount}`, {
+    page.drawText(`NEXTGENTOOLKIT CLIENT-SIDE BENCHMARK | PAGE ${i} OF ${pageCount}`, {
       x: 56,
       y: height - 72,
       size: 13,
@@ -252,7 +253,7 @@ export async function compressPdfToTargetKb(
 
   outDoc.setTitle('');
   outDoc.setAuthor('');
-  outDoc.setProducer('Utilix Zero-Upload PDF Optimizer');
+  outDoc.setProducer('NextGenToolkit Client-Side PDF Engine');
   outDoc.setCreator('');
 
   const compressedBytes = await outDoc.save({
@@ -435,7 +436,7 @@ export async function renderPdfSummaryPreviewImages(
     ctx.fillRect(32 * scale, 32 * scale, canvas.width - 64 * scale, 48 * scale);
     ctx.fillStyle = '#FFFFFF';
     ctx.font = `bold ${Math.round(14 * scale)}px "Plus Jakarta Sans", sans-serif`;
-    ctx.fillText(`${file.name} — Page ${i + 1} of ${doc.getPageCount()} (${dpi} DPI)`, 48 * scale, 62 * scale);
+    ctx.fillText(`${file.name} | Page ${i + 1} of ${doc.getPageCount()} (${dpi} DPI)`, 48 * scale, 62 * scale);
 
     ctx.fillStyle = '#171927';
     ctx.font = `${Math.round(12 * scale)}px "Plus Jakarta Sans", sans-serif`;
@@ -517,6 +518,7 @@ export async function transcodeImageClient(
     mimeType: targetMime,
     blob,
     previewUrl: URL.createObjectURL(blob),
+    sourcePreviewUrl: dataUrl,
   };
 }
 
@@ -580,6 +582,7 @@ export async function compressImageToExactKbClient(
     mimeType: 'image/jpeg',
     blob: bestBlob,
     previewUrl: URL.createObjectURL(bestBlob),
+    sourcePreviewUrl: dataUrl,
     iterations,
     achievedQuality: Math.round(bestQuality * 100),
     dimensions: `${canvas.width} × ${canvas.height} px`,
@@ -591,40 +594,34 @@ export async function inspectAndScrubExifClient(file: File): Promise<{
   cleanItem: ProcessedFileItem;
 }> {
   const buf = await file.arrayBuffer();
-  const view = new DataView(buf);
-  const forensicTags: Record<string, string> = {
-    'File Name': file.name,
-    'MIME Format': file.type || 'image/jpeg',
-    'Original Byte Size': `${(file.size / 1024).toFixed(2)} KB`,
-  };
+  const report = inspectImageBinaryMetadata(new Uint8Array(buf));
 
-  // Check JPEG SOI 0xFFD8 and scan for APP1 (0xFFE1) EXIF header
-  if (view.byteLength > 12 && view.getUint16(0) === 0xffd8) {
-    let offset = 2;
-    let foundExif = false;
-    while (offset + 4 < view.byteLength) {
-      const marker = view.getUint16(offset);
-      const len = view.getUint16(offset + 2);
-      if (marker === 0xffe1) {
-        foundExif = true;
-        forensicTags['APP1 / EXIF Segment'] = `Detected at byte offset 0x${offset.toString(16)} (${len} bytes)`;
-        break;
-      }
-      if ((marker & 0xff00) !== 0xff00) break;
-      offset += 2 + len;
-    }
-    if (!foundExif) {
-      forensicTags['APP1 / EXIF Segment'] = 'Embedded JFIF / Color Profile Header Present';
-    }
-  }
-
-  forensicTags['Camera / Device Signature'] = 'Sony ILCE-7RM5 / Apple iPhone 16 Pro (Simulated or Embedded)';
-  forensicTags['GPS Latitude / Longitude'] = '37° 46\' 29.6" N, 122° 25\' 09.8" W (Stripped on Export)';
-  forensicTags['Software & XMP Packet'] = 'Adobe Photoshop Lightroom Classic 14.0 (Stripped on Export)';
-
-  // Strip 100% of EXIF/APP1/XMP segments by re-encoding raw pixel matrix onto clean Canvas
   const cleanItem = await transcodeImageClient(file, 'image/jpeg', 0.92);
   cleanItem.name = `${file.name.replace(/\.[^.]+$/, '')}-clean-no-exif.jpg`;
+  const cleanBuf = await cleanItem.blob.arrayBuffer();
+  const cleanReport = inspectImageBinaryMetadata(new Uint8Array(cleanBuf));
+
+  const forensicTags: Record<string, string> = {
+    'File Name': file.name,
+    'Container Format': `${report.container} (${file.type || 'image/jpeg'})`,
+    'Original Byte Size': `${(file.size / 1024).toFixed(2)} KB`,
+    'EXIF / APP1 Tags': report.hasExif ? 'Detected & Stripped in Output' : 'None detected in source bytes',
+    'XMP / Text Chunks': report.hasXmp ? 'Detected & Stripped in Output' : 'None detected in source bytes',
+    'ICC Color Profile': report.hasIccProfile ? 'Embedded ICC normalized to sRGB' : 'Standard sRGB pixel matrix',
+    'Detected Segments':
+      report.detectedSegments.length > 0
+        ? report.detectedSegments.slice(0, 3).join(' | ')
+        : 'Raw image frames only (No tracking segments)',
+    'Verified Output Check':
+      cleanReport.detectedSegments.length === 0
+        ? '0 EXIF/XMP/COM segments remaining after Canvas rebuild'
+        : `${cleanReport.detectedSegments.length} standard JFIF segment(s)`,
+  };
+
+  if (report.asciiPreviewTokens.length > 0) {
+    forensicTags['Extracted Header Strings'] = report.asciiPreviewTokens.join(' · ');
+  }
+
   return { forensicTags, cleanItem };
 }
 
