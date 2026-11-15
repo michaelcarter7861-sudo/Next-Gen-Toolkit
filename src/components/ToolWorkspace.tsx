@@ -218,8 +218,9 @@ export function ToolWorkspace({
     setUploadedFiles([]);
     setProcessedItems([]);
 
-    const savedKey = `utilix_session_${tool.id}`;
-    const saved = sessionRecovery ? localStorage.getItem(savedKey) : null;
+    const savedKey = `ngt_session_${tool.id}`;
+    const legacySaved = sessionRecovery ? localStorage.getItem(`utilix_session_${tool.id}`) : null;
+    const saved = sessionRecovery ? (localStorage.getItem(savedKey) ?? legacySaved) : null;
     if (saved) {
       setInputText(saved);
     } else {
@@ -230,7 +231,7 @@ export function ToolWorkspace({
   // Save input to localStorage when sessionRecovery is enabled
   useEffect(() => {
     if (sessionRecovery && inputText && !isBinaryFileTool) {
-      localStorage.setItem(`utilix_session_${tool.id}`, inputText);
+      localStorage.setItem(`ngt_session_${tool.id}`, inputText);
     }
   }, [inputText, tool.id, sessionRecovery, isBinaryFileTool]);
 
