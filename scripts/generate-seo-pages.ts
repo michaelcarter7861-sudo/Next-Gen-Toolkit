@@ -112,7 +112,7 @@ function createPage({
   );
   html = html.replace(
     '<div id="root"></div>',
-    `<div id="root"><main style="max-width:980px;margin:0 auto;padding:32px 20px;font:16px/1.65 system-ui,sans-serif;color:#171927"><div style="font-weight:800;letter-spacing:.04em">NextGenToolkit</div>${content}<p><a href="${escapeHtml(publicPath('/'))}">NextGenToolkit Home</a></p></main></div>`
+    `<div id="root"><main style="max-width:980px;margin:0 auto;padding:32px 20px;font:16px/1.65 system-ui,sans-serif;color:#171927"><div style="font-weight:800;letter-spacing:.04em">NextGenToolkit</div>${content}<p><a href="${escapeHtml(publicPath('/'))}">NextGenToolkit Home</a> · <a href="${escapeHtml(publicPath('/sitemap/'))}">All Tools Directory</a></p></main></div>`
   );
   return html;
 }
