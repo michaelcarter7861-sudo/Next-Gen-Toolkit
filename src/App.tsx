@@ -1765,7 +1765,7 @@ export default function App() {
               <span>NextGenToolkit</span>
             </div>
             <p className="text-xs text-[#94A3B8] leading-relaxed">
-              Everything you need. Nothing you don&apos;t. Free privacy-first browser utilities for PDF, image, text, and developer tasks.
+              Everything you need. Nothing you don&apos;t. Free browser-based utilities for PDF, image, text, and developer tasks. Processing stays local for many core tools; remote features may send required data to providers.
             </p>
             <div className="pt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#94A3B8]">
               <a
