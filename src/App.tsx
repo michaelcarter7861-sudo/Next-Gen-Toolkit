@@ -966,7 +966,7 @@ export default function App() {
                   </div>
                   <div>
                     <h2 className="text-lg sm:text-xl font-extrabold text-[#171927] dark:text-white">
-                      Privacy-First Tools
+                      Local Processing Where Supported
                     </h2>
                     <p className="text-xs sm:text-sm text-[#253044] dark:text-[#CBD5E1] mt-0.5">
                       Many core tools process files locally in your browser. AI-powered and other remote features may send the data needed for that operation to the relevant provider.
@@ -1049,7 +1049,7 @@ export default function App() {
                         Confidential PDFs, IDs &amp; API Keys
                       </td>
                       <td className="py-3.5 px-4 text-[#64748B]">
-                        Files uploaded to remote cloud queues &amp; stored on third-party servers
+                        Some online tools upload inputs to remote cloud services
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-emerald-700 dark:text-emerald-400">
                         Core PDF operations process locally inside browser RAM via{' '}
@@ -1239,7 +1239,7 @@ export default function App() {
                       problem:
                         'Uploading signed NDAs, bank statements, or medical records to third-party cloud PDF servers violates enterprise privacy policies.',
                       solution:
-                        'Merge, split, sanitize XMP metadata, and compress multi-page PDFs 100% inside browser RAM using WebAssembly, so zero bytes ever leave your computer.',
+                        'Core PDF merging, splitting, metadata sanitizing, and compression are performed in the browser using WebAssembly; review the individual tool notes for exceptions.',
                       actions: [
                         { label: 'Merge Confidential PDFs', id: 'merge-pdf', path: '/pdf-tools/merge-pdf/' },
                         { label: 'Compress PDF Locally', id: 'compress-pdf', path: '/pdf-tools/compress-pdf/' },
