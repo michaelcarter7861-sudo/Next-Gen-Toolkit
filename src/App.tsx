@@ -488,7 +488,7 @@ export default function App() {
                     <span aria-hidden="true">·</span>
                     <span>25 Free Browser Utilities</span>
                     <span aria-hidden="true">·</span>
-                    <span>0 Bytes Uploaded</span>
+                    <span>Local Processing on Core Tools</span>
                   </div>
 
                   <h1
@@ -502,7 +502,7 @@ export default function App() {
                   </h1>
 
                   <p className="text-base sm:text-lg text-[#253044] dark:text-[#CBD5E1] max-w-xl mx-auto lg:mx-0">
-                    Simple, powerful browser tools for everyday PDF, image, text, and developer tasks. Fast, private, and free, with zero file uploads required.
+                    Simple, powerful browser tools for everyday PDF, image, text, and developer tasks. Many core tools process locally; AI and remote-service features may send the data needed for an operation to their providers.
                   </p>
 
                   {/* Search Bar */}
@@ -957,7 +957,7 @@ export default function App() {
               )}
             </section>
 
-            {/* PRIVACY-FIRST TOOLS BANNER */}
+            {/* TOOL PROCESSING & PRIVACY DISCLOSURE */}
             <section className="max-w-[1200px] mx-auto px-4 sm:px-6">
               <div className="rounded-3xl bg-gradient-to-r from-[#EDE7FF] via-[#F4F1FF] to-[#E1F0FF] dark:from-[#1E1B36] dark:via-[#1C1F2E] dark:to-[#182238] border border-[#DDD6FE] dark:border-[#37306B] p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                 <div className="flex items-start sm:items-center gap-4">
@@ -966,10 +966,10 @@ export default function App() {
                   </div>
                   <div>
                     <h2 className="text-lg sm:text-xl font-extrabold text-[#171927] dark:text-white">
-                      Privacy-First Tools
+                      Local Processing on Core Tools
                     </h2>
                     <p className="text-xs sm:text-sm text-[#253044] dark:text-[#CBD5E1] mt-0.5">
-                      Every utility runs directly in your browser, so your confidential files and data stay on your device.
+                      Many core file and text utilities process inputs in your browser. AI-powered and other remote-service features may send required data to the relevant provider; check each tool's processing notes before using sensitive information.
                     </p>
                   </div>
                 </div>
@@ -977,15 +977,15 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row lg:flex-col gap-2 text-xs font-semibold text-[#171927] dark:text-[#E2E8F0] shrink-0">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
-                    <span>No unnecessary uploads, files stay on your device</span>
+                    <span>Core file tools process supported inputs locally</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
-                    <span>Faster and more secure in-browser processing</span>
+                    <span>Remote features are identified in their processing notes</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
-                    <span>Works across all modern desktop and mobile devices</span>
+                    <span>Check each tool's browser and device requirements</span>
                   </div>
                 </div>
               </div>
@@ -1003,7 +1003,7 @@ export default function App() {
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-[#7047EB] tabular-nums">
-                  100% Local RAM Execution · 0 Bytes Uploaded
+                  Local Processing for Supported Core Tools
                 </span>
               </div>
 
@@ -1061,7 +1061,7 @@ export default function App() {
                         >
                           WebAssembly
                         </a>{' '}
-                        &amp; Canvas (0 bytes uploaded)
+                        &amp; Canvas for supported local workflows
                       </td>
                     </tr>
                     <tr>
@@ -1765,7 +1765,7 @@ export default function App() {
               <span>NextGenToolkit</span>
             </div>
             <p className="text-xs text-[#94A3B8] leading-relaxed">
-              Everything you need. Nothing you don&apos;t. Free privacy-first browser utilities for PDF, image, text, and developer tasks.
+              Free browser-based utilities for PDF, image, text, and developer tasks. Many core tools process locally; AI and remote-service features may send the data needed for the requested operation to their providers.
             </p>
             <div className="pt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#94A3B8]">
               <a
