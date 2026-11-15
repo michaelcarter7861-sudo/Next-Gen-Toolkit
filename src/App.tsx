@@ -1049,10 +1049,10 @@ export default function App() {
                         Confidential PDFs, IDs &amp; API Keys
                       </td>
                       <td className="py-3.5 px-4 text-[#64748B]">
-                        Files uploaded to remote cloud queues &amp; stored on third-party servers
+                        Some online tools upload inputs to remote cloud services
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-emerald-700 dark:text-emerald-400">
-                        Processed locally inside browser RAM via{' '}
+                        Core PDF operations process locally inside browser RAM via{' '}
                         <a
                           href="https://webassembly.org/"
                           target="_blank"
@@ -1237,9 +1237,9 @@ export default function App() {
                     {
                       title: 'Confidential Contracts, Tax & Legal PDF Workflows',
                       problem:
-                        'Uploading signed NDAs, bank statements, or medical records to third-party cloud PDF servers violates enterprise privacy policies.',
+                        'Sending sensitive documents to remote services may violate enterprise privacy policies; use local-only tools when handling confidential files.',
                       solution:
-                        'Merge, split, sanitize XMP metadata, and compress multi-page PDFs 100% inside browser RAM using WebAssembly, so zero bytes ever leave your computer.',
+                        'Core PDF merging, splitting, metadata sanitizing, and compression are performed in the browser using WebAssembly; review the individual tool notes for exceptions.',
                       actions: [
                         { label: 'Merge Confidential PDFs', id: 'merge-pdf', path: '/pdf-tools/merge-pdf/' },
                         { label: 'Compress PDF Locally', id: 'compress-pdf', path: '/pdf-tools/compress-pdf/' },
@@ -1458,7 +1458,7 @@ export default function App() {
                         anchor: 'MDN HTML5 Canvas & ArrayBuffer APIs',
                         url: 'https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API',
                         org: 'MDN Web Docs',
-                        desc: 'Powers zero-upload image compression, WebP transcoding, and DPI rasterization.',
+                        desc: 'Powers browser-based image compression, WebP transcoding, and DPI rasterization for supported local operations.',
                       },
                       {
                         anchor: 'Google web.dev Core Web Vitals Guide',
@@ -1470,7 +1470,7 @@ export default function App() {
                         anchor: 'OWASP File Upload & Privacy Cheat Sheet',
                         url: 'https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html',
                         org: 'OWASP.org',
-                        desc: 'Guides our zero-retention browser architecture and EXIF/XMP metadata scrubbing.',
+                        desc: 'Guides browser-based EXIF/XMP metadata scrubbing for supported local operations.',
                       },
                     ].map((ref) => (
                       <div
@@ -1550,7 +1550,7 @@ export default function App() {
                 <div className="space-y-1.5">
                   <div className="font-bold text-[#171927] dark:text-white flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
-                    <span>Zero-Retention Privacy Guarantee</span>
+                    <span>Tool-Specific Processing Notes</span>
                   </div>
                   <p className="text-[#64748B] dark:text-[#94A3B8]">
                     Every file you drop into NextGenToolkit is read into local browser memory via the{' '}
@@ -1681,7 +1681,7 @@ export default function App() {
                     Editorial Methodology, Unit-Tested Engines &amp; Privacy Boundary
                   </div>
                   <p className="text-[#253044] dark:text-[#CBD5E1] leading-relaxed">
-                    Every core parser, regex evaluator, token estimator, cron scheduler, binary EXIF scanner, and PDF byte-range engine is verified by automated deterministic unit tests and benchmarked against ISO 32000-1, IETF RFC 8259/7519, and W3C Web Cryptography standards. All 25 utilities execute 100% inside local browser RAM (verifiable in your browser DevTools Network tab); only the optional AI Search Assistant sends user-submitted prompts to the AI endpoint.
+                    Core browser-only parsers, converters, token estimators, and PDF/image engines process their inputs locally. Some optional AI or remote-service features transmit the data needed for that feature to its provider. Processing notes are shown with individual utilities.
                   </p>
                 </div>
                 <div className="text-left md:text-right shrink-0 space-y-0.5 tabular-nums">
