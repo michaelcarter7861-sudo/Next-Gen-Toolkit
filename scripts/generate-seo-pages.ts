@@ -74,7 +74,7 @@ function createPage({
   const canonical = absoluteUrl(route);
   const safeTitle = escapeHtml(shortDescription(title, 60));
   const safeDescription = escapeHtml(shortDescription(description, 158));
-  const ogImage = `${SITE_URL}/og-cover.svg`;
+  const ogImage = `${SITE_URL}/og-cover.png`;
   const jsonLd = JSON.stringify(schema).replace(/</g, '\\u003c');
 
   let html = template;
@@ -117,7 +117,7 @@ function createPage({
 }
 
 const homeContent = `<h1>NextGenToolkit | Free Online PDF, Image, Text and Developer Tools</h1>
-<p>NextGenToolkit brings together 25 privacy-first browser utilities for working with PDF documents, images, text, developer data, and everyday generators. Every utility runs directly inside your browser memory via <a href="https://webassembly.org/" target="_blank" rel="noopener noreferrer">WebAssembly</a> and the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer" target="_blank" rel="noopener noreferrer">MDN JavaScript ArrayBuffer API</a> with zero file uploads to external servers.</p>
+<p>NextGenToolkit brings together 25 browser-based utilities for working with PDF documents, images, text, developer data, and everyday generators. Processing depends on the individual utility: many core tools handle files or text locally in your browser, while AI-powered and other remote-service features may send the data needed for the requested operation to the relevant provider. Check each tool's processing notes before submitting sensitive information.</p>
 <p>Popular workflows include <a href="${escapeHtml(publicPath('/image-tools/compress-image-to-kb/'))}">compressing images to exact 20KB or 50KB limits</a>, <a href="${escapeHtml(publicPath('/pdf-tools/merge-pdf/'))}">merging confidential PDF files locally</a>, <a href="${escapeHtml(publicPath('/dev-tools/json-formatter-validator/'))}">formatting and auto-fixing broken JSON syntax</a> per the <a href="https://datatracker.ietf.org/doc/html/rfc8259" target="_blank" rel="noopener noreferrer">IETF RFC 8259 JSON standard</a>, and creating permanent <a href="https://www.iso.org/standard/62021.html" target="_blank" rel="noopener noreferrer">ISO/IEC 18004 QR Code</a> vectors in our <a href="${escapeHtml(publicPath('/generators/custom-qr-code-generator/'))}">Custom SVG/PNG QR Code Studio</a>.</p>
 ${HUBS.map((hub) => {
   const tools = TOOLS_CATALOG.filter((tool) => tool.hubId === hub.id);
@@ -153,7 +153,7 @@ const homeSchema = {
       isAccessibleForFree: true,
       url: absoluteUrl('/'),
       description:
-        'Compress PDFs & images to exact KB, format broken JSON, count LLM tokens, and run 25+ free privacy-first tools in your browser with NextGenToolkit.',
+        'Compress PDFs & images to exact KB, format broken JSON, count LLM tokens, and run 25+ free browser-based tools with NextGenToolkit.',
       offers: {
         '@type': 'Offer',
         price: '0',
@@ -197,7 +197,7 @@ await writeFile(
     route: '/',
     title: 'NextGenToolkit | 25+ Free PDF, Image & Developer Tools',
     description:
-      'Compress PDFs & images to exact KB, format broken JSON, count LLM tokens, and run 25+ free privacy-first tools in your browser with NextGenToolkit.',
+      'Compress PDFs & images to exact KB, format broken JSON, count LLM tokens, and run 25+ free browser-based tools with NextGenToolkit.',
     content: homeContent,
     schema: homeSchema,
   }),
