@@ -958,10 +958,10 @@ export function ToolWorkspace({
               <strong>Processing model for {tool.name}:</strong> {tool.specTable.privacyModel}. For tools marked as local, the input is processed in your browser rather than sent to our processing servers. You can inspect network activity in Browser DevTools; distinguish analytics requests from transfers of tool inputs.
             </div>
             <div className="text-[11px] opacity-85">
-              This describes file and text processing, not all website network activity. Google analytics may receive page and interaction events, and the optional AI Grounded Inspect action sends the text you submit to the configured AI provider. Do not submit passwords, access tokens, or private keys.
+              This describes file and text processing, not all website network activity. The embedded Google Tag Manager container may load analytics or other tags; the actual tags and events depend on its external account configuration. AI or remote-service features, where enabled, may send submitted text to the relevant provider. The current static Cloudflare deployment disables server-backed AI features. Do not submit passwords, access tokens, or private keys.
             </div>
           </div>
-          <span className="font-mono font-bold whitespace-nowrap shrink-0">Local Input Processing</span>
+          <span className="font-mono font-bold whitespace-nowrap shrink-0">Tool-Specific Processing</span>
         </div>
       )}
 
