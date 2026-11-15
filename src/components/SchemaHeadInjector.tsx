@@ -367,9 +367,6 @@ export function SchemaHeadInjector({
 
     let script = document.getElementById('nextgentoolkit-jsonld-schema') as HTMLScriptElement | null;
     if (!script) {
-      script = document.getElementById('utilix-jsonld-schema') as HTMLScriptElement | null;
-    }
-    if (!script) {
       script = document.createElement('script');
       script.id = 'nextgentoolkit-jsonld-schema';
       script.type = 'application/ld+json';
