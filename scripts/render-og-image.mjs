@@ -1,18 +1,25 @@
-import sharp from 'sharp';
-import { readFile, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 
-const sourcePath = new URL('../public/og-cover.svg', import.meta.url);
-const outputPath = new URL('../public/og-cover.png', import.meta.url);
+execFileSync('npx', [
+  '--yes',
+  'sharp-cli@6.1.0',
+  '--input',
+  'public/og-cover.svg',
+  '--output',
+  'public/og-cover.png',
+  'resize',
+  '1200',
+  '630',
+], { stdio: 'inherit' });
 
-const svg = await readFile(sourcePath);
-const { data, info } = await sharp(svg, { density: 144 })
-  .resize(1200, 630, { fit: 'fill' })
-  .png({ compressionLevel: 9, adaptiveFiltering: true })
-  .toBuffer({ resolveWithObject: true });
+const png = await readFile('public/og-cover.png');
+const signature = png.subarray(0, 8).toString('hex');
+const width = png.readUInt32BE(16);
+const height = png.readUInt32BE(20);
 
-if (info.width !== 1200 || info.height !== 630) {
-  throw new Error(`Social preview must be 1200x630; received ${info.width}x${info.height}`);
+if (signature !== '89504e470d0a1a0a' || width !== 1200 || height !== 630) {
+  throw new Error(`Invalid social preview PNG: signature=${signature}, dimensions=${width}x${height}`);
 }
 
-await writeFile(outputPath, data);
-console.log(`Generated public/og-cover.png (${info.width}x${info.height}, ${data.length} bytes)`);
+console.log(`Generated validated social preview PNG: ${width}x${height} (${png.length} bytes)`);
