@@ -955,13 +955,13 @@ export function ToolWorkspace({
         <div className="mb-6 p-4 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div>
-              <strong>Processing model for {tool.name}:</strong> {tool.specTable.privacyModel}. You can independently verify <strong>0 bytes uploaded</strong> by opening Browser DevTools (Network tab) or running this utility offline after the page loads.
+              <strong>Processing model for {tool.name}:</strong> {tool.specTable.privacyModel}. For tools marked as local, the input is processed in your browser rather than sent to our processing servers. You can inspect network activity in Browser DevTools; distinguish analytics requests from transfers of tool inputs.
             </div>
             <div className="text-[11px] opacity-85">
-              This guarantee covers the core utility workspace. The optional AI Grounded Inspect action sends only the text you submit to the configured AI provider; do not submit passwords, access tokens, or private keys.
+              This describes file and text processing, not all website network activity. Google analytics may receive page and interaction events, and the optional AI Grounded Inspect action sends the text you submit to the configured AI provider. Do not submit passwords, access tokens, or private keys.
             </div>
           </div>
-          <span className="font-mono font-bold whitespace-nowrap shrink-0">0 B Network Upload</span>
+          <span className="font-mono font-bold whitespace-nowrap shrink-0">Local Input Processing</span>
         </div>
       )}
 
@@ -1233,7 +1233,7 @@ export function ToolWorkspace({
                             Processed locally in <strong>{executionDurationMs ?? 24} ms</strong>
                           </span>
                           <span>·</span>
-                          <span>0 Bytes Uploaded</span>
+                          <span>No File Upload to Processing Server</span>
                           {totalSavedPct > 0 && (
                             <>
                               <span>·</span>
