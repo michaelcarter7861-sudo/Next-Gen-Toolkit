@@ -1458,7 +1458,7 @@ export default function App() {
                         anchor: 'MDN HTML5 Canvas & ArrayBuffer APIs',
                         url: 'https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API',
                         org: 'MDN Web Docs',
-                        desc: 'Powers zero-upload image compression, WebP transcoding, and DPI rasterization.',
+                        desc: 'Powers browser-based image compression, WebP transcoding, and DPI rasterization for supported local operations.',
                       },
                       {
                         anchor: 'Google web.dev Core Web Vitals Guide',
