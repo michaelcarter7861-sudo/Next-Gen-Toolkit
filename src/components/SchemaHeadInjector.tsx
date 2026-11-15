@@ -154,7 +154,7 @@ export function SchemaHeadInjector({
     if (isSitemapView) {
       title = formatBrandedSeoTitle('Complete SEO Sitemap & All 25 Tools Directory');
       description = formatSeoDescription(
-        'Browse all 31 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.'
+        'Browse all 32 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.'
       );
       canonical = `${baseUrl}/sitemap/`;
       schema = {
