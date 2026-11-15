@@ -59,7 +59,7 @@ test('Live Regex evaluator finds capture groups and explains AST tokens', () => 
 test('JWT decoder parses header, payload, and expiration status accurately', () => {
   // Header: {"alg":"HS256","typ":"JWT"}, Payload: {"sub":"1234567890","name":"NextGenToolkit Dev","iat":1516239022,"exp":1999999999}
   const sampleJwt =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlV0aWxpeCBEZXYiLCJpYXQiOjE1MTYyMzkwMjIsImV4cCI6MTk5OTk5OTk5OX0.signature';
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Ik5leHRHZW5Ub29sa2l0IERldiIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxOTk5OTk5OTk5fQ.signature';
   const decoded = decodeJwtToken(sampleJwt, 1700000000000);
   assert.equal(decoded.valid, true);
   assert.equal(decoded.isExpired, false);
