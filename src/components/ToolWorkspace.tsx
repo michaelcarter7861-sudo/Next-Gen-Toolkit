@@ -47,23 +47,7 @@ import {
   convertEpochTimestamp,
   parseCronExpression,
 } from '../utils/toolEngines';
-import {
-  ProcessedFileItem,
-  createSamplePdfFile,
-  createSampleImageFile,
-  inspectAndCleanPdfMetadata,
-  compressPdfToTargetKb,
-  mergePdfFilesClient,
-  splitPdfByRangesClient,
-  convertImagesToPdfClient,
-  renderPdfSummaryPreviewImages,
-  transcodeImageClient,
-  compressImageToExactKbClient,
-  inspectAndScrubExifClient,
-  generateSocialMediaBulkPack,
-  generateCustomQrCode,
-  createBatchZipBlob,
-} from '../utils/binaryEngines';
+import type { ProcessedFileItem } from '../utils/binaryEngines';
 import { NineZoneSeoContent } from './NineZoneSeoContent';
 import { BreadcrumbsNav } from './BreadcrumbsNav';
 import { ImageCompareModal } from './ImageCompareModal';
@@ -409,13 +393,13 @@ export function ToolWorkspace({
           } else if (qrMode === 'vcard' && !payload.startsWith('BEGIN:VCARD')) {
             payload = `BEGIN:VCARD\nVERSION:3.0\nFN:${payload}\nURL:https://nextgentoolkit.pages.dev\nEND:VCARD`;
           }
-          generateCustomQrCode({
+          import('../utils/binaryEngines').then(({ generateCustomQrCode }) => generateCustomQrCode({
             payload,
             errorCorrectionLevel: qrEcc,
             darkColor: qrDarkColor,
             lightColor: qrLightColor,
             margin: 2,
-          }).then((res) => {
+          })).then((res) => {
             setQrOutput(res);
             setOutputText(res.svgString);
           });
@@ -538,11 +522,13 @@ export function ToolWorkspace({
       setForensicTable(null);
 
       try {
+        // Keep the heavy PDF/image/ZIP engines out of the initial page bundle.
+        const binary = await import('../utils/binaryEngines');
         const results: ProcessedFileItem[] = [];
 
         if (tool.id === 'compress-pdf') {
           for (const f of filesToProcess) {
-            const res = await compressPdfToTargetKb(f, targetKb);
+            const res = await binary.compressPdfToTargetKb(f, targetKb);
             results.push({
               id: `${f.name}-${Date.now()}`,
               name: `${f.name.replace(/\.pdf$/i, '')}-compressed-${targetKb}kb.pdf`,
@@ -557,7 +543,7 @@ export function ToolWorkspace({
             });
           }
         } else if (tool.id === 'merge-pdf') {
-          const res = await mergePdfFilesClient(filesToProcess, pdfRotation);
+          const res = await binary.mergePdfFilesClient(filesToProcess, pdfRotation);
           results.push({
             id: `merged-${Date.now()}`,
             name: `nextgentoolkit-merged-${filesToProcess.length}-files.pdf`,
@@ -572,7 +558,7 @@ export function ToolWorkspace({
           });
         } else if (tool.id === 'split-pdf') {
           for (const f of filesToProcess) {
-            const res = await splitPdfByRangesClient(f, pdfRangeSyntax);
+            const res = await binary.splitPdfByRangesClient(f, pdfRangeSyntax);
             results.push({
               id: `split-${f.name}`,
               name: `${f.name.replace(/\.pdf$/i, '')}-pages-${pdfRangeSyntax.replace(/[^0-9,-]/g, '')}.pdf`,
@@ -588,10 +574,10 @@ export function ToolWorkspace({
           }
         } else if (tool.id === 'pdf-to-image') {
           const first = filesToProcess[0];
-          const rendered = await renderPdfSummaryPreviewImages(first, pdfDpi, imageOutputFormat);
+          const rendered = await binary.renderPdfSummaryPreviewImages(first, pdfDpi, imageOutputFormat);
           results.push(...rendered);
         } else if (tool.id === 'image-to-pdf') {
-          const res = await convertImagesToPdfClient(filesToProcess, {
+          const res = await binary.convertImagesToPdfClient(filesToProcess, {
             pageSize: pdfPageSize,
             orientation: pdfOrientation,
             marginPx: 24,
@@ -612,7 +598,7 @@ export function ToolWorkspace({
           });
         } else if (tool.id === 'pdf-metadata-cleaner') {
           for (const f of filesToProcess) {
-            const res = await inspectAndCleanPdfMetadata(f, true);
+            const res = await binary.inspectAndCleanPdfMetadata(f, true);
             setForensicTable(res.metadata);
             results.push({
               id: `clean-${f.name}`,
@@ -626,7 +612,7 @@ export function ToolWorkspace({
           }
         } else if (tool.id === 'compress-image-to-kb') {
           for (const f of filesToProcess) {
-            const res = await compressImageToExactKbClient(f, targetKb);
+            const res = await binary.compressImageToExactKbClient(f, targetKb);
             results.push({
               ...res,
               metaSummary: {
@@ -638,17 +624,17 @@ export function ToolWorkspace({
           }
         } else if (tool.id === 'bulk-webp-avif-converter') {
           for (const f of filesToProcess) {
-            const res = await transcodeImageClient(f, imageOutputFormat, qualitySlider / 100);
+            const res = await binary.transcodeImageClient(f, imageOutputFormat, qualitySlider / 100);
             results.push(res);
           }
         } else if (tool.id === 'exif-metadata-remover') {
           for (const f of filesToProcess) {
-            const res = await inspectAndScrubExifClient(f);
+            const res = await binary.inspectAndScrubExifClient(f);
             setForensicTable(res.forensicTags);
             results.push(res.cleanItem);
           }
         } else if (tool.id === 'social-media-image-resizer') {
-          const pack = await generateSocialMediaBulkPack(filesToProcess[0]);
+          const pack = await binary.generateSocialMediaBulkPack(filesToProcess[0]);
           results.push(...pack);
         }
 
@@ -682,11 +668,13 @@ export function ToolWorkspace({
   // Load Sample Data Handler (Mandatory UX Upgrade #3)
   const handleLoadSampleData = async () => {
     if (tool.hubId === 'pdf-tools' && tool.id !== 'image-to-pdf') {
+      const { createSamplePdfFile } = await import('../utils/binaryEngines');
       const samplePdf1 = await createSamplePdfFile('nextgentoolkit-financial-report-q4.pdf', 4);
       const samplePdf2 = await createSamplePdfFile('nextgentoolkit-architecture-annex.pdf', 2);
       const batch = tool.id === 'merge-pdf' ? [samplePdf1, samplePdf2] : [samplePdf1];
       setUploadedFiles(batch);
     } else if (tool.hubId === 'image-tools' || tool.id === 'image-to-pdf') {
+      const { createSampleImageFile } = await import('../utils/binaryEngines');
       const sampleImg = await createSampleImageFile('nextgentoolkit-highres-sample.jpg');
       setUploadedFiles([sampleImg]);
       if (tool.id === 'image-to-text-ocr') {
@@ -771,6 +759,7 @@ export function ToolWorkspace({
 
   const handleDownloadAllZip = async () => {
     if (processedItems.length > 0) {
+      const { createBatchZipBlob } = await import('../utils/binaryEngines');
       const zipBlob = await createBatchZipBlob(
         processedItems.map((it) => ({ name: it.name, content: it.blob }))
       );
@@ -781,6 +770,7 @@ export function ToolWorkspace({
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } else if (outputText) {
+      const { createBatchZipBlob } = await import('../utils/binaryEngines');
       const ext =
         tool.id === 'custom-qr-code-generator'
           ? 'svg'
@@ -1427,10 +1417,11 @@ export function ToolWorkspace({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
+                  <label htmlFor={`ngt-input-${tool.id}`} className="block text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
                     {tool.id === 'code-diff-checker' ? 'Original Text / Code (A)' : 'Input Source'}
                   </label>
                   <textarea
+                    id={`ngt-input-${tool.id}`}
                     rows={12}
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
@@ -1441,10 +1432,11 @@ export function ToolWorkspace({
 
                 {tool.id === 'code-diff-checker' ? (
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
+                    <label htmlFor="ngt-secondary-input" className="block text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
                       Modified Text / Code (B)
                     </label>
                     <textarea
+                      id="ngt-secondary-input"
                       rows={12}
                       value={secondaryText}
                       onChange={(e) => setSecondaryText(e.target.value)}
@@ -1454,7 +1446,7 @@ export function ToolWorkspace({
                 ) : (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="block text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
+                      <label htmlFor={`ngt-output-${tool.id}`} className="block text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
                         Live Reactive Output (0ms Reload)
                       </label>
                       {tool.id === 'text-to-txt-markdown' && (
@@ -1464,6 +1456,7 @@ export function ToolWorkspace({
                       )}
                     </div>
                     <textarea
+                      id={`ngt-output-${tool.id}`}
                       rows={12}
                       readOnly={tool.id !== 'image-to-text-ocr'}
                       value={outputText}
@@ -1917,10 +1910,11 @@ export function ToolWorkspace({
             {tool.id === 'regex-tester' && (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC] mb-1">
+                  <label htmlFor="ngt-regex-pattern" className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC] mb-1">
                     Regular Expression Pattern
                   </label>
                   <input
+                    id="ngt-regex-pattern"
                     type="text"
                     value={regexPattern}
                     onChange={(e) => setRegexPattern(e.target.value)}
