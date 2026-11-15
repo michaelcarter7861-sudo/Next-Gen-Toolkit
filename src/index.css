@@ -88,3 +88,18 @@ input[type="range"].ngt-slider::-webkit-slider-thumb {
 input[type="range"].ngt-slider::-webkit-slider-thumb:hover {
   transform: scale(1.12);
 }
+
+
+/* Improve contrast for small supporting text and table/breadcrumb labels in main content. */
+#root main p.text-xs,
+#root main .text-\\[11px\\],
+#root main table thead th,
+#root main nav[aria-label="Breadcrumb"] span {
+  color: #475569;
+}
+.dark #root main p.text-xs,
+.dark #root main .text-\\[11px\\],
+.dark #root main table thead th,
+.dark #root main nav[aria-label="Breadcrumb"] span {
+  color: #CBD5E1;
+}
