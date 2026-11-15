@@ -87,14 +87,14 @@ interface ToolWorkspaceProps {
 }
 
 const SAMPLE_TEXT_PRESETS: Record<string, string> = {
-  'json-formatter-validator': `{\n  // Malformed JSON with single quotes, unquoted keys & trailing comma\n  platform: 'NextGenToolkit',\n  domain: 'https://nextgentoolkit.pages.dev',\n  clientSidePercent: 100,\n  serverBytesUploaded: 0,\n  hubs: ['PDF Tools', 'Image Tools', 'Developer Tools', 'Text Tools', 'Generators'],\n  coreWebVitals: { lcpMs: 420, inpMs: 18, cls: 0.000, },\n}`,
-  'llm-token-counter': `import { PDFDocument } from 'pdf-lib';\n\n// NextGenToolkit Zero-Upload PDF Compressor Worker\nexport async function compressPdfInBrowser(buffer: ArrayBuffer, targetKb: number) {\n  const doc = await PDFDocument.load(buffer);\n  doc.setTitle('');\n  doc.setAuthor('');\n  return await doc.save({ useObjectStreams: true });\n}`,
+  'json-formatter-validator': `{\n  // Malformed JSON with single quotes, unquoted keys & trailing comma\n  platform: 'NextGenToolkit',\n  domain: 'https://nextgentoolkit.pages.dev',\n  processingModel: 'Depends on the selected utility',\n  coreTools: 'Many process locally in the browser',\n  remoteFeatures: 'May send data needed for the operation to the relevant provider',\n  hubs: ['PDF Tools', 'Image Tools', 'Developer Tools', 'Text Tools', 'Generators'],\n  coreWebVitals: { lcpMs: 420, inpMs: 18, cls: 0.000, },\n}`,
+  'llm-token-counter': `import { PDFDocument } from 'pdf-lib';\n\n// Client-side PDF compression example\nexport async function compressPdfInBrowser(buffer: ArrayBuffer, targetKb: number) {\n  const doc = await PDFDocument.load(buffer);\n  doc.setTitle('');\n  doc.setAuthor('');\n  return await doc.save({ useObjectStreams: true });\n}`,
   'regex-tester': `Contact our engineering team at architecture@nextgentoolkit.dev or security@nextgentoolkit.io.\nServer nodes: 192.168.1.104 and 10.24.88.12.\nRelease date: 2025-02-20T09:30:00Z | Order #NGT-99412.`,
   'jwt-decoder': `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzk4NDEyIiwibmFtZSI6IlNhYmlyIEFyYWluIChOZXh0R2VuVG9vbGtpdCBBcmNoaXRlY3QpIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzMxNDgwMDAwLCJleHAiOjE5OTk5OTk5OTl9.nextgentoolkit_client_side_verified_signature`,
   'code-diff-checker': `function calculateCompressionTarget(sizeKb) {\n  const maxUpload = 50;\n  return sizeKb * 0.85;\n}`,
-  'base64-url-encoder': `NextGenToolkit: 100% Client-Side Browser Utilities (0 Bytes Uploaded) ✓`,
-  'text-to-txt-markdown': `## Executive Summary\u200B\uFEFF\n\nCopied from **ChatGPT / Claude** with hidden\u00A0zero-width watermarks (\u200B) and “smart quotes”.\n\n- 100% Local Browser Processing\n- Multi-File Batch ZIP Export`,
-  'word-counter-density': `Compress PDF online free with NextGenToolkit Offline PDF Compressor. Unlike legacy cloud PDF tools that upload your confidential documents to remote servers, NextGenToolkit compresses PDF files to exact 100KB and 200KB targets directly inside your browser RAM using WebAssembly and pdf-lib.`,
+  'base64-url-encoder': `NextGenToolkit: many core tools process locally; remote features may use providers ✓`,
+  'text-to-txt-markdown': `## Executive Summary\u200B\uFEFF\n\nCopied from **ChatGPT / Claude** with hidden\u00A0zero-width watermarks (\u200B) and “smart quotes”.\n\n- Local processing for supported core tools\n- Multi-File Batch ZIP Export`,
+  'word-counter-density': `Many core PDF utilities process files locally in the browser using client-side libraries. Processing and file-size results depend on the selected tool and input document.`,
   'case-converter-slug-generator': `How to Compress a PDF Under 200KB Online Without Uploading\nBulk WebP and Image Format Converter for Core Web Vitals\nJSON Formatter Validator and Broken Syntax Auto Fixer`,
   'duplicate-line-remover': `compress-pdf\njson-formatter\nmerge-pdf\ncompress-pdf\nllm-token-counter\njson-formatter\ncustom-qr-code-generator\nmerge-pdf`,
   'custom-qr-code-generator': `https://nextgentoolkit.pages.dev`,
