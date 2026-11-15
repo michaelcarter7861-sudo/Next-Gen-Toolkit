@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Render the social preview PNG from its SVG source\n        run: |\n          sudo apt-get update\n          sudo apt-get install -y librsvg2-bin\n          rsvg-convert --width 1200 --height 630 public/og-cover.svg --output public/og-cover.png\n          git config user.name \"github-actions[bot]\"\n          git config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"\n          if ! git diff --quiet -- public/og-cover.png; then\n            git add public/og-cover.png\n            git commit -m \"chore: regenerate NextGenToolkit social preview PNG\"\n            git push\n          fi\n\n      - name: Set up Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
