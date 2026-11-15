@@ -35,7 +35,7 @@ export interface HubEditorialLinkPack {
 export const HOME_FAQS: FaqEntry[] = [
   {
     q: 'Are NextGenToolkit utilities really 100% free and private with zero file uploads?',
-    a: 'Processing depends on the individual utility. Many core PDF, image, text, and developer tools process inputs locally in your browser without sending those inputs to our processing servers. This does not mean the website makes no network requests: Google Tag Manager and Google Analytics may receive page and interaction events. AI-powered or other remote-service features may send the data needed for the requested operation to the relevant provider. Check each tool\\'s processing notes before submitting sensitive information. No sign-up is required for the free browser tools.',
+    a: 'Processing depends on the individual utility. Many core PDF, image, text, and developer tools process inputs locally in your browser without sending those inputs to our processing servers. This does not mean the website makes no network requests: Google Tag Manager and Google Analytics may receive page and interaction events. AI-powered or other remote-service features may send the data needed for the requested operation to the relevant provider. Check each tool\'s processing notes before submitting sensitive information. No sign-up is required for the free browser tools.',
   },
   {
     q: 'How do I compress an image or PDF to an exact 20KB, 50KB, or 100KB portal limit?',
