@@ -34,7 +34,7 @@ export interface HubEditorialLinkPack {
 
 export const HOME_FAQS: FaqEntry[] = [
   {
-    q: 'Are NextGenToolkit utilities really 100% free and private with zero file uploads?',
+    q: 'How does NextGenToolkit handle file and text privacy?',
     a: 'Processing depends on the individual utility. Many core PDF, image, text, and developer tools process files or text locally in your browser, without uploading those inputs to our servers. AI-powered or other remote-service features may send the data needed for the requested operation to the relevant provider. Check the tool\'s on-page processing notes before submitting sensitive information. No sign-up is required for the free browser tools.',
   },
   {
@@ -189,7 +189,7 @@ export const HUB_EDITORIAL_LINKS: Record<HubId, HubEditorialLinkPack> = {
         url: 'https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html',
         sourceName: 'OWASP Foundation',
         contextSentence:
-          'Our zero-upload architecture follows OWASP File Upload and Document Privacy Guidelines by processing byte streams exclusively in local browser RAM.',
+          'Core browser-only tools process file bytes locally; any feature using a remote provider should disclose the data it sends and the provider involved.'
       },
     ],
   },
