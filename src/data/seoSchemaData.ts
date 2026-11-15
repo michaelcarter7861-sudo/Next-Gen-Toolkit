@@ -35,7 +35,7 @@ export interface HubEditorialLinkPack {
 export const HOME_FAQS: FaqEntry[] = [
   {
     q: 'How does NextGenToolkit handle file and text privacy?',
-    a: 'Processing depends on the individual utility. Many core PDF, image, text, and developer tools process inputs locally in your browser without sending those inputs to our processing servers. This does not mean the website makes no network requests: Google Tag Manager and Google Analytics may receive page and interaction events. AI-powered or other remote-service features may send the data needed for the requested operation to the relevant provider. Check each tool\'s processing notes before submitting sensitive information. No sign-up is required for the free browser tools.',
+    a: 'Processing depends on the individual utility. Many core PDF, image, text, and developer tools process inputs locally in your browser without sending those inputs to our processing servers. The website also makes network requests for external assets and services. A Google Tag Manager container is embedded; which analytics or other tags it loads and which events are sent depend on the external GTM account configuration and have not been independently verified from this repository. AI-powered or other remote-service features may send the data needed for the requested operation to the relevant provider. Check each tool\'s processing notes before submitting sensitive information. No sign-up is required for the free browser tools.',
   },
   {
     q: 'How do I compress an image or PDF to an exact 20KB, 50KB, or 100KB portal limit?',
