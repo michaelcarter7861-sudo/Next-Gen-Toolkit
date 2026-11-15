@@ -392,7 +392,7 @@ export const TOOL_EDITORIAL_LINKS: Record<string, ToolEditorialLinkPack> = {
         url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer',
         sourceName: 'MDN Web Docs',
         contextSentence:
-          'Core file operations use browser APIs such as ArrayBuffer where supported. Optional remote-service features may transmit necessary inputs to providers; check each tool's processing notes.',
+          'Core file operations use browser APIs such as ArrayBuffer where supported. Optional remote-service features may transmit necessary inputs to providers; check each tool\'s processing notes.',
       },
     ],
   },
