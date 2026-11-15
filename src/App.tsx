@@ -957,7 +957,7 @@ export default function App() {
               )}
             </section>
 
-            {/* PRIVACY-FIRST TOOLS BANNER */}
+            {/* LOCAL PROCESSING INFORMATION BANNER */}
             <section className="max-w-[1200px] mx-auto px-4 sm:px-6">
               <div className="rounded-3xl bg-gradient-to-r from-[#EDE7FF] via-[#F4F1FF] to-[#E1F0FF] dark:from-[#1E1B36] dark:via-[#1C1F2E] dark:to-[#182238] border border-[#DDD6FE] dark:border-[#37306B] p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                 <div className="flex items-start sm:items-center gap-4">
