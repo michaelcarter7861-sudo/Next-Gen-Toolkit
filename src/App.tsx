@@ -1470,7 +1470,7 @@ export default function App() {
                         anchor: 'OWASP File Upload & Privacy Cheat Sheet',
                         url: 'https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html',
                         org: 'OWASP.org',
-                        desc: 'Guides our zero-retention browser architecture and EXIF/XMP metadata scrubbing.',
+                        desc: 'Guides browser-based EXIF/XMP metadata scrubbing for supported local operations.',
                       },
                     ].map((ref) => (
                       <div
