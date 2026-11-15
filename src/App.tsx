@@ -969,7 +969,7 @@ export default function App() {
                       Privacy-First Tools
                     </h2>
                     <p className="text-xs sm:text-sm text-[#253044] dark:text-[#CBD5E1] mt-0.5">
-                      Every utility runs directly in your browser, so your confidential files and data stay on your device.
+                      Many core tools process files locally in your browser. AI-powered and other remote features may send the data needed for that operation to the relevant provider.
                     </p>
                   </div>
                 </div>
@@ -977,7 +977,7 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row lg:flex-col gap-2 text-xs font-semibold text-[#171927] dark:text-[#E2E8F0] shrink-0">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
-                    <span>No unnecessary uploads, files stay on your device</span>
+                    <span>Core files stay local in browser-only tools</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
@@ -1003,7 +1003,7 @@ export default function App() {
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-[#7047EB] tabular-nums">
-                  100% Local RAM Execution · 0 Bytes Uploaded
+                  Local processing for core tools; remote features may transmit data
                 </span>
               </div>
 
@@ -1052,7 +1052,7 @@ export default function App() {
                         Files uploaded to remote cloud queues &amp; stored on third-party servers
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-emerald-700 dark:text-emerald-400">
-                        Processed locally inside browser RAM via{' '}
+                        Core PDF operations process locally inside browser RAM via{' '}
                         <a
                           href="https://webassembly.org/"
                           target="_blank"
@@ -1061,7 +1061,7 @@ export default function App() {
                         >
                           WebAssembly
                         </a>{' '}
-                        &amp; Canvas (0 bytes uploaded)
+                        &amp; Canvas for supported local operations
                       </td>
                     </tr>
                     <tr>
@@ -1681,7 +1681,7 @@ export default function App() {
                     Editorial Methodology, Unit-Tested Engines &amp; Privacy Boundary
                   </div>
                   <p className="text-[#253044] dark:text-[#CBD5E1] leading-relaxed">
-                    Every core parser, regex evaluator, token estimator, cron scheduler, binary EXIF scanner, and PDF byte-range engine is verified by automated deterministic unit tests and benchmarked against ISO 32000-1, IETF RFC 8259/7519, and W3C Web Cryptography standards. All 25 utilities execute 100% inside local browser RAM (verifiable in your browser DevTools Network tab); only the optional AI Search Assistant sends user-submitted prompts to the AI endpoint.
+                    Core browser-only parsers, converters, token estimators, and PDF/image engines process their inputs locally. Some optional AI or remote-service features transmit the data needed for that feature to its provider. Processing notes are shown with individual utilities.
                   </p>
                 </div>
                 <div className="text-left md:text-right shrink-0 space-y-0.5 tabular-nums">
