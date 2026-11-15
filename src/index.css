@@ -59,7 +59,7 @@
 }
 
 /* Custom Range Slider matching reference image purple slider */
-input[type="range"].utilix-slider {
+input[type="range"].ngt-slider {
   -webkit-appearance: none;
   appearance: none;
   height: 6px;
@@ -68,11 +68,11 @@ input[type="range"].utilix-slider {
   outline: none;
 }
 
-.dark input[type="range"].utilix-slider {
+.dark input[type="range"].ngt-slider {
   background: #2E334D;
 }
 
-input[type="range"].utilix-slider::-webkit-slider-thumb {
+input[type="range"].ngt-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 18px;
@@ -85,6 +85,6 @@ input[type="range"].utilix-slider::-webkit-slider-thumb {
   transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-input[type="range"].utilix-slider::-webkit-slider-thumb:hover {
+input[type="range"].ngt-slider::-webkit-slider-thumb:hover {
   transform: scale(1.12);
 }
