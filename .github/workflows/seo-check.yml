@@ -54,7 +54,7 @@ jobs:
           const base = new URL(process.env.SITE_URL).pathname.replace(/\/+$/, '');
           const png = readFileSync('dist/og-cover.png');\n          assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'Social preview must be a PNG');\n          assert.equal(png.readUInt32BE(16), 1200, 'Social preview width must be 1200px');\n          assert.equal(png.readUInt32BE(20), 630, 'Social preview height must be 630px');\n          const xml = readFileSync('dist/sitemap.xml', 'utf8');
           const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
-          assert.equal(urls.length, 31, 'Expected homepage + 5 hubs + 25 tool URLs');
+          assert.equal(urls.length, 32, 'Expected homepage + sitemap + 5 hubs + 25 tool URLs');
           for (const url of urls) {
             const pathname = new URL(url).pathname.slice(base.length).replace(/^\/+|\/+$/g, '');
             const html = pathname ? `dist/${pathname}/index.html` : 'dist/index.html';
