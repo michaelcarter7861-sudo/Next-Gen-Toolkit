@@ -392,7 +392,7 @@ export const TOOL_EDITORIAL_LINKS: Record<string, ToolEditorialLinkPack> = {
         url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer',
         sourceName: 'MDN Web Docs',
         contextSentence:
-          'All byte manipulation occurs inside the MDN JavaScript ArrayBuffer binary memory API so your confidential files never leave your browser.',
+          'Core file operations use browser APIs such as ArrayBuffer where supported. Optional remote-service features may transmit necessary inputs to providers; check each tool's processing notes.',
       },
     ],
   },
