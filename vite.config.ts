@@ -5,7 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: process.env.GITHUB_PAGES === 'true' ? '/UTILIX/' : '/',
+    base: process.env.GITHUB_PAGES === 'true' ? '/Next-Gen-Toolkit/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
