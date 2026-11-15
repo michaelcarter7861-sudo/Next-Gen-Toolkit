@@ -48,7 +48,7 @@ export function SeoSitemapView({
             NextGenToolkit All Tools &amp; Categories Directory
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
-            Browse all {TOOLS_CATALOG.length} browser utilities and {HUBS.length} category hubs in one place. Every tool runs 100% locally inside your browser using{' '}
+            Browse all {TOOLS_CATALOG.length} browser utilities and {HUBS.length} category hubs in one place. Many tools process data locally in your browser; processing varies by utility, and optional AI or remote-service features may send required data to their providers. Review each tool's processing notes before submitting sensitive information.{' '}
             <a
               href="https://webassembly.org/"
               target="_blank"
@@ -84,14 +84,14 @@ export function SeoSitemapView({
             >
               W3C Web Cryptography API
             </a>{' '}
-            with zero file uploads.
+            
           </p>
         </div>
 
         <div className="flex flex-col gap-2 text-xs font-semibold text-[#171927] dark:text-[#E2E8F0] bg-[#F8F7FC] dark:bg-[#171927] p-4 rounded-2xl border border-[#E8E6F2] dark:border-[#2A2E42] shrink-0">
           <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
             <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>100% Local Browser Processing</span>
+            <span>Tool-Specific Processing &amp; Privacy Notes</span>
           </div>
           <div className="flex items-center gap-2 text-[#64748B] dark:text-[#94A3B8]">
             <CheckCircle2 className="w-4 h-4 text-[#7047EB] shrink-0" aria-hidden="true" />
