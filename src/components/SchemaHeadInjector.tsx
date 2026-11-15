@@ -70,6 +70,7 @@ export function buildToolJsonLd(tool: ToolDefinition): Record<string, unknown> {
           `Engine: ${tool.specTable.executionEngine}`,
           `Supported Formats: ${tool.specTable.supportedFormats}`,
           `Privacy Model: ${tool.specTable.privacyModel}`,
+          'Data handling depends on the utility: local-only operations retain inputs in the browser; remote-service features may transmit required data to providers.',
         ],
         ...(editorial
           ? {
