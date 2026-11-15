@@ -34,7 +34,7 @@ export interface HubEditorialLinkPack {
 
 export const HOME_FAQS: FaqEntry[] = [
   {
-    q: 'Are NextGenToolkit utilities really 100% free and private with zero file uploads?',
+    q: 'How does NextGenToolkit handle file and text privacy?',
     a: 'Processing depends on the individual utility. Many core PDF, image, text, and developer tools process inputs locally in your browser without sending those inputs to our processing servers. This does not mean the website makes no network requests: Google Tag Manager and Google Analytics may receive page and interaction events. AI-powered or other remote-service features may send the data needed for the requested operation to the relevant provider. Check each tool\'s processing notes before submitting sensitive information. No sign-up is required for the free browser tools.',
   },
   {
@@ -189,7 +189,7 @@ export const HUB_EDITORIAL_LINKS: Record<HubId, HubEditorialLinkPack> = {
         url: 'https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html',
         sourceName: 'OWASP Foundation',
         contextSentence:
-          'Our zero-upload architecture follows OWASP File Upload and Document Privacy Guidelines by processing byte streams exclusively in local browser RAM.',
+          'Core browser-only tools process file bytes locally; any feature using a remote provider should disclose the data it sends and the provider involved.',
       },
     ],
   },
@@ -392,7 +392,7 @@ export const TOOL_EDITORIAL_LINKS: Record<string, ToolEditorialLinkPack> = {
         url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer',
         sourceName: 'MDN Web Docs',
         contextSentence:
-          'All byte manipulation occurs inside the MDN JavaScript ArrayBuffer binary memory API so your confidential files never leave your browser.',
+          'Core file operations use browser APIs such as ArrayBuffer where supported. Optional remote-service features may transmit necessary inputs to providers; check each tool's processing notes.',
       },
     ],
   },
