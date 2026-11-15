@@ -44,6 +44,7 @@ import { SchemaHeadInjector } from './components/SchemaHeadInjector';
 import { CommandModal, AiWorkflowModal } from './components/CommandModal';
 import type { ChainedToolPayload } from './components/ToolWorkspace';
 
+// Keep the heavier file-processing workspace out of the initial homepage bundle.
 const ToolWorkspace = lazy(() =>
   import('./components/ToolWorkspace').then((module) => ({ default: module.ToolWorkspace }))
 );
