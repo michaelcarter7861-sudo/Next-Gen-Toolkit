@@ -969,7 +969,7 @@ export default function App() {
                       Local Processing on Core Tools
                     </h2>
                     <p className="text-xs sm:text-sm text-[#253044] dark:text-[#CBD5E1] mt-0.5">
-                      Many core file and text utilities process inputs in your browser. AI-powered and other remote-service features may send required data to the relevant provider; check each tool's processing notes before using sensitive information.
+                      Many core file and text utilities process inputs in your browser. Google Tag Manager and Analytics may separately receive page and interaction events. AI-powered and other remote-service features may send required data to the relevant provider; check each tool's processing notes before using sensitive information.
                     </p>
                   </div>
                 </div>
