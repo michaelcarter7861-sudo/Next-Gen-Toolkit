@@ -360,7 +360,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       'page index slicing',
       'pdf-lib document splitter',
       'custom page intervals 1-3, 5',
-      'zero-upload document burst',
+      'browser-only document processing',
       'extract single page from PDF',
       'separate PDF chapters offline',
       'vector font preservation',
@@ -625,7 +625,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       'NextGenToolkit Bulk WebP & Format Converter is a high-speed client-side image transcoder that converts PNG, JPEG, and WebP files using HTML5 Canvas codecs. Practical batch limits depend on browser memory and input size.',
     aeoQuestionHeading: 'How to Batch Convert PNG and JPG to WebP for Faster Core Web Vitals?',
     aeoSummaryParagraph:
-      'Drop your folder of PNG or JPG assets into the NextGenToolkit Bulk WebP Converter, set the quality slider (e.g., 82%), and download all converted next-gen WebP files in a single ZIP archive with zero upload wait time.',
+      'Drop your folder of PNG or JPG assets into the NextGenToolkit Bulk WebP Converter, set the quality slider (e.g., 82%), and download all converted next-gen WebP files in a single ZIP archive without waiting for server-side uploads.',
     howToSteps: [
       { name: 'Drop Image Batch', text: 'Drag PNG or JPG images into the dropzone or load a sample photo.' },
       { name: 'Select Output Format & Quality', text: 'Choose WebP, PNG, or JPEG and adjust the compression quality slider.' },
@@ -1005,7 +1005,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     nextStepToolId: 'password-api-key-generator',
     nextStepPrompt: 'Need a high-entropy 256-bit signing secret? Open Crypto Password & Key Gen →',
     entityLeadSentence:
-      'NextGenToolkit JWT Decoder & Inspector is a zero-upload JSON Web Token analyzer that decodes Base64Url headers and payloads, translates Unix claim timestamps (exp, iat, nbf), and verifies token expiration status strictly inside browser RAM.',
+      'NextGenToolkit JWT Decoder & Inspector is a browser-based JSON Web Token analyzer that decodes Base64Url headers and payloads, translates Unix claim timestamps (exp, iat, nbf), and verifies token expiration status strictly inside browser RAM.',
     aeoQuestionHeading: 'How to Safely Decode a Production JWT Token Without Leaking Credentials?',
     aeoSummaryParagraph:
       'Paste your Bearer or raw JSON Web Token into NextGenToolkit JWT Decoder to inspect the decoded JOSE Header, JSON Payload claims, and live expiration countdown locally in your browser without transmitting sensitive auth tokens over the internet.',
