@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, useState, useEffect, useMemo } from 'react';
 import {
   Search,
   Sun,
@@ -42,7 +42,11 @@ import {
 import { HOME_FAQS } from './data/seoSchemaData';
 import { SchemaHeadInjector } from './components/SchemaHeadInjector';
 import { CommandModal, AiWorkflowModal } from './components/CommandModal';
-import { ToolWorkspace, ChainedToolPayload } from './components/ToolWorkspace';
+import type { ChainedToolPayload } from './components/ToolWorkspace';
+
+const ToolWorkspace = React.lazy(() =>
+  import('./components/ToolWorkspace').then((module) => ({ default: module.ToolWorkspace }))
+);
 import { CategoryHubView } from './components/CategoryHubView';
 import { SeoSitemapView } from './components/SeoSitemapView';
 import { GlobalSidebarDrawer } from './components/GlobalSidebarDrawer';
@@ -455,17 +459,25 @@ export default function App() {
             onSelectTool={navigateToTool}
           />
         ) : activeView === 'tool' && activeTool ? (
-          <ToolWorkspace
-            tool={activeTool}
-            onNavigateHome={navigateToHome}
-            onSelectHub={navigateToHub}
-            onSelectTool={navigateToTool}
-            onOpenAiModal={openAiModal}
-            isFavorite={favoriteIds.includes(activeTool.id)}
-            onToggleFavorite={toggleFavorite}
-            chainedPayload={chainedPayload}
-            onChainToTool={handleChainToTool}
-          />
+          <Suspense
+            fallback={
+              <div className="min-h-[40vh] flex items-center justify-center px-4 text-sm text-[#64748B] dark:text-[#94A3B8]" role="status" aria-live="polite">
+                Loading tool workspace…
+              </div>
+            }
+          >
+            <ToolWorkspace
+              tool={activeTool}
+              onNavigateHome={navigateToHome}
+              onSelectHub={navigateToHub}
+              onSelectTool={navigateToTool}
+              onOpenAiModal={openAiModal}
+              isFavorite={favoriteIds.includes(activeTool.id)}
+              onToggleFavorite={toggleFavorite}
+              chainedPayload={chainedPayload}
+              onChainToTool={handleChainToTool}
+            />
+          </Suspense>
         ) : activeView === 'hub' && activeHub ? (
           <CategoryHubView
             hub={activeHub}
