@@ -35,7 +35,7 @@ export interface HubEditorialLinkPack {
 export const HOME_FAQS: FaqEntry[] = [
   {
     q: 'Are NextGenToolkit utilities really 100% free and private with zero file uploads?',
-    a: 'Yes. All 25 PDF, image, text, and developer tools run locally inside your web browser using WebAssembly, HTML5 Canvas, and native JavaScript APIs. Your confidential documents, ID photos, and API payloads stay inside your device RAM (0 bytes uploaded to remote servers) with no sign-up, daily limits, or watermarks.',
+    a: 'Processing depends on the individual utility. Many core PDF, image, text, and developer tools process files or text locally in your browser, without uploading those inputs to our servers. AI-powered or other remote-service features may send the data needed for the requested operation to the relevant provider. Check the tool\'s on-page processing notes before submitting sensitive information. No sign-up is required for the free browser tools.',
   },
   {
     q: 'How do I compress an image or PDF to an exact 20KB, 50KB, or 100KB portal limit?',
@@ -63,7 +63,7 @@ export const HUB_FAQS: Record<HubId, FaqEntry[]> = {
   'pdf-tools': [
     {
       q: 'Are my confidential PDF contracts and bank statements uploaded to a server?',
-      a: 'No. Every NextGenToolkit PDF utility, including PDF Compressor, Merger, Splitter, and Metadata Cleaner, processes files 100% locally inside your browser RAM using WebAssembly and pdf-lib. Zero bytes ever leave your computer.',
+      a: 'The core PDF utilities described here process PDF files locally in your browser using client-side libraries; they do not upload the PDF contents to our servers for those operations. Processing behavior can differ for other site features, so check the individual tool\'s processing notes before submitting sensitive documents.',
     },
     {
       q: 'How can I reduce a PDF under 200KB for government or university portals?',
@@ -103,7 +103,7 @@ export const HUB_FAQS: Record<HubId, FaqEntry[]> = {
     },
     {
       q: 'Is it safe to decode production JWT tokens and inspect API keys here?',
-      a: 'Yes. The JWT Decoder & Inspector and Base64/URL Codec run 100% client-side with zero network requests. Your bearer tokens, headers, and claims never leave your browser tab.',
+      a: 'The JWT Decoder & Inspector and Base64/URL Codec are designed to decode the supplied values in your browser. Do not assume this describes every developer or AI feature on the site: remote-service features may transmit the data required for that operation to their providers. Review the tool\'s processing notes before using sensitive tokens or credentials.',
     },
     {
       q: 'How are LLM token counts and API costs calculated?',
