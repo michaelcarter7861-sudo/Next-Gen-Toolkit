@@ -144,10 +144,10 @@ export function SchemaHeadInjector({
 }: SchemaHeadInjectorProps) {
   useEffect(() => {
     const baseUrl = getSiteUrl();
-    const ogImageUrl = `${baseUrl}/og-cover.svg`;
+    const ogImageUrl = `${baseUrl}/og-cover.png`;
     let title = 'NextGenToolkit | 25+ Free PDF, Image & Developer Tools';
     let description =
-      'Compress PDFs & images to exact KB, format broken JSON, count LLM tokens, and run 25+ free privacy-first tools in your browser with NextGenToolkit.';
+      'Compress PDFs & images to exact KB, format broken JSON, count LLM tokens, and run 25+ free browser-based tools with NextGenToolkit.';
     let canonical = `${baseUrl}/`;
     let schema: Record<string, unknown>;
 
