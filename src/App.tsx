@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useMemo } from 'react';
 import {
   Search,
   Sun,
@@ -42,7 +42,11 @@ import {
 import { HOME_FAQS } from './data/seoSchemaData';
 import { SchemaHeadInjector } from './components/SchemaHeadInjector';
 import { CommandModal, AiWorkflowModal } from './components/CommandModal';
-import { ToolWorkspace, ChainedToolPayload } from './components/ToolWorkspace';
+import type { ChainedToolPayload } from './components/ToolWorkspace';
+
+const ToolWorkspace = lazy(() =>
+  import('./components/ToolWorkspace').then((module) => ({ default: module.ToolWorkspace }))
+);
 import { CategoryHubView } from './components/CategoryHubView';
 import { SeoSitemapView } from './components/SeoSitemapView';
 import { GlobalSidebarDrawer } from './components/GlobalSidebarDrawer';
@@ -455,6 +459,7 @@ export default function App() {
             onSelectTool={navigateToTool}
           />
         ) : activeView === 'tool' && activeTool ? (
+          <Suspense fallback={<div className="mx-auto max-w-[1200px] px-4 py-16 text-center text-sm text-[#475569]" role="status">Loading tool workspace…</div>}>
           <ToolWorkspace
             tool={activeTool}
             onNavigateHome={navigateToHome}
@@ -466,6 +471,7 @@ export default function App() {
             chainedPayload={chainedPayload}
             onChainToTool={handleChainToTool}
           />
+          </Suspense>
         ) : activeView === 'hub' && activeHub ? (
           <CategoryHubView
             hub={activeHub}
