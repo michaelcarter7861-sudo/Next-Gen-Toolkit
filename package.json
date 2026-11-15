@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && tsx scripts/generate-seo-pages.ts",
+    "build": "node scripts/generate-og-image.mjs && vite build && tsx scripts/generate-seo-pages.ts",
     "start": "node server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
