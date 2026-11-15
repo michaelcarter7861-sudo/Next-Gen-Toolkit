@@ -437,7 +437,7 @@ const sitemapPageSchema = {
       '@id': `${absoluteUrl(sitemapPageRoute)}#webpage`,
       name: 'NextGenToolkit Complete SEO Sitemap & Directory',
       description:
-        'Browse all 31 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.',
+        'Browse all 32 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.',
       url: absoluteUrl(sitemapPageRoute),
       isPartOf: { '@type': 'WebSite', '@id': `${absoluteUrl('/')}#website`, name: 'NextGenToolkit', url: absoluteUrl('/') },
       mainEntity: {
@@ -470,7 +470,7 @@ await writeFile(
     route: sitemapPageRoute,
     title: formatBrandedSeoTitle('Complete SEO Sitemap & All 25 Tools Directory'),
     description:
-      'Browse all 31 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.',
+      'Browse all 32 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.',
     content: sitemapPageContent,
     schema: sitemapPageSchema,
   }),
