@@ -1648,7 +1648,7 @@ export function ToolWorkspace({
                   step={10}
                   value={targetKb}
                   onChange={(e) => setTargetKb(Number(e.target.value))}
-                  className="w-full utilix-slider"
+                  className="w-full ngt-slider"
                 />
                 <div className="text-[11px] font-semibold text-[#64748B]">
                   1-Click Portal &amp; Form Presets:
@@ -1693,7 +1693,7 @@ export function ToolWorkspace({
                     max={100}
                     value={qualitySlider}
                     onChange={(e) => setQualitySlider(Number(e.target.value))}
-                    className="w-full utilix-slider"
+                    className="w-full ngt-slider"
                   />
                 </div>
 
@@ -2185,7 +2185,7 @@ export function ToolWorkspace({
                   max={64}
                   value={pwdLength}
                   onChange={(e) => setPwdLength(Number(e.target.value))}
-                  className="w-full utilix-slider"
+                  className="w-full ngt-slider"
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex items-center gap-1.5">
