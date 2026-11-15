@@ -1,4 +1,4 @@
-// Cloudflare Pages runs the automated tool-engine suite before the production build.
+// Cloudflare Pages runs automated tests and TypeScript checks before the production build.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { HUBS, TOOLS_CATALOG } from '../src/data/toolsCatalog';
