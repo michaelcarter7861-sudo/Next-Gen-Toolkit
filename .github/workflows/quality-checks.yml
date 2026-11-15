@@ -16,13 +16,35 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: package.json
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Run automated tool-engine tests
+      - name: Automated tool-engine tests
         run: npm test
-      - name: Run TypeScript checks
+      - name: TypeScript checks
         run: npm run lint
-      - name: Verify production build
+      - name: Production build
         run: npm run build
+      - name: Verify generated pages and metadata
+        run: |
+          test -f dist/index.html
+          test -f dist/404.html
+          test -f dist/robots.txt
+          test -f dist/sitemap.xml
+          grep -q 'og-cover.png' dist/index.html
+          grep -q 'og-cover.png' dist/pdf-tools/compress-pdf/index.html
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, existsSync } from 'node:fs';
+          const sitemap = readFileSync('dist/sitemap.xml', 'utf8');
+          const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]);
+          assert.equal(urls.length, 31);
+          for (const url of urls) {
+            const path = new URL(url).pathname.replace(/^\/+|\/+$/g, '');
+            const file = path ? `dist/${path}/index.html` : 'dist/index.html';
+            assert.ok(existsSync(file), `Missing page ${file}`);
+            const html = readFileSync(file, 'utf8');
+            assert.ok(html.includes('rel="canonical"'), `Missing canonical ${url}`);
+            assert.ok(html.includes('<h1'), `Missing H1 ${url}`);
+          }
+          console.log(`Validated ${urls.length} static routes.`);
+          NODE
