@@ -488,7 +488,7 @@ export default function App() {
                     <span aria-hidden="true">·</span>
                     <span>25 Free Browser Utilities</span>
                     <span aria-hidden="true">·</span>
-                    <span>0 Bytes Uploaded</span>
+                    <span>Local processing on supported core tools</span>
                   </div>
 
                   <h1
