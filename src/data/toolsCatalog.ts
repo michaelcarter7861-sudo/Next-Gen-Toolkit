@@ -265,7 +265,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'PDF 1.3 – 2.0 (.pdf)',
       maxFileCapacity: 'Depends on available browser memory and input size',
       executionEngine: 'pdf-lib Object Stream Reconstruction + Canvas Downsampling',
-      privacyModel: 'Zero-Knowledge / 0 Bytes Uploaded to Server',
+      privacyModel: 'Local browser processing for core PDF operations',
       batchSupport: 'Multi-file queue with ZIP export; capacity depends on browser memory',
     },
     faqs: [
@@ -322,7 +322,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Multi-file PDF (.pdf)',
       maxFileCapacity: 'Depends on available browser memory and input size',
       executionEngine: 'pdf-lib copyPages() & Byte Buffer Concatenation',
-      privacyModel: '100% Local Browser RAM (Zero Cloud Storage)',
+      privacyModel: 'Local browser processing; no cloud storage for core operations',
       batchSupport: 'Multi-PDF Queue + Instant Unified Output',
     },
     faqs: [
@@ -360,7 +360,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       'page index slicing',
       'pdf-lib document splitter',
       'custom page intervals 1-3, 5',
-      'zero-upload document burst',
+      'browser-only document processing',
       'extract single page from PDF',
       'separate PDF chapters offline',
       'vector font preservation',
@@ -376,7 +376,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'PDF (.pdf)',
       maxFileCapacity: 'Depends on document size and available browser memory',
       executionEngine: 'pdf-lib Page Index Slicer + JSZip',
-      privacyModel: 'Zero-Knowledge / Local Browser Execution',
+      privacyModel: 'Local browser execution for this utility',
       batchSupport: 'Custom Range Syntax + Multi-File Queue',
     },
     faqs: [
@@ -430,7 +430,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Input: PDF • Output: PNG, JPEG, WebP',
       maxFileCapacity: 'Depends on document size and available browser memory',
       executionEngine: 'HTML5 Canvas + pdf-lib Page Geometry + JSZip',
-      privacyModel: '100% Local Browser Canvas',
+      privacyModel: 'Browser Canvas processing on-device',
       batchSupport: 'Multi-Page Simultaneous Export + ZIP',
     },
     faqs: [
@@ -484,7 +484,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Input: PNG, JPG, WebP • Output: PDF',
       maxFileCapacity: 'Depends on available browser memory and input size',
       executionEngine: 'HTML5 Canvas Normalization + pdf-lib embedJpg()',
-      privacyModel: 'Zero Server Upload / Browser RAM',
+      privacyModel: 'Browser RAM processing for supported local operations',
       batchSupport: 'Multi-Image Compilation into Single PDF',
     },
     faqs: [
@@ -538,7 +538,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'PDF 1.0 – 2.0 (.pdf)',
       maxFileCapacity: 'Depends on document size and available browser memory',
       executionEngine: 'pdf-lib Info Dictionary & Stream Sanitizer',
-      privacyModel: '100% Client-Side Forensic Scrubbing',
+      privacyModel: 'Client-side forensic scrubbing',
       batchSupport: 'Multi-PDF Sanitization + ZIP Export',
     },
     faqs: [
@@ -598,7 +598,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'JPG, PNG, WebP (Max 50 MB per file)',
       maxFileCapacity: 'Depends on available browser memory and input size',
       executionEngine: 'Binary-Search Canvas Quality Iteration Loop',
-      privacyModel: '100% In-Browser Processing (Zero Upload)',
+      privacyModel: 'In-browser processing for supported operations',
       batchSupport: 'Multi-Image Queue + 1-Click ZIP Export',
     },
     faqs: [
@@ -625,7 +625,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       'NextGenToolkit Bulk WebP & Format Converter is a high-speed client-side image transcoder that converts PNG, JPEG, and WebP files using HTML5 Canvas codecs. Practical batch limits depend on browser memory and input size.',
     aeoQuestionHeading: 'How to Batch Convert PNG and JPG to WebP for Faster Core Web Vitals?',
     aeoSummaryParagraph:
-      'Drop your folder of PNG or JPG assets into the NextGenToolkit Bulk WebP Converter, set the quality slider (e.g., 82%), and download all converted next-gen WebP files in a single ZIP archive with zero upload wait time.',
+      'Drop your folder of PNG or JPG assets into the NextGenToolkit Bulk WebP Converter, set the quality slider (e.g., 82%), and download all converted next-gen WebP files in a single ZIP archive without waiting for server-side uploads.',
     howToSteps: [
       { name: 'Drop Image Batch', text: 'Drag PNG or JPG images into the dropzone or load a sample photo.' },
       { name: 'Select Output Format & Quality', text: 'Choose WebP, PNG, or JPEG and adjust the compression quality slider.' },
@@ -652,7 +652,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'PNG, JPEG, WebP (Alpha transparency preserved)',
       maxFileCapacity: 'Depends on available browser memory and input size',
       executionEngine: 'HTML5 Canvas Native MIME Transcoder + JSZip',
-      privacyModel: '100% Client-Side RAM Execution',
+      privacyModel: 'Client-side RAM processing',
       batchSupport: 'Multi-file queue and ZIP export; capacity depends on browser memory',
     },
     faqs: [
@@ -706,7 +706,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'JPEG, PNG, WebP',
       maxFileCapacity: 'Depends on image dimensions and available browser memory',
       executionEngine: 'DataView 0xFFE1 APP1 Parser + Clean Canvas Pixel Re-encoder',
-      privacyModel: 'Zero Server Upload / Local Forensic Scan',
+      privacyModel: 'Local forensic scan for supported files',
       batchSupport: 'Multi-Photo Scrubbing + ZIP Export',
     },
     faqs: [
@@ -760,7 +760,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'PNG, JPG, WebP',
       maxFileCapacity: 'Depends on image dimensions and available browser memory',
       executionEngine: 'Multi-Canvas Smart Cover Scaling + JSZip',
-      privacyModel: '100% Local Browser Rendering',
+      privacyModel: 'Local browser rendering',
       batchSupport: '1 Upload → 6 Platform Presets in 1 ZIP',
     },
     faqs: [
@@ -813,7 +813,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Input: PNG, JPG, WebP, Clipboard • Output: TXT, MD, JSON',
       maxFileCapacity: 'Depends on image dimensions and available browser memory',
       executionEngine: 'Client-Side Canvas Contrast Normalizer + Lexical OCR Pipeline',
-      privacyModel: 'Zero Server Upload for Local OCR',
+      privacyModel: 'Local OCR processing in the browser',
       batchSupport: 'Instant Clipboard Paste + Multi-Format Export',
     },
     faqs: [
@@ -873,7 +873,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Input: JSON / JSON5 / Malformed JSON • Output: JSON, CSV, YAML, TS, SQL',
       maxFileCapacity: 'Depends on available browser memory and payload size',
       executionEngine: 'V8 JSON AST Parser + jsonrepair Engine',
-      privacyModel: '100% Client-Side (API Keys & Payloads Never Leave Browser)',
+      privacyModel: 'Client-side processing; confirm data flow before using remote features',
       batchSupport: 'Multi-Format Export + Instant Minify/Prettify',
     },
     faqs: [
@@ -927,7 +927,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Plain Text, Markdown, Source Code (.ts, .py, .js, .json, .md)',
       maxFileCapacity: 'Depends on available browser memory and input size',
       executionEngine: 'Client-Side BPE Sub-Word Tokenizer + Repomix XML/MD Packer',
-      privacyModel: '100% Local Tokenization (Proprietary Code Never Uploaded)',
+      privacyModel: 'Local tokenization for code inputs',
       batchSupport: 'Multi-File Code Context Packing + Comment Stripping',
     },
     faqs: [
@@ -981,7 +981,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'ECMAScript / PCRE-compatible Regular Expressions',
       maxFileCapacity: 'Up to 500 matches displayed in real time with loop guard',
       executionEngine: 'Native RegExp Engine + Lexical Token AST Parser',
-      privacyModel: '100% Client-Side Execution',
+      privacyModel: 'Client-side execution for core operations',
       batchSupport: 'Multi-Line Test Corpus + JS/Python/Go Export',
     },
     faqs: [
@@ -1005,7 +1005,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     nextStepToolId: 'password-api-key-generator',
     nextStepPrompt: 'Need a high-entropy 256-bit signing secret? Open Crypto Password & Key Gen →',
     entityLeadSentence:
-      'NextGenToolkit JWT Decoder & Inspector is a zero-upload JSON Web Token analyzer that decodes Base64Url headers and payloads, translates Unix claim timestamps (exp, iat, nbf), and verifies token expiration status strictly inside browser RAM.',
+      'NextGenToolkit JWT Decoder & Inspector is a browser-based JSON Web Token analyzer that decodes Base64Url headers and payloads, translates Unix claim timestamps (exp, iat, nbf), and verifies token expiration status strictly inside browser RAM.',
     aeoQuestionHeading: 'How to Safely Decode a Production JWT Token Without Leaking Credentials?',
     aeoSummaryParagraph:
       'Paste your Bearer or raw JSON Web Token into NextGenToolkit JWT Decoder to inspect the decoded JOSE Header, JSON Payload claims, and live expiration countdown locally in your browser without transmitting sensitive auth tokens over the internet.',
@@ -1034,7 +1034,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'RFC 7519 JWT (HS256, HS384, HS512, RS256, ES256)',
       maxFileCapacity: 'Instantaneous decoding',
       executionEngine: 'UTF-8 Base64Url Decoder + Temporal Claim Analyzer',
-      privacyModel: '100% Local RAM (Auth Tokens Never Leave Browser)',
+      privacyModel: 'Local token decoding; remote features may transmit data',
       batchSupport: 'Accepts Raw JWT or "Bearer <token>" Header Strings',
     },
     faqs: [
@@ -1087,7 +1087,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Source Code, JSON, YAML, Markdown, Plain Text',
       maxFileCapacity: 'Depends on available browser memory and input length',
       executionEngine: 'jsdiff Myers O(ND) Difference Algorithm',
-      privacyModel: '100% Local Browser RAM (Proprietary Code Safe)',
+      privacyModel: 'Local browser processing for supported code tools',
       batchSupport: 'Instant Unified Diff + .patch File Download',
     },
     faqs: [
@@ -1140,7 +1140,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Base64, Base64 Data URI, URL RFC 3986, HTML5 Entities',
       maxFileCapacity: 'Depends on available browser memory and string length',
       executionEngine: 'Web API TextEncoder / TextDecoder + Uint8Array',
-      privacyModel: '100% Local Browser Execution',
+      privacyModel: 'Local browser execution for core operations',
       batchSupport: 'Instant Reactive Codec Switching',
     },
     faqs: [
@@ -1199,7 +1199,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Plain Text, Markdown, Draft Articles',
       maxFileCapacity: 'Depends on input length and available browser memory',
       executionEngine: 'Lexical N-Gram Tokenizer + Arial 20px SERP Pixel Estimator',
-      privacyModel: '100% Client-Side (Unpublished Drafts Stay Private)',
+      privacyModel: 'Client-side processing for supported text operations',
       batchSupport: 'Export Full SEO Audit Report as JSON/TXT',
     },
     faqs: [
@@ -1252,7 +1252,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Input: Rich Text / AI Text / Markdown • Output: .txt, .md',
       maxFileCapacity: 'Depends on input length and available browser memory',
       executionEngine: 'Unicode Regex Scrubber + Turndown + Blob Constructor',
-      privacyModel: '100% Local Browser Sanitization',
+      privacyModel: 'Local browser sanitization',
       batchSupport: 'Custom Filename & LF/CRLF Line Ending Export',
     },
     faqs: [
@@ -1305,7 +1305,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Unicode Text, Multi-Line Article Titles, Variable Names',
       maxFileCapacity: 'Depends on input length and available browser memory',
       executionEngine: 'Unicode NFD Diacritic Normalizer + Regex Case Matrix',
-      privacyModel: '100% Client-Side Execution',
+      privacyModel: 'Client-side execution for core operations',
       batchSupport: '12 Simultaneous Cases + Multi-Line Bulk Slug Export',
     },
     faqs: [
@@ -1358,7 +1358,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Multi-line Text, CSV columns, URL lists, Log files',
       maxFileCapacity: 'Depends on input length and available browser memory',
       executionEngine: 'ES6 Set Hash Deduplication + Intl.Collator Natural Sort',
-      privacyModel: '100% Local Browser RAM (Email/Customer Lists Stay Private)',
+      privacyModel: 'Local browser processing for supported list operations',
       batchSupport: 'Prefix/Suffix Wrapping + Instant TXT Export',
     },
     faqs: [
@@ -1416,7 +1416,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Output: Vector SVG (.svg) & High-Res PNG (.png)',
       maxFileCapacity: 'Up to 2,953 bytes per QR symbol',
       executionEngine: 'ISO/IEC 18004 Matrix + Reed-Solomon ECC Generator',
-      privacyModel: '100% Static Direct Encoding (Zero Redirect Tracking)',
+      privacyModel: 'Direct static encoding without redirect tracking',
       batchSupport: 'URL, Wi-Fi Login, vCard & Plain Text Modes',
     },
     faqs: [
@@ -1469,7 +1469,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Passwords, 5-Word Passphrases, UUID v4, 256-bit Hex Secrets',
       maxFileCapacity: 'Instantaneous hardware CSPRNG sampling',
       executionEngine: 'Web Crypto API (crypto.getRandomValues & randomUUID)',
-      privacyModel: 'Zero-Knowledge / Generated Strictly in Local RAM',
+      privacyModel: 'Generated in local browser memory',
       batchSupport: 'Simultaneous Multi-Format Credential Generation',
     },
     faqs: [
@@ -1522,7 +1522,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Unix Seconds (10d), Milliseconds (13d), Nanoseconds (19d), ISO-8601',
       maxFileCapacity: 'Instantaneous temporal parsing',
       executionEngine: 'ECMAScript Date + Intl.DateTimeFormat IANA Timezone Engine',
-      privacyModel: '100% Client-Side Execution',
+      privacyModel: 'Client-side execution for core operations',
       batchSupport: '6-City Global Timezone Matrix',
     },
     faqs: [
@@ -1575,7 +1575,7 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
       supportedFormats: 'Standard 5-Field POSIX Crontab (`* * * * *`)',
       maxFileCapacity: 'Simulates 10 future runs in < 5ms',
       executionEngine: 'Client-Side Cron AST Parser & Temporal Iterator',
-      privacyModel: '100% Local Browser Execution',
+      privacyModel: 'Local browser execution for core operations',
       batchSupport: '1-Click Presets + Copyable Schedule Report',
     },
     faqs: [
