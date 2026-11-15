@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Render the social preview PNG from its SVG source\n        run: |\n          sudo apt-get update\n          sudo apt-get install -y librsvg2-bin\n          rsvg-convert --width 1200 --height 630 public/og-cover.svg --output public/og-cover.png\n          git config user.name \"github-actions[bot]\"\n          git config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"\n          if ! git diff --quiet -- public/og-cover.png; then\n            git add public/og-cover.png\n            git commit -m \"chore: regenerate NextGenToolkit social preview PNG\"\n            git push\n          fi\n\n      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -41,7 +41,7 @@ jobs:
           test -f dist/index.html
           test -f dist/404.html
           test -f dist/robots.txt
-          test -f dist/sitemap.xml
+          test -f dist/sitemap.xml\n          test -s dist/og-cover.png
           test -f dist/pdf-tools/compress-pdf/index.html
           test -f dist/image-tools/compress-image-to-kb/index.html
           test -f dist/dev-tools/json-formatter-validator/index.html
@@ -52,7 +52,7 @@ jobs:
           import assert from 'node:assert/strict';
           import { readFileSync, existsSync } from 'node:fs';
           const base = new URL(process.env.SITE_URL).pathname.replace(/\/+$/, '');
-          const xml = readFileSync('dist/sitemap.xml', 'utf8');
+          const png = readFileSync('dist/og-cover.png');\n          assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'Social preview must be a PNG');\n          assert.equal(png.readUInt32BE(16), 1200, 'Social preview width must be 1200px');\n          assert.equal(png.readUInt32BE(20), 630, 'Social preview height must be 630px');\n          const xml = readFileSync('dist/sitemap.xml', 'utf8');
           const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
           assert.equal(urls.length, 31, 'Expected homepage + 5 hubs + 25 tool URLs');
           for (const url of urls) {
@@ -70,6 +70,6 @@ jobs:
       - name: Upload static site artifact for review
         uses: actions/upload-artifact@v4
         with:
-          name: utilix-static-site
+          name: nextgentoolkit-static-site
           path: dist
           if-no-files-found: error
