@@ -1237,7 +1237,7 @@ export default function App() {
                     {
                       title: 'Confidential Contracts, Tax & Legal PDF Workflows',
                       problem:
-                        'Uploading signed NDAs, bank statements, or medical records to third-party cloud PDF servers violates enterprise privacy policies.',
+                        'Sending sensitive documents to remote services may violate enterprise privacy policies; use local-only tools when handling confidential files.',
                       solution:
                         'Core PDF merging, splitting, metadata sanitizing, and compression are performed in the browser using WebAssembly; review the individual tool notes for exceptions.',
                       actions: [
@@ -1550,7 +1550,7 @@ export default function App() {
                 <div className="space-y-1.5">
                   <div className="font-bold text-[#171927] dark:text-white flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
-                    <span>Zero-Retention Privacy Guarantee</span>
+                    <span>Tool-Specific Processing Notes</span>
                   </div>
                   <p className="text-[#64748B] dark:text-[#94A3B8]">
                     Every file you drop into NextGenToolkit is read into local browser memory via the{' '}
