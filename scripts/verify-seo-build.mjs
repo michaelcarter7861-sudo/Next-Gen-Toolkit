@@ -3,18 +3,19 @@ import { existsSync, readFileSync } from 'node:fs';
 
 const siteUrl = process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://nextgentoolkit.pages.dev';
 const origin = new URL(siteUrl).origin;
-const basePath = new URL(siteUrl).pathname.replace(/\/+$/, '');
+let basePath = new URL(siteUrl).pathname;
+while (basePath.endsWith('/')) basePath = basePath.slice(0, -1);
 const dist = 'dist';
 
 const sitemap = readFileSync(dist + '/sitemap.xml', 'utf8');
-const urls = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+const urls = sitemap.split('<loc>').slice(1).map((part) => part.split('</loc>')[0].trim());
 
 assert.equal(urls.length, 32, 'Expected homepage + sitemap + 5 hubs + 25 tool URLs');
 
 for (const url of urls) {
   const parsed = new URL(url);
   assert.equal(parsed.origin, origin, 'Unexpected sitemap origin: ' + url);
-  const route = parsed.pathname.slice(basePath.length).replace(/^\/+|\/+$/g, '');
+  const route = parsed.pathname.slice(basePath.length).split('/').filter(Boolean).join('/');
   const htmlPath = route ? dist + '/' + route + '/index.html' : dist + '/index.html';
   assert.ok(existsSync(htmlPath), 'Missing prerendered route: ' + htmlPath);
 
@@ -24,8 +25,10 @@ for (const url of urls) {
   assert.ok(html.includes('All Tools Directory'), 'Missing static directory link: ' + url);
 }
 
+let normalizedSiteUrl = siteUrl;
+while (normalizedSiteUrl.endsWith('/')) normalizedSiteUrl = normalizedSiteUrl.slice(0, -1);
 const robots = readFileSync(dist + '/robots.txt', 'utf8');
-assert.ok(robots.includes(siteUrl.replace(/\/+$/, '') + '/sitemap.xml'), 'robots.txt must reference sitemap.xml');
+assert.ok(robots.includes(normalizedSiteUrl + '/sitemap.xml'), 'robots.txt must reference sitemap.xml');
 
 const png = readFileSync(dist + '/og-cover.png');
 assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'Social preview must be PNG');
