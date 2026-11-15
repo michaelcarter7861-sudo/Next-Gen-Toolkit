@@ -611,22 +611,6 @@ try {
   // Ignore if public directory is read-only
 }
 
-for (const filename of ['llms.txt', 'llms-full.txt']) {
-  for (const dir of [DIST, PUBLIC_DIR]) {
-    const filePath = path.join(dir, filename);
-    try {
-      const source = await readFile(filePath, 'utf8');
-      const rewritten = source
-        .replaceAll('https://utilix.tools', SITE_URL)
-        .replaceAll('https://utilix.io', SITE_URL)
-        .replaceAll('https://utilix-5rz.pages.dev', SITE_URL);
-      await writeFile(filePath, rewritten, 'utf8');
-    } catch {
-      // Optional AI-crawler documentation should not fail a production build.
-    }
-  }
-}
-
 const notFound = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex,follow"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found | NextGenToolkit</title><meta name="description" content="The requested NextGenToolkit page could not be found."></head><body style="font-family:system-ui,sans-serif;padding:40px;max-width:680px;margin:0 auto;color:#171927"><main><h1>Page not found</h1><p>The requested utility page does not exist.</p><a href="${escapeHtml(publicPath('/'))}">Return to NextGenToolkit</a></main></body></html>`;
 await writeFile(path.join(DIST, '404.html'), notFound, 'utf8');
 
