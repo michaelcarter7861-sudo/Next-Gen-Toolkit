@@ -1,0 +1,1 @@
+Trigger diagnostic workflow after switching to an isolated GitHub Pages environment.
