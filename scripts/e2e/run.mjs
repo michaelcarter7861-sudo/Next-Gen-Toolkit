@@ -58,8 +58,11 @@ async function check(name, fn) {
     results.push({ name, status: 'pass' });
     console.log(`  ok    ${name}`);
   } catch (error) {
-    results.push({ name, status: 'fail', error: String(error?.message ?? error) });
-    console.log(`  FAIL  ${name}\n        ${String(error?.message ?? error)}`);
+    const message = String(error?.message ?? error).replace(/\r?\n/g, ' ').slice(0, 900);
+    results.push({ name, status: 'fail', error: message });
+    console.log(`  FAIL  ${name}\n        ${message}`);
+    // CI annotations are readable from the API even when log/artifact download is blocked.
+    console.log(`::error title=${name.slice(0, 90)}::${message}`);
   }
 }
 
@@ -266,6 +269,8 @@ async function main() {
 }
 
 main().catch((error) => {
+  const message = String(error?.stack ?? error).replace(/\r?\n/g, ' ').slice(0, 900);
   console.error(error);
+  console.log(`::error title=suite-crashed::${message}`);
   process.exit(1);
 });
