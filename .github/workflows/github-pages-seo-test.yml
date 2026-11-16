@@ -19,7 +19,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment:
-      name: github-pages
+      name: github-pages-seo-diagnostic
       url: ${{ steps.deployment.outputs.page_url }}
     env:
       GITHUB_PAGES: "true"
