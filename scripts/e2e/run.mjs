@@ -283,6 +283,7 @@ async function main() {
     results,
   }, null, 2));
   console.log(`\n${results.length - failed.length}/${results.length} browser scenarios passed`);
+  console.log(`::notice title=browser-suite-totals::${results.length - failed.length}/${results.length} scenarios passed (${process.env.BROWSER ?? 'chromium'})`);
   if (failed.length) process.exitCode = 1;
 }
 
