@@ -103,7 +103,7 @@ export function CategoryHubView({
             {renderHubIcon(hub.iconName, 'w-8 h-8')}
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#171927] dark:text-[#171927] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#171927] dark:text-white tracking-tight">
               {hub.name}
             </h1>
             <p className="text-sm text-[#253044] max-w-xl">{hub.description}</p>

@@ -146,14 +146,14 @@ export function SchemaHeadInjector({
   useEffect(() => {
     const baseUrl = getSiteUrl();
     const ogImageUrl = `${baseUrl}/og-cover.png`;
-    let title = 'NextGenToolkit | 25+ Free PDF, Image & Developer Tools';
+    let title = 'Free PDF, Image, Text & Developer Tools | NextGenToolkit';
     let description =
       'Compress PDFs & images to exact KB, format broken JSON, count LLM tokens, and run 25+ free browser-based tools with NextGenToolkit.';
     let canonical = `${baseUrl}/`;
     let schema: Record<string, unknown>;
 
     if (isSitemapView) {
-      title = formatBrandedSeoTitle('Complete SEO Sitemap & All 25 Tools Directory');
+      title = formatBrandedSeoTitle('All Tools & Complete Directory');
       description = formatSeoDescription(
         'Browse all 32 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.'
       );
@@ -278,11 +278,8 @@ export function SchemaHeadInjector({
             url: `${baseUrl}/`,
             description,
             publisher: { '@id': `${baseUrl}/#organization` },
-            potentialAction: {
-              '@type': 'SearchAction',
-              target: `${baseUrl}/?q={search_term_string}`,
-              'query-input': 'required name=search_term_string',
-            },
+            // potentialAction/SearchAction removed: Google retired the sitelinks
+            // search box feature in November 2024, so the markup was inert.
           },
           {
             '@type': 'WebApplication',
@@ -348,6 +345,14 @@ export function SchemaHeadInjector({
       if (element) element.setAttribute(attribute, value);
     };
 
+    // Preview tools must stay out of the index even after client-side navigation.
+    setMeta(
+      'meta[name="robots"]',
+      'content',
+      activeTool?.status === 'preview'
+        ? 'noindex,follow'
+        : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
+    );
     setMeta('meta[name="description"]', 'content', description);
     setMeta('meta[property="og:title"]', 'content', title);
     setMeta('meta[property="og:description"]', 'content', description);

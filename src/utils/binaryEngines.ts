@@ -131,7 +131,7 @@ export async function createSampleImageFile(filename = 'nextgentoolkit-sample-ph
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 1200, 800);
 
-  // Geometric cards for OCR & visual compression fidelity testing
+  // Geometric cards and high-frequency detail for compression fidelity testing
   ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
   ctx.beginPath();
   ctx.roundRect(70, 70, 1060, 660, 28);
@@ -143,18 +143,17 @@ export async function createSampleImageFile(filename = 'nextgentoolkit-sample-ph
 
   ctx.fillStyle = '#E1F0FF';
   ctx.font = '600 30px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('100% Client-Side WebP / Target-KB / OCR Test Card', 130, 265);
+  ctx.fillText('Client-side WebP / Target-KB compression test card', 130, 265);
 
   ctx.fillStyle = '#F8F7FC';
   ctx.font = '24px monospace';
-  const ocrLines = [
-    'INVOICE #NGT-2025-8841   DATE: 2025-02-20',
-    'GPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)',
-    'DEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100',
-    'PORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop',
-    'OCR VERIFICATION LINE: Pack my box with five dozen liquor jugs.',
+  const testCardLines = [
+    'This image was generated locally by your browser.',
+    'It exists so you can try compression without uploading a real photo.',
+    'Try the 20 KB, 50 KB and 100 KB presets and compare quality.',
+    'No network request is made when this sample is processed.',
   ];
-  ocrLines.forEach((l, i) => {
+  testCardLines.forEach((l, i) => {
     ctx.fillText(l, 130, 355 + i * 52);
   });
 
@@ -223,58 +222,98 @@ export async function inspectAndCleanPdfMetadata(
   };
 }
 
-export async function compressPdfToTargetKb(
-  file: File,
-  targetKb: number
-): Promise<{
+export interface PdfCompressResult {
   blob: Blob;
   originalSize: number;
   compressedSize: number;
   pageCount: number;
   savingsPercent: number;
-}> {
-  const arrayBuffer = await file.arrayBuffer();
-  const srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-  const pageCount = srcDoc.getPageCount();
+  targetKb: number;
+  targetMet: boolean;
+  /** True when the optimiser could not beat the original and returned it unchanged. */
+  returnedOriginal: boolean;
+  /** Machine-readable outcome used by the UI to show an honest status message. */
+  status: 'met-target' | 'optimized-only' | 'already-optimal';
+}
 
-  // Reconstruct clean object-stream PDF stripping redundant metadata & unused objects
+/**
+ * Structural PDF optimisation.
+ *
+ * What this genuinely does: rebuilds the document with object streams, drops
+ * unused objects and removes Info/XMP metadata. What it does NOT do is
+ * re-encode embedded images, which is where most of a scanned PDF's bytes live.
+ *
+ * Honesty rules enforced here (see IMPLEMENTATION-CHANGELOG.md):
+ *  - never report a saving that did not happen;
+ *  - never return a file larger than the input;
+ *  - never claim the target was met when it was not.
+ */
+export async function compressPdfToTargetKb(
+  file: File,
+  targetKb: number
+): Promise<PdfCompressResult> {
+  const arrayBuffer = await file.arrayBuffer();
+  let srcDoc: PDFDocument | null = null;
+  try {
+    srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+  } catch {
+    throw new Error(
+      'This PDF could not be parsed. It may be encrypted, password-protected or corrupted.'
+    );
+  }
+  const pageCount = srcDoc.getPageCount();
+  if (pageCount === 0) {
+    throw new Error('This PDF contains no pages.');
+  }
+
   const outDoc = await PDFDocument.create();
   const indices = Array.from({ length: pageCount }, (_, i) => i);
   const copiedPages = await outDoc.copyPages(srcDoc, indices);
-
-  // Scale page content slightly if strict targetKb is requested
-  const scaleFactor = targetKb <= 100 ? 0.85 : targetKb <= 200 ? 0.92 : 0.98;
-  copiedPages.forEach((p) => {
-    if (scaleFactor < 1) {
-      p.scaleContent(scaleFactor, scaleFactor);
-    }
-    outDoc.addPage(p);
-  });
-
+  // Page content is intentionally NOT scaled: scaling distorts the layout and
+  // does not meaningfully reduce byte size. Verified with fixture tests.
+  copiedPages.forEach((page) => outDoc.addPage(page));
   outDoc.setTitle('');
   outDoc.setAuthor('');
   outDoc.setProducer('NextGenToolkit Client-Side PDF Engine');
   outDoc.setCreator('');
 
-  const compressedBytes = await outDoc.save({
+  const optimisedBytes = await outDoc.save({
     useObjectStreams: true,
     addDefaultPage: false,
     objectsPerTick: 50,
   });
 
-  const blob = new Blob([compressedBytes as unknown as BlobPart], { type: 'application/pdf' });
-  const compressedSize = blob.size;
-  const savingsPercent = Math.max(
-    4,
-    Math.round(((Math.max(file.size, compressedSize + 1200) - compressedSize) / Math.max(1, file.size)) * 100)
-  );
+  const originalSize = file.size;
+  const optimisedSize = optimisedBytes.byteLength;
+
+  // Never hand back something bigger than what the user gave us.
+  if (optimisedSize >= originalSize) {
+    return {
+      blob: new Blob([arrayBuffer], { type: 'application/pdf' }),
+      originalSize,
+      compressedSize: originalSize,
+      pageCount,
+      savingsPercent: 0,
+      targetKb,
+      targetMet: originalSize <= targetKb * 1024,
+      returnedOriginal: true,
+      status: 'already-optimal',
+    };
+  }
+
+  const savingsPercent = Math.round(((originalSize - optimisedSize) / originalSize) * 100);
+  const targetMet = optimisedSize <= targetKb * 1024;
 
   return {
-    blob,
-    originalSize: file.size,
-    compressedSize,
+    blob: new Blob([optimisedBytes as unknown as BlobPart], { type: 'application/pdf' }),
+    originalSize,
+    compressedSize: optimisedSize,
     pageCount,
     savingsPercent,
+    targetKb,
+    targetMet,
+    returnedOriginal: false,
+    status: targetMet ? 'met-target' : 'optimized-only',
   };
 }
 
@@ -408,63 +447,6 @@ export async function convertImagesToPdfClient(
   };
 }
 
-export async function renderPdfSummaryPreviewImages(
-  file: File,
-  dpi: 150 | 300 | 600,
-  format: 'image/png' | 'image/jpeg' | 'image/webp'
-): Promise<ProcessedFileItem[]> {
-  const buf = await file.arrayBuffer();
-  const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
-  const count = Math.min(doc.getPageCount(), 6);
-  const scale = dpi === 600 ? 2.2 : dpi === 300 ? 1.5 : 1.0;
-  const ext = format === 'image/png' ? 'png' : format === 'image/webp' ? 'webp' : 'jpg';
-
-  const items: ProcessedFileItem[] = [];
-  for (let i = 0; i < count; i++) {
-    const page = doc.getPage(i);
-    const { width, height } = page.getSize();
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(width * scale);
-    canvas.height = Math.round(height * scale);
-    const ctx = canvas.getContext('2d')!;
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Header band
-    ctx.fillStyle = '#7047EB';
-    ctx.fillRect(32 * scale, 32 * scale, canvas.width - 64 * scale, 48 * scale);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = `bold ${Math.round(14 * scale)}px "Plus Jakarta Sans", sans-serif`;
-    ctx.fillText(`${file.name} | Page ${i + 1} of ${doc.getPageCount()} (${dpi} DPI)`, 48 * scale, 62 * scale);
-
-    ctx.fillStyle = '#171927';
-    ctx.font = `${Math.round(12 * scale)}px "Plus Jakarta Sans", sans-serif`;
-    ctx.fillText(`Dimensions: ${Math.round(width)} x ${Math.round(height)} pt • Rendered at ${canvas.width}x${canvas.height}px`, 40 * scale, 115 * scale);
-
-    // Simulated document lines
-    for (let l = 0; l < 14; l++) {
-      ctx.fillStyle = l % 4 === 0 ? '#253044' : '#CBD5E1';
-      const lineW = (canvas.width - 96 * scale) * (l % 3 === 2 ? 0.65 : 0.92);
-      ctx.fillRect(40 * scale, (150 + l * 34) * scale, lineW, (l % 4 === 0 ? 12 : 8) * scale);
-    }
-
-    const blob = await new Promise<Blob>((res) =>
-      canvas.toBlob((b) => res(b || new Blob()), format, 0.92)
-    );
-    items.push({
-      id: `${file.name}-p${i + 1}`,
-      name: `${file.name.replace(/\.pdf$/i, '')}-page-${i + 1}-${dpi}dpi.${ext}`,
-      originalSize: Math.round(file.size / count),
-      outputSize: blob.size,
-      mimeType: format,
-      blob,
-      previewUrl: URL.createObjectURL(blob),
-    });
-  }
-  return items;
-}
-
 // ============================================================================
 // 3. Client-Side Image Compression, Binary-Search KB Loop, EXIF & Social Resizer
 // ============================================================================
@@ -522,70 +504,146 @@ export async function transcodeImageClient(
   };
 }
 
+export type CompressImageMime = 'image/webp' | 'image/jpeg' | 'image/png';
+
+export function extensionForImageMime(mime: CompressImageMime): 'jpg' | 'png' | 'webp' {
+  if (mime === 'image/png') return 'png';
+  if (mime === 'image/webp') return 'webp';
+  return 'jpg';
+}
+
+/** Pure helper (unit-tested): builds an honest output filename for a target size. */
+export function buildCompressedImageName(
+  originalName: string,
+  targetKb: number,
+  mime: CompressImageMime
+): string {
+  const base = originalName.replace(/\.[^.]+$/, '') || 'image';
+  return `${base}-${targetKb}kb.${extensionForImageMime(mime)}`;
+}
+
+function encodeCanvas(
+  canvas: HTMLCanvasElement,
+  mime: CompressImageMime,
+  quality: number
+): Promise<Blob> {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob || new Blob()), mime, quality);
+  });
+}
+
+/**
+ * Target-size image compression with a real byte-level verification loop.
+ *
+ * - JPEG/WebP: 8-step binary search over encoder quality, then progressive
+ *   downscaling if the requested byte ceiling is still unreachable.
+ * - PNG: quality is ignored by browsers, so size is controlled by progressive
+ *   downscaling (PNG is kept lossless, never silently converted).
+ * - Transparency is preserved for PNG/WebP output.
+ */
 export async function compressImageToExactKbClient(
   file: File,
-  targetKb: number
-): Promise<ProcessedFileItem & { iterations: number; achievedQuality: number; dimensions: string }> {
+  targetKb: number,
+  mime: CompressImageMime = 'image/jpeg'
+): Promise<
+  ProcessedFileItem & {
+    iterations: number;
+    achievedQuality: number | null;
+    dimensions: string;
+    targetMet: boolean;
+    scaleApplied: number;
+    requestedMime: CompressImageMime;
+  }
+> {
   const targetBytes = targetKb * 1024;
   const dataUrl = await fileToDataUrl(file);
   const img = await loadImageElement(dataUrl);
+  const naturalW = img.naturalWidth || 800;
+  const naturalH = img.naturalHeight || 600;
+  const lossy = mime !== 'image/png';
 
-  let scale = 1.0;
-  if (targetKb <= 25 && (img.naturalWidth > 600 || img.naturalHeight > 600)) {
-    scale = 600 / Math.max(img.naturalWidth, img.naturalHeight);
-  } else if (targetKb <= 55 && (img.naturalWidth > 900 || img.naturalHeight > 900)) {
-    scale = 900 / Math.max(img.naturalWidth, img.naturalHeight);
-  }
+  let scale = 1;
+  // Sensible starting scale so tiny targets do not waste eight encode passes.
+  if (targetKb <= 25 && Math.max(naturalW, naturalH) > 600) scale = 600 / Math.max(naturalW, naturalH);
+  else if (targetKb <= 55 && Math.max(naturalW, naturalH) > 900) scale = 900 / Math.max(naturalW, naturalH);
 
-  let low = 0.05;
-  let high = 0.95;
-  let bestBlob: Blob | null = null;
-  let bestQuality = 0.75;
   let iterations = 0;
+  let bestBlob: Blob | null = null;
+  let bestQuality: number | null = lossy ? 0.75 : null;
+  let bestScale = scale;
+  let bestCanvas: HTMLCanvasElement | null = null;
 
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(120, Math.round((img.naturalWidth || 800) * scale));
-  canvas.height = Math.max(120, Math.round((img.naturalHeight || 600) * scale));
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const render = (scaleValue: number): HTMLCanvasElement => {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(64, Math.round(naturalW * scaleValue));
+    canvas.height = Math.max(64, Math.round(naturalH * scaleValue));
+    const ctx = canvas.getContext('2d')!;
+    if (mime === 'image/jpeg') {
+      // JPEG has no alpha channel: flatten onto white instead of rendering black.
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  };
 
-  for (let i = 0; i < 8; i++) {
-    iterations++;
-    const mid = Number(((low + high) / 2).toFixed(3));
-    const candidate = await new Promise<Blob>((resolve) =>
-      canvas.toBlob((b) => resolve(b || new Blob()), 'image/jpeg', mid)
-    );
-    if (candidate.size <= targetBytes) {
-      bestBlob = candidate;
-      bestQuality = mid;
-      low = mid;
-    } else {
-      high = mid;
+  // Phase 1: quality search (lossy formats only).
+  if (lossy) {
+    const canvas = render(scale);
+    bestCanvas = canvas;
+    let low = 0.05;
+    let high = 0.95;
+    for (let i = 0; i < 8; i++) {
+      iterations++;
+      const mid = Number(((low + high) / 2).toFixed(3));
+      const candidate = await encodeCanvas(canvas, mime, mid);
+      if (candidate.size <= targetBytes) {
+        bestBlob = candidate;
+        bestQuality = mid;
+        low = mid;
+      } else {
+        high = mid;
+      }
     }
   }
 
-  if (!bestBlob) {
-    bestBlob = await new Promise<Blob>((resolve) =>
-      canvas.toBlob((b) => resolve(b || new Blob()), 'image/jpeg', 0.1)
-    );
-    bestQuality = 0.1;
+  // Phase 2: progressive downscale until the ceiling is met (or we hit the floor).
+  let attempts = 0;
+  while ((!bestBlob || bestBlob.size > targetBytes) && attempts < 6 && Math.max(naturalW, naturalH) * scale > 96) {
+    attempts++;
+    iterations++;
+    scale = Math.max(0.08, scale * 0.82);
+    const canvas = render(scale);
+    const candidate = await encodeCanvas(canvas, mime, lossy ? (bestQuality ?? 0.7) : 1);
+    if (!bestBlob || candidate.size <= bestBlob.size) {
+      bestBlob = candidate;
+      bestScale = scale;
+      bestCanvas = canvas;
+    }
+    if (bestBlob.size <= targetBytes) break;
   }
 
-  const baseName = file.name.replace(/\.[^.]+$/, '');
+  if (!bestBlob || !bestCanvas) {
+    bestCanvas = render(scale);
+    bestBlob = await encodeCanvas(bestCanvas, mime, lossy ? 0.1 : 1);
+    bestScale = scale;
+  }
+
   return {
     id: `${file.name}-kb-${Date.now()}`,
-    name: `${baseName}-${targetKb}kb.jpg`,
+    name: buildCompressedImageName(file.name, targetKb, mime),
     originalSize: file.size,
     outputSize: bestBlob.size,
-    mimeType: 'image/jpeg',
+    mimeType: mime,
     blob: bestBlob,
     previewUrl: URL.createObjectURL(bestBlob),
     sourcePreviewUrl: dataUrl,
     iterations,
-    achievedQuality: Math.round(bestQuality * 100),
-    dimensions: `${canvas.width} × ${canvas.height} px`,
+    achievedQuality: bestQuality === null ? null : Math.round(bestQuality * 100),
+    dimensions: `${bestCanvas.width} × ${bestCanvas.height} px`,
+    targetMet: bestBlob.size <= targetBytes,
+    scaleApplied: Number(bestScale.toFixed(3)),
+    requestedMime: mime,
   };
 }
 

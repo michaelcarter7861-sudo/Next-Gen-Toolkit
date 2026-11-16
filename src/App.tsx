@@ -60,7 +60,16 @@ export default function App() {
   const [activeView, setActiveView] = useState<'home' | 'hub' | 'tool' | 'sitemap'>('home');
   const [selectedHubId, setSelectedHubId] = useState<HubId>('image-tools');
   const [selectedToolId, setSelectedToolId] = useState<string>('compress-image-to-kb');
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('ngt_theme_v1');
+      if (saved === 'dark') return true;
+      if (saved === 'light') return false;
+      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+    } catch {
+      return false;
+    }
+  });
 
   // Homepage live search query & quick-category filter
   const [heroSearch, setHeroSearch] = useState<string>('');
@@ -119,10 +128,11 @@ export default function App() {
   // Toggle dark class on <html>
   useEffect(() => {
     const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    root.classList.toggle('dark', darkMode);
+    try {
+      localStorage.setItem('ngt_theme_v1', darkMode ? 'dark' : 'light');
+    } catch {
+      // Ignore storage errors (private mode, quota).
     }
   }, [darkMode]);
 
@@ -502,9 +512,9 @@ export default function App() {
                     className="text-4xl sm:text-5xl lg:text-[54px] font-extrabold text-[#171927] dark:text-white tracking-tight leading-[1.12]"
                     style={{ textWrap: 'balance' }}
                   >
-                    Get more done.{' '}
+                    Free PDF, image, text &amp; developer tools
                     <span className="block text-[#7047EB] dark:text-[#9F7AEA]">
-                      With less effort.
+                      that run in your browser.
                     </span>
                   </h1>
 
@@ -1763,6 +1773,17 @@ export default function App() {
           SEMANTIC DARK FOOTER
       ===================================================================== */}
       <footer className="bg-[#171927] text-[#CBD5E1] py-12 border-t border-[#2A2E42]">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-8">
+          <nav aria-label="Site information" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-[#94A3B8]">
+            <a href={toPublicPath('/about/')} className="hover:text-white">About</a>
+            <a href={toPublicPath('/contact/')} className="hover:text-white">Contact</a>
+            <a href={toPublicPath('/privacy/')} className="hover:text-white">Privacy</a>
+            <a href={toPublicPath('/terms/')} className="hover:text-white">Terms</a>
+            <a href={toPublicPath('/editorial-policy/')} className="hover:text-white">Editorial policy</a>
+            <a href={toPublicPath('/changelog/')} className="hover:text-white">Changelog</a>
+            <a href={toPublicPath('/sitemap/')} className="hover:text-white">All tools</a>
+          </nav>
+        </div>
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
           <div className="space-y-3">
             <div className="flex items-center gap-2.5 text-white font-extrabold text-lg">

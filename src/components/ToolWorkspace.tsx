@@ -52,6 +52,13 @@ import { NineZoneSeoContent } from './NineZoneSeoContent';
 import { BreadcrumbsNav } from './BreadcrumbsNav';
 import { ImageCompareModal } from './ImageCompareModal';
 
+/** Honest, user-facing status messages for features whose engine is not shipped yet. */
+export const PDF_RENDER_NOTICE =
+  'PDF page rendering is not available in this build. The previous version drew placeholder shapes and presented them as converted pages, which was misleading, so that behaviour was removed. Your file is untouched and was not uploaded anywhere. Real page rasterisation (pdf.js) is planned.';
+
+export const OCR_NOTICE =
+  'OCR is not available in this build. No text-recognition engine is bundled, so this tool does not extract text from images yet. The previous version echoed input text and presented it as recognised output, which was misleading. Your image is untouched and was not uploaded anywhere.';
+
 export interface ChainedToolPayload {
   text?: string;
   files?: File[];
@@ -115,6 +122,7 @@ export function ToolWorkspace({
   const [processedItems, setProcessedItems] = useState<ProcessedFileItem[]>([]);
   const [forensicTable, setForensicTable] = useState<Record<string, string> | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingNotice, setProcessingNotice] = useState<string | null>(null);
   const [executionDurationMs, setExecutionDurationMs] = useState<number | null>(null);
   const [chainedFromLabel, setChainedFromLabel] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -463,13 +471,11 @@ export function ToolWorkspace({
           break;
         }
         case 'image-to-text-ocr': {
-          if (!inputText) {
-            setOutputText(
-              `INVOICE #NGT-2026-8841   DATE: 2026-11-13\nGPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)\nDEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100\nPORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop\nOCR VERIFICATION LINE: Pack my box with five dozen liquor jugs.`
-            );
-          } else {
-            setOutputText(inputText);
-          }
+          // No OCR engine is bundled in this build. Previously this branch echoed
+          // the input (or canned sample text) and presented it as recognised text.
+          // Emitting nothing is the only honest option until tesseract.js ships.
+          setOutputText('');
+          setProcessingNotice(OCR_NOTICE);
           break;
         }
       }
@@ -520,6 +526,7 @@ export function ToolWorkspace({
       const t0 = performance.now();
       setIsProcessing(true);
       setForensicTable(null);
+      setProcessingNotice(null);
 
       try {
         // Keep the heavy PDF/image/ZIP engines out of the initial page bundle.
@@ -529,16 +536,28 @@ export function ToolWorkspace({
         if (tool.id === 'compress-pdf') {
           for (const f of filesToProcess) {
             const res = await binary.compressPdfToTargetKb(f, targetKb);
+            const statusLabel =
+              res.status === 'met-target'
+                ? `Target met (≤ ${targetKb} KB)`
+                : res.status === 'already-optimal'
+                  ? 'Already optimised — original returned unchanged'
+                  : `Optimised, target NOT met (${Math.round(res.compressedSize / 1024)} KB)`;
             results.push({
               id: `${f.name}-${Date.now()}`,
-              name: `${f.name.replace(/\.pdf$/i, '')}-compressed-${targetKb}kb.pdf`,
+              name: `${f.name.replace(/\.pdf$/i, '')}-optimised.pdf`,
               originalSize: res.originalSize,
               outputSize: res.compressedSize,
               mimeType: 'application/pdf',
               blob: res.blob,
               metaSummary: {
                 Pages: String(res.pageCount),
-                Savings: `${res.savingsPercent}% Reduced`,
+                Change:
+                  res.savingsPercent > 0
+                    ? `${res.savingsPercent}% smaller`
+                    : res.returnedOriginal
+                      ? '0% — original returned'
+                      : '0%',
+                Status: statusLabel,
               },
             });
           }
@@ -573,9 +592,10 @@ export function ToolWorkspace({
             });
           }
         } else if (tool.id === 'pdf-to-image') {
-          const first = filesToProcess[0];
-          const rendered = await binary.renderPdfSummaryPreviewImages(first, pdfDpi, imageOutputFormat);
-          results.push(...rendered);
+          // The previous build drew placeholder shapes and presented them as a
+          // rendered PDF page. That is not a conversion, so it was removed. Until
+          // a real rasteriser (pdf.js) ships, the UI states this honestly.
+          setProcessingNotice(PDF_RENDER_NOTICE);
         } else if (tool.id === 'image-to-pdf') {
           const res = await binary.convertImagesToPdfClient(filesToProcess, {
             pageSize: pdfPageSize,
@@ -612,13 +632,18 @@ export function ToolWorkspace({
           }
         } else if (tool.id === 'compress-image-to-kb') {
           for (const f of filesToProcess) {
-            const res = await binary.compressImageToExactKbClient(f, targetKb);
+            const res = await binary.compressImageToExactKbClient(f, targetKb, imageOutputFormat);
             results.push({
               ...res,
               metaSummary: {
                 'Target Limit': `≤ ${targetKb} KB`,
-                'Quality Reached': `${res.achievedQuality}% (${res.iterations} binary steps)`,
-                Dimensions: res.dimensions,
+                Result: res.targetMet
+                  ? `Target met (${(res.outputSize / 1024).toFixed(1)} KB)`
+                  : `Could not reach target (${(res.outputSize / 1024).toFixed(1)} KB)`,
+                Output: `${res.mimeType.replace('image/', '').toUpperCase()} · ${res.dimensions}`,
+                ...(res.achievedQuality === null
+                  ? { Lossless: 'PNG kept lossless (size reduced by scaling)' }
+                  : { 'Quality Reached': `${res.achievedQuality}% (${res.iterations} passes)` }),
               },
             });
           }
@@ -678,9 +703,9 @@ export function ToolWorkspace({
       const sampleImg = await createSampleImageFile('nextgentoolkit-highres-sample.jpg');
       setUploadedFiles([sampleImg]);
       if (tool.id === 'image-to-text-ocr') {
-        setInputText(
-          `INVOICE #NGT-2025-8841   DATE: 2025-02-20\nGPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)\nDEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100\nPORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop\nOCR VERIFICATION LINE: Pack my box with five dozen liquor jugs.`
-        );
+        // No canned "recognised" text: an OCR preview must not invent output.
+        setInputText('');
+        setProcessingNotice(OCR_NOTICE);
       }
     } else {
       setInputText(SAMPLE_TEXT_PRESETS[tool.id] || 'NextGenToolkit Sample Input');
@@ -861,6 +886,11 @@ export function ToolWorkspace({
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#171927] dark:text-[#F8F7FC] tracking-tight">
               {tool.name}
             </h1>
+            {tool.status === 'preview' && (
+              <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 text-[11px] font-bold uppercase tracking-wide">
+                Preview — engine not shipped
+              </span>
+            )}
             <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-0.5">
               {tool.valuePropSubtitle}
             </p>
@@ -1198,6 +1228,18 @@ export function ToolWorkspace({
                 </div>
               )}
 
+              {/* Honest feature-availability notice (aria-live so screen readers hear it) */}
+              {processingNotice && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 space-y-1"
+                >
+                  <div className="font-bold">Not available yet — nothing was faked</div>
+                  <p className="leading-relaxed">{processingNotice}</p>
+                </div>
+              )}
+
               {/* Processed Batch Queue Results */}
               {isProcessing && (
                 <div className="p-4 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] text-xs font-semibold text-[#7047EB] flex items-center gap-2">
@@ -1458,7 +1500,9 @@ export function ToolWorkspace({
                     <textarea
                       id={`ngt-output-${tool.id}`}
                       rows={12}
-                      readOnly={tool.id !== 'image-to-text-ocr'}
+                      readOnly
+                      aria-live="polite"
+                      aria-label={`${tool.name} output`}
                       value={outputText}
                       onChange={(e) => setOutputText(e.target.value)}
                       className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#131520] text-[#E2E8F0] p-3.5 font-mono text-xs focus:outline-none leading-relaxed"
@@ -1473,7 +1517,11 @@ export function ToolWorkspace({
                   <label className="block text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
                     Unified Myers Diff & Git .patch Output
                   </label>
-                  <pre className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#131520] text-[#E2E8F0] p-4 font-mono text-xs overflow-x-auto max-h-64 whitespace-pre-wrap">
+                  <pre
+                    aria-live="polite"
+                    aria-label="Diff output"
+                    className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#131520] text-[#E2E8F0] p-4 font-mono text-xs overflow-x-auto max-h-64 whitespace-pre-wrap"
+                  >
                     {outputText}
                   </pre>
                 </div>

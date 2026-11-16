@@ -1,28 +1,55 @@
 name: Project quality checks
+
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      SITE_URL: https://nextgentoolkit.pages.dev
+      VITE_SITE_URL: https://nextgentoolkit.pages.dev
+      VITE_STATIC_DEPLOYMENT: 'true'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package.json
+
+      # npm ci is reproducible and fails loudly if the lockfile drifts from
+      # package.json. The previous `npm install` failed from a clean checkout
+      # because a stray esbuild devDependency conflicted with Vite 8's peer range.
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Run automated tool-engine tests
+        run: npm ci --no-audit --no-fund
+
+      - name: Unit tests (text, dev and binary engines)
         run: npm test
-      - name: Run TypeScript checks
+
+      - name: Type-check
         run: npm run lint
-      - name: Verify production build
+
+      # The build runs render-og-image -> vite build -> generate-seo-pages ->
+      # verify-seo-build, so a broken canonical, sitemap entry, noindex policy
+      # or OG image fails the pipeline here.
+      - name: Build and verify generated SEO output
         run: npm run build
+
+      - name: Upload build output for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextgentoolkit-build
+          path: dist
+          if-no-files-found: error
+          retention-days: 7

@@ -31,6 +31,13 @@ export interface ToolDefinition {
   valuePropSubtitle: string;
   subCategory: string;
   popular?: boolean;
+  /**
+   * 'live'    — the advertised operation is genuinely implemented.
+   * 'preview' — the UI is shipped but the core engine is not; the page must be
+   *             noindexed, excluded from the sitemap and must never emit
+   *             simulated output. See IMPLEMENTATION-CHANGELOG.md.
+   */
+  status?: 'live' | 'preview';
   nextStepToolId: string;
   nextStepPrompt: string;
   // GEO & AEO 9-Zone Content
@@ -224,30 +231,30 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     hubId: 'pdf-tools',
     slug: 'compress-pdf',
     canonicalPath: '/pdf-tools/compress-pdf/',
-    name: 'Offline PDF Compressor',
-    shortDesc: 'Reduce PDF file size to exact KB targets without losing quality.',
-    primaryKeyword: 'Compress PDF Online Free to Exact KB (100KB, 200KB)',
-    valuePropSubtitle: 'Shrink PDF files toward 100KB, 200KB, or 500KB targets inside your browser RAM with zero server uploads.',
+    name: 'Offline PDF Optimizer',
+    shortDesc: 'Rebuild PDF object streams and strip hidden metadata locally — measured savings, honestly reported.',
+    primaryKeyword: 'Optimize PDF Offline & Strip Metadata (No Upload)',
+    valuePropSubtitle: 'Rebuild PDF structure and strip hidden metadata inside your browser RAM. Savings are measured byte-for-byte and reported honestly; embedded images are not re-encoded yet.',
     subCategory: 'Compress',
     popular: true,
     nextStepToolId: 'merge-pdf',
     nextStepPrompt: 'Need to combine multiple compressed PDFs? Send directly to PDF Merger →',
     entityLeadSentence:
-      'NextGenToolkit Offline PDF Compressor is a free, browser-based web application that reduces PDF byte size toward exact kilobyte targets (100KB, 200KB, 500KB) using pdf-lib object stream reconstruction and metadata stripping with zero server uploads.',
-    aeoQuestionHeading: 'How to Compress a PDF Under 200KB Online Without Uploading?',
+      'NextGenToolkit Offline PDF Optimizer is a free, browser-based utility that rebuilds PDF object streams and removes Author, Creator, Producer and XMP metadata using pdf-lib, entirely inside your browser with zero server uploads. It reports the real byte difference and never returns a file larger than the original.',
+    aeoQuestionHeading: 'How Can I Reduce a PDF File Size Without Uploading It?',
     aeoSummaryParagraph:
-      'To compress a PDF under 200KB without uploading it to a cloud server, drop your PDF into the NextGenToolkit Offline PDF Compressor, slide the Target KB selector to 200KB, and export the reconstructed PDF stream directly from your browser memory.',
+      'Drop your PDF into the NextGenToolkit Offline PDF Optimizer. It rebuilds the document with compressed object streams, removes metadata and tells you the exact before/after byte size. Text-based PDFs usually shrink; scanned, image-heavy PDFs usually do not, because their bytes live in embedded images that this tool does not re-encode yet.',
     howToSteps: [
-      { name: 'Select or Drag PDF Files', text: 'Drop one or multiple PDF files into the NextGenToolkit workspace or click Load Sample Data.' },
-      { name: 'Set Target KB Size Slider', text: 'Slide the target KB control to 100KB, 200KB, or 500KB for portal compliance.' },
-      { name: 'Download Optimized PDF or Batch ZIP', text: 'Save your compressed PDF immediately or export all files in a single ZIP archive.' },
+      { name: 'Select or Drag PDF Files', text: 'Drop one or multiple PDF files into the workspace, or click Load Sample Data to try a generated text PDF.' },
+      { name: 'Run the Optimizer', text: 'The tool rebuilds object streams, drops unused objects and strips metadata. No file leaves your browser.' },
+      { name: 'Check the Measured Result', text: 'Download the optimised PDF or the batch ZIP. The result panel shows the real byte change and whether your target was reached — it will not claim a saving that did not happen.' },
     ],
     lsiKeywords: [
-      'DPI downsampling',
-      'lossless object stream compression',
-      'WebAssembly PDF parser',
+      'object stream reconstruction',
+      'PDF metadata stripping',
       'client-side PDF privacy',
-      'compress PDF to 100KB 200KB',
+      'reduce PDF size without upload',
+      'scanned PDF compression limitations',
       'XMP metadata stripping',
       'pdf-lib stream optimization',
       'portal upload size limit',
@@ -264,13 +271,14 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     specTable: {
       supportedFormats: 'PDF 1.3 – 2.0 (.pdf)',
       maxFileCapacity: 'Depends on available browser memory and input size',
-      executionEngine: 'pdf-lib Object Stream Reconstruction + Canvas Downsampling',
+      executionEngine: 'pdf-lib object stream rebuild + metadata stripping (no image re-encoding yet)',
       privacyModel: 'Local browser processing for core PDF operations',
       batchSupport: 'Multi-file queue with ZIP export; capacity depends on browser memory',
     },
     faqs: [
       { q: 'Does NextGenToolkit upload my confidential PDF to any server?', a: 'No. Every byte of your PDF is parsed and compressed locally inside your browser using JavaScript and pdf-lib. Network inspection verifies 0 bytes are transmitted to a file-processing server.' },
-      { q: 'How can I compress a PDF under 100KB or 200KB for government portals?', a: 'Use the Target KB Slider in the settings panel to select 100KB or 200KB. NextGenToolkit strips redundant XMP packets, compresses object streams, and optimizes embedded structures to meet portal limits.' },
+      { q: 'Will this reach an exact 100KB or 200KB target?', a: 'Not always, and the interface says so. Text-based PDFs typically shrink 20-40%. Scanned or image-heavy PDFs usually cannot reach a strict ceiling here, because their bytes are inside embedded images that this build does not re-encode; the result panel shows the real output size instead of pretending the target was met.' },
+      { q: 'What exactly does the optimizer change?', a: 'It rebuilds the document with compressed object streams, drops unused objects, and clears Author, Creator, Producer, Title and XMP metadata. Page content and layout are left untouched. If the rebuild would produce a larger file, the original is returned unchanged.' },
       { q: 'Can I batch compress multiple PDF files at once for free?', a: 'Yes. Drop multiple PDFs into the queue and click Download All as ZIP.' },
       { q: 'Will compressing my PDF add watermarks?', a: 'Never. NextGenToolkit outputs clean, standards-compliant PDF documents with zero watermarks or sign-up gates.' },
       { q: 'Does offline PDF compression work on mobile and macOS Safari?', a: 'Yes, the engine uses standard ES6 ArrayBuffers supported across Chrome, Safari, Firefox, and Edge on desktop and mobile.' },
@@ -393,9 +401,10 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     slug: 'pdf-to-image',
     canonicalPath: '/pdf-tools/pdf-to-image/',
     name: 'PDF to High-Res Images',
-    shortDesc: 'Render PDF pages to crisp PNG, JPG, or WebP at 150, 300, or 600 DPI.',
+    status: 'preview',
+    shortDesc: 'Preview page rasterisation to PNG, JPG or WebP at 150–600 DPI. Engine not shipped yet — the tool says so instead of faking output.',
     primaryKeyword: 'Convert PDF to PNG, JPG & WebP High DPI',
-    valuePropSubtitle: 'Rasterize PDF pages onto offscreen HTML5 Canvas at configurable 150, 300, or 600 DPI scales.',
+    valuePropSubtitle: 'Page rasterisation at configurable 150, 300 or 600 DPI is in development. The page states this plainly and never produces placeholder images.',
     subCategory: 'Convert',
     nextStepToolId: 'compress-image-to-kb',
     nextStepPrompt: 'Need your exported images under 50KB? Open Target-KB Image Compressor →',
@@ -777,7 +786,8 @@ export const TOOLS_CATALOG: ToolDefinition[] = [
     slug: 'image-to-text-ocr',
     canonicalPath: '/image-tools/image-to-text-ocr/',
     name: 'Browser OCR (Image to Text)',
-    shortDesc: 'Extract selectable text from images and pasted screenshots (Ctrl+V).',
+    status: 'preview',
+    shortDesc: 'In-browser OCR for images and screenshots is in development. No text-recognition engine is bundled yet, so the tool says so rather than echoing input.',
     primaryKeyword: 'Image to Text OCR Converter Online (Browser-Based)',
     valuePropSubtitle: 'Extract text from uploaded photos or pasted clipboard screenshots (Ctrl+V) and export to .txt, .md, or .json.',
     subCategory: 'OCR',
