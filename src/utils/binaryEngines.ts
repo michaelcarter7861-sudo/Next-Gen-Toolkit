@@ -545,6 +545,8 @@ export interface ImageCompressResult extends ProcessedFileItem {
   actualMime: string;
   /** True when the browser substituted a different format than the one requested. */
   formatFallback: boolean;
+  /** True when the file already satisfied the ceiling, so no conversion was attempted. */
+  conversionSkipped: boolean;
   iterations: number;
   achievedQuality: number | null;
   originalDimensions: string;
@@ -649,7 +651,10 @@ export async function compressImageToExactKbClient(
       status: 'already-below-target',
       requestedMime: mime,
       actualMime: actual.mime,
-      formatFallback: actual.fallback,
+      // The requested format was deliberately not applied: re-encoding a file
+      // that already fits would only lose quality. This is not an encoder error.
+      formatFallback: false,
+      conversionSkipped: actual.fallback,
       iterations: 0,
       achievedQuality: null,
       originalDimensions,
@@ -666,9 +671,9 @@ export async function compressImageToExactKbClient(
   const MIN_LONG_EDGE = 240;
   const longEdge = Math.max(naturalW, naturalH);
 
+  // Always start at native resolution: a resolution cut that was not needed can
+  // never be undone, while an unnecessary quality pass costs a few milliseconds.
   let scale = 1;
-  if (targetKb <= 25 && longEdge > 600) scale = 600 / longEdge;
-  else if (targetKb <= 55 && longEdge > 900) scale = 900 / longEdge;
 
   let iterations = 0;
   const best: {
@@ -783,6 +788,7 @@ export async function compressImageToExactKbClient(
     requestedMime: mime,
     actualMime: actual.mime,
     formatFallback: actual.fallback,
+    conversionSkipped: false,
     iterations,
     achievedQuality: best.quality === null ? null : Math.round(best.quality * 100),
     originalDimensions,

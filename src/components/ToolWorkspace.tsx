@@ -127,6 +127,7 @@ export function ToolWorkspace({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingNotice, setProcessingNotice] = useState<string | null>(null);
   const [gauge, setGauge] = useState<ByteGaugeProps | null>(null);
+  const processedItemsRef = useRef<ProcessedFileItem[]>([]);
   const [executionDurationMs, setExecutionDurationMs] = useState<number | null>(null);
   const [chainedFromLabel, setChainedFromLabel] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -148,7 +149,9 @@ export function ToolWorkspace({
   });
   const [imageOutputFormat, setImageOutputFormat] = useState<'image/webp' | 'image/jpeg' | 'image/png'>('image/webp');
   const [pdfRotation, setPdfRotation] = useState<number>(0);
-  const [pdfRangeSyntax, setPdfRangeSyntax] = useState<string>('1-2, 4');
+  // Splitting needs an explicit range; rendering defaults to the whole document.
+  const [pdfRangeSyntax, setPdfRangeSyntax] = useState<string>('1-2');
+  const [pdfImagePages, setPdfImagePages] = useState<string>('all');
   const [pdfDpi, setPdfDpi] = useState<150 | 300 | 600>(300);
   const [pdfPageSize, setPdfPageSize] = useState<'A4' | 'Letter' | 'Fit'>('A4');
   const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('portrait');
@@ -542,6 +545,10 @@ export function ToolWorkspace({
       setForensicTable(null);
       setProcessingNotice(null);
       setGauge(null);
+      // Release the previous run's blob URLs so long sessions cannot leak memory.
+      for (const previous of processedItemsRef.current) {
+        if (previous.previewUrl) URL.revokeObjectURL(previous.previewUrl);
+      }
 
       try {
         // Keep the heavy PDF/image/ZIP engines out of the initial page bundle.
@@ -624,7 +631,7 @@ export function ToolWorkspace({
           const raster = await import('../utils/pdfRasterBrowser');
           for (const f of filesToProcess) {
             const rendered = await raster.renderPdfPagesInBrowser(f, {
-              pages: pdfRangeSyntax || 'all',
+              pages: pdfImagePages.trim() || 'all',
               dpi: pdfDpi,
               format: imageOutputFormat,
               quality: qualitySlider / 100,
@@ -633,8 +640,12 @@ export function ToolWorkspace({
               setProcessingNotice('No pages matched the page selection.');
             }
             if (rendered.skipped > 0) {
+              const reason =
+                rendered.truncatedReason === 'pixel-budget'
+                  ? 'the per-document pixel budget was reached (high DPI on a long document needs more memory than this device should give)'
+                  : 'the per-run page cap was reached';
               setProcessingNotice(
-                `Rendered ${rendered.pages.length} pages. ${rendered.skipped} more were skipped because of the per-run page cap.`
+                `Rendered ${rendered.pages.length} page${rendered.pages.length === 1 ? '' : 's'}. ${rendered.skipped} more were skipped because ${reason}. Lower the DPI or render them in a second run.`
               );
             }
             for (const page of rendered.pages) {
@@ -724,8 +735,10 @@ export function ToolWorkspace({
                 Result: statusLabel,
                 Output: `${res.actualMime.replace('image/', '').toUpperCase()} · ${res.finalDimensions}`,
                 ...(res.formatFallback
-                  ? { Format: `Browser could not encode ${res.requestedMime.replace('image/', '').toUpperCase()} — saved as ${res.actualMime.replace('image/', '').toUpperCase()}` }
-                  : {}),
+                  ? { Format: `This browser could not encode ${res.requestedMime.replace('image/', '').toUpperCase()} — saved as ${res.actualMime.replace('image/', '').toUpperCase()}` }
+                  : res.conversionSkipped
+                    ? { Format: `Kept as ${res.actualMime.replace('image/', '').toUpperCase()} — the file already fits the limit, so converting it would only lose quality` }
+                    : {}),
                 ...(res.achievedQuality === null
                   ? { Lossless: res.scaled ? 'PNG kept lossless; resolution reduced to reach the limit' : 'PNG kept lossless' }
                   : { 'Quality Reached': `${res.achievedQuality}% (${res.iterations} passes)` }),
@@ -749,6 +762,7 @@ export function ToolWorkspace({
           results.push(...pack);
         }
 
+        processedItemsRef.current = results;
         setProcessedItems(results);
         setExecutionDurationMs(Math.max(1, Math.round(performance.now() - t0)));
       } finally {
@@ -1919,8 +1933,8 @@ export function ToolWorkspace({
                     id="ngt-pdf-page-range"
                     type="text"
                     inputMode="text"
-                    value={pdfRangeSyntax}
-                    onChange={(e) => setPdfRangeSyntax(e.target.value)}
+                    value={pdfImagePages}
+                    onChange={(e) => setPdfImagePages(e.target.value)}
                     placeholder="all"
                     className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] px-3 py-2 min-h-11 text-xs font-mono"
                   />

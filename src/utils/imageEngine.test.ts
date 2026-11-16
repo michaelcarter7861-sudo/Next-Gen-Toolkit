@@ -229,7 +229,8 @@ test('an already-small file keeps its own format even if another was requested',
   const result = await compressImageToExactKbClient(file, 500, 'image/jpeg');
   assert.equal(result.status, 'already-below-target');
   assert.equal(result.actualMime, 'image/png');
-  assert.equal(result.formatFallback, true, 'the requested format was not applied, and that is reported');
+  assert.equal(result.conversionSkipped, true, 'the requested format was not applied, and that is reported as a skip');
+  assert.equal(result.formatFallback, false, 'a deliberate skip is not an encoder failure');
   assert.equal(result.outputSize, file.size);
   assert.equal(result.name, file.name);
 });
@@ -242,4 +243,65 @@ test('transparency handling is stated in the result', async () => {
 
   const asPng = await compressImageToExactKbClient(file, 150, 'image/png');
   assert.equal(asPng.transparencyNote, null, 'PNG must not claim to flatten transparency');
+});
+
+/**
+ * Real transparency fixtures. The earlier suite used an opaque source while
+ * describing transparency coverage, which proved nothing. These tests build a
+ * PNG with genuinely transparent corners and inspect the decoded output pixels.
+ */
+async function makeTransparentPng(size = 400): Promise<File> {
+  const canvas = createCanvas(size, size);
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, size, size); // fully transparent
+  ctx.fillStyle = '#1D4ED8';
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 3, 0, Math.PI * 2);
+  ctx.fill();
+  const buffer = canvas.toBuffer('image/png');
+  return new File([new Uint8Array(buffer)], 'alpha.png', { type: 'image/png' });
+}
+
+async function alphaAt(file: File, x: number, y: number): Promise<number> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const image = await loadImage(Buffer.from(bytes));
+  const canvas = createCanvas(image.width, image.height);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(image as never, 0, 0);
+  return ctx.getImageData(Math.min(x, image.width - 1), Math.min(y, image.height - 1), 1, 1).data[3];
+}
+
+test('transparent PNG pixels survive a PNG -> PNG compression', async () => {
+  const source = await makeTransparentPng();
+  assert.equal(await alphaAt(source, 2, 2), 0, 'fixture must start transparent');
+  const result = await compressImageToExactKbClient(source, 60, 'image/png');
+  assert.equal(result.actualMime, 'image/png');
+  const corner = await alphaAt(result.blob as File, 2, 2);
+  assert.equal(corner, 0, `transparent corner became opaque (alpha ${corner})`);
+  const centre = await alphaAt(result.blob as File, 200, 200);
+  assert.equal(centre, 255, 'the opaque shape must stay opaque');
+});
+
+test('JPEG output flattens transparency onto white, as documented', async () => {
+  const source = await makeTransparentPng(800);
+  assert.ok(source.size > 12 * 1024, `fixture must exceed the target (${source.size} bytes)`);
+  const result = await compressImageToExactKbClient(source, 12, 'image/jpeg');
+  assert.equal(result.status, 'met-target');
+  assert.equal(result.actualMime, 'image/jpeg');
+  const bytes = new Uint8Array(await (result.blob as File).arrayBuffer());
+  const image = await loadImage(Buffer.from(bytes));
+  const canvas = createCanvas(image.width, image.height);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(image as never, 0, 0);
+  const pixel = ctx.getImageData(2, 2, 1, 1).data;
+  assert.ok(pixel[0] > 240 && pixel[1] > 240 && pixel[2] > 240, `corner should be white, got ${[...pixel].slice(0, 3)}`);
+  assert.match(String(result.transparencyNote), /white/i);
+});
+
+test('an already-fitting file reports a skipped conversion, not an encoder failure', async () => {
+  const source = await makeTransparentPng(120);
+  const result = await compressImageToExactKbClient(source, 500, 'image/jpeg');
+  assert.equal(result.status, 'already-below-target');
+  assert.equal(result.conversionSkipped, true, 'the format was deliberately not applied');
+  assert.equal(result.formatFallback, false, 'this is not an encoder refusal');
 });

@@ -1,0 +1,59 @@
+name: Browser acceptance tests
+
+# Real Chromium run of the Playwright suite against the built dist/.
+# Deliberately does NOT deploy or touch production: it only builds, serves from a
+# local static server and uploads screenshots + results as artifacts.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'arena/**'
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SITE_URL: https://nextgentoolkit.pages.dev
+      VITE_SITE_URL: https://nextgentoolkit.pages.dev
+      VITE_STATIC_DEPLOYMENT: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Type-check and unit tests
+        run: |
+          npm run lint
+          npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser suite
+        run: node scripts/e2e/run.mjs
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence
+          path: |
+            audit/screenshots
+          if-no-files-found: warn
+          retention-days: 14

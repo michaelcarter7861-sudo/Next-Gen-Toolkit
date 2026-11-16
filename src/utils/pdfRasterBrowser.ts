@@ -70,6 +70,7 @@ export interface BrowserRasterResult {
   pages: RasterPageResult[];
   pageCount: number;
   skipped: number;
+  truncatedReason: 'page-cap' | 'pixel-budget' | null;
 }
 
 export async function renderPdfPagesInBrowser(

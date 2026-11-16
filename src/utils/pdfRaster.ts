@@ -18,6 +18,8 @@ export interface RasterOptions {
   maxPages?: number;
   /** Used for output filenames. */
   baseName?: string;
+  /** Override the per-document pixel budget (tests and constrained devices). */
+  maxPixels?: number;
 }
 
 export interface RasterPageResult {
@@ -71,6 +73,14 @@ export const MAX_RASTER_PAGES = 50;
  * and the reduction is reported instead of silently downscaling.
  */
 export const MAX_CANVAS_PIXELS = 32_000_000;
+
+/**
+ * Per-document pixel budget. A single safe canvas is not enough: forty 8 MP
+ * pages plus the ZIP of their PNGs can exhaust a phone even though every
+ * individual page is legal. Rendering stops here and the shortfall is reported
+ * instead of failing halfway with a blank tab.
+ */
+export const MAX_DOCUMENT_PIXELS = 120_000_000;
 
 /**
  * Turn a user typed page selection into zero-based page indices.
@@ -137,7 +147,13 @@ export async function renderPdfPages(
   bytes: Uint8Array,
   options: RasterOptions,
   adapters: RasterAdapters
-): Promise<{ pages: RasterPageResult[]; pageCount: number; skipped: number }> {
+): Promise<{
+  pages: RasterPageResult[];
+  pageCount: number;
+  skipped: number;
+  /** Why the run stopped early, when it did. */
+  truncatedReason: 'page-cap' | 'pixel-budget' | null;
+}> {
   const format: 'image/png' | 'image/jpeg' | 'image/webp' =
     options.format === 'image/jpeg'
       ? 'image/jpeg'
@@ -154,10 +170,13 @@ export async function renderPdfPages(
     const selection = parsePageSelection(options.pages, doc.numPages);
     const rendered: RasterPageResult[] = [];
     let skipped = 0;
+    let spentPixels = 0;
+    let limitReason: 'page-cap' | 'pixel-budget' | null = null;
 
     for (const pageIndex of selection) {
       if (rendered.length >= maxPages) {
         skipped = selection.length - rendered.length;
+        limitReason = 'page-cap';
         break;
       }
       const page = await doc.getPage(pageIndex + 1);
@@ -174,6 +193,12 @@ export async function renderPdfPages(
       const viewport = page.getViewport({ scale });
       const width = Math.max(1, Math.ceil(viewport.width));
       const height = Math.max(1, Math.ceil(viewport.height));
+      if (spentPixels + width * height > (options.maxPixels ?? MAX_DOCUMENT_PIXELS)) {
+        skipped = selection.length - rendered.length;
+        limitReason = 'pixel-budget';
+        break;
+      }
+      spentPixels += width * height;
       const canvas = adapters.createCanvas(width, height);
       const ctx = canvas.getContext('2d') as
         | { fillStyle: string; fillRect: (x: number, y: number, w: number, h: number) => void }
@@ -205,7 +230,12 @@ export async function renderPdfPages(
       page.cleanup?.();
     }
 
-    return { pages: rendered, pageCount: doc.numPages, skipped };
+    return {
+      pages: rendered,
+      pageCount: doc.numPages,
+      skipped,
+      truncatedReason: skipped > 0 ? limitReason : null,
+    };
   } finally {
     await doc.destroy().catch(() => undefined);
   }

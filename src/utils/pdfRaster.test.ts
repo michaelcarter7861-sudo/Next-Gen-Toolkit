@@ -151,6 +151,19 @@ test('the memory guard lowers DPI instead of attempting an impossible canvas', a
   assert.ok(page.dpi < 600);
 });
 
+test('the per-document pixel budget stops the run and says why', async () => {
+  const bytes = await makePdf(6);
+  // Two A4 pages at 72 DPI is ~1 MP; a 1.2 MP budget can therefore complete one.
+  const result = await renderPdfPages(
+    bytes,
+    { pages: 'all', dpi: 72, format: 'image/png', maxPixels: 1_200_000 },
+    await adapters()
+  );
+  assert.ok(result.pages.length >= 1 && result.pages.length < 6, `rendered ${result.pages.length}`);
+  assert.equal(result.truncatedReason, 'pixel-budget');
+  assert.equal(result.skipped, 6 - result.pages.length);
+});
+
 test('a page request outside the document fails loudly', async () => {
   const bytes = await makePdf(2);
   await assert.rejects(
