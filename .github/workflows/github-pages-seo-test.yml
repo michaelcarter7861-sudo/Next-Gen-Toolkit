@@ -1,0 +1,53 @@
+name: GitHub Pages SEO Diagnostic
+
+on:
+  push:
+    branches:
+      - github-pages-seo-test
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages-seo-test
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      GITHUB_PAGES: "true"
+      SITE_URL: "https://michaelcarter7861-sudo.github.io/Next-Gen-Toolkit"
+      VITE_SITE_URL: "https://michaelcarter7861-sudo.github.io/Next-Gen-Toolkit"
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build GitHub Pages site and SEO files
+        run: bun run build
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./dist
+
+      - name: Deploy diagnostic site
+        id: deployment
+        uses: actions/deploy-pages@v4
