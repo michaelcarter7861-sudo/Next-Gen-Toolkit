@@ -31,7 +31,9 @@ export interface SitePageDefinition {
 }
 
 const UPDATED = '2026-11-16';
-const CONTACT_EMAIL = 'michaelcarter7861@gmail.com';
+/** Public contact details are intentionally absent until the owner approves one.
+ *  See audit/SECOND-PHASE-REMAINING-WORK-VERIFICATION.md — publishing an
+ *  unapproved address is treated as a release blocker, not a placeholder. */
 const REPO_URL = 'https://github.com/michaelcarter7861-sudo/Next-Gen-Toolkit';
 
 export const SITE_PAGES: SitePageDefinition[] = [
@@ -91,13 +93,14 @@ export const SITE_PAGES: SitePageDefinition[] = [
       'How to reach the NextGenToolkit maintainer about bugs, incorrect claims, privacy questions or tool requests, and what to include in a report.',
     h1: 'Contact',
     intro:
-      'One maintainer, no support queue, no chatbot. Email or GitHub is the way to reach the project; here is what gets a fast, useful reply.',
+      'One maintainer, no support queue, no chatbot. The public repository is currently the only contact channel; here is what gets a fast, useful reply.',
     updated: UPDATED,
     sections: [
       {
-        heading: 'Email',
+        heading: 'Contact channel',
         paragraphs: [
-          `Write to ${CONTACT_EMAIL}. This is the maintainer\u2019s mailbox and it is the only guaranteed channel. A branded address will replace it once the project moves to its own domain.`,
+          'There is no published support address yet. A single, owner-approved contact channel has not been supplied, and inventing one would be worse than admitting the gap — so bug reports and corrections go through the public repository for now, where every message is visible and archived.',
+          'Once the owner approves a public address it will be published here, on the About page and in the footer, and the change will be recorded in the changelog.',
         ],
       },
       {

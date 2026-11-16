@@ -39,6 +39,18 @@
 #    strict script-src would silently break analytics;
 #  - the product ships an embed widget that must be frameable by third parties.
 # Both are tracked as follow-ups in the technical report rather than guessed at.
+# Preview and branch deployments live on <alias>.nextgentoolkit.pages.dev.
+# Cloudflare Pages supports host placeholders in _headers, so these aliases can
+# be noindexed without touching production. The two-placeholder pattern only
+# matches 3+ label hosts, so the production host (nextgentoolkit.pages.dev) and
+# any custom domain are unaffected.
+# Verify after deploy:
+#   curl -sI https://<branch>.nextgentoolkit.pages.dev/ | grep -i x-robots-tag   -> noindex
+#   curl -sI https://nextgentoolkit.pages.dev/            | grep -i x-robots-tag   -> no header
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+# Baseline security headers applied to every path on every host.
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

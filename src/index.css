@@ -109,3 +109,36 @@ input[type="range"].ngt-slider::-webkit-slider-thumb:hover {
 .dark #root main nav[aria-label="Breadcrumb"] span {
   color: #CBD5E1;
 }
+
+/* Native controls (scrollbars, form widgets, date pickers) should follow the
+   active theme instead of flashing light-mode chrome in dark mode. */
+:root {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+/* Respect the OS reduced-motion setting. Decorative motion is removed; nothing
+   that carries meaning is animated in the first place. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A focus ring that survives on both themes and never disappears for keyboard
+   users. Mouse users do not see it. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid #7047eb;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+html.dark :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline-color: #9f7aea;
+}

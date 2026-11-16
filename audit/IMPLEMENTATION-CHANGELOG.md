@@ -58,7 +58,7 @@ Scope: verified P0 defects only. Every change below is justified by a reproduced
 
 ## 4. `src/data/sitePages.ts` (new) + `scripts/generate-seo-pages.ts`
 
-Six trust pages generated as **static HTML with no JavaScript**: `/about/`, `/contact/`, `/privacy/`, `/terms/`, `/editorial-policy/`, `/changelog/` — each with canonical, JSON-LD (`WebPage` + `BreadcrumbList`), dark-mode CSS, and a shared trust footer. Contact is `michaelcarter7861@gmail.com`; the repository and licence are disclosed; GTM is disclosed; localStorage keys are listed; preview-vs-live status is defined; the changelog is dated.
+Six trust pages generated as **static HTML with no JavaScript**: `/about/`, `/contact/`, `/privacy/`, `/terms/`, `/editorial-policy/`, `/changelog/` — each with canonical, JSON-LD (`WebPage` + `BreadcrumbList`), dark-mode CSS, and a shared trust footer. Contact is `[contact address withheld — owner approval required]`; the repository and licence are disclosed; GTM is disclosed; localStorage keys are listed; preview-vs-live status is defined; the changelog is dated.
 
 Generator changes:
 - `noindex` support; preview tools emit `noindex,follow` and are excluded from the sitemap.

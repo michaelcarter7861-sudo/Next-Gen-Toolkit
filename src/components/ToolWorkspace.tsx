@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ByteGauge, type ByteGaugeProps } from './ByteGauge';
 import {
   UploadCloud,
   Zap,
@@ -53,8 +54,7 @@ import { BreadcrumbsNav } from './BreadcrumbsNav';
 import { ImageCompareModal } from './ImageCompareModal';
 
 /** Honest, user-facing status messages for features whose engine is not shipped yet. */
-export const PDF_RENDER_NOTICE =
-  'PDF page rendering is not available in this build. The previous version drew placeholder shapes and presented them as converted pages, which was misleading, so that behaviour was removed. Your file is untouched and was not uploaded anywhere. Real page rasterisation (pdf.js) is planned.';
+
 
 export const OCR_NOTICE =
   'OCR is not available in this build. No text-recognition engine is bundled, so this tool does not extract text from images yet. The previous version echoed input text and presented it as recognised output, which was misleading. Your image is untouched and was not uploaded anywhere.';
@@ -123,6 +123,7 @@ export function ToolWorkspace({
   const [forensicTable, setForensicTable] = useState<Record<string, string> | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingNotice, setProcessingNotice] = useState<string | null>(null);
+  const [gauge, setGauge] = useState<ByteGaugeProps | null>(null);
   const [executionDurationMs, setExecutionDurationMs] = useState<number | null>(null);
   const [chainedFromLabel, setChainedFromLabel] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -131,7 +132,17 @@ export function ToolWorkspace({
 
   // Tool-Specific Control States
   const [qualitySlider, setQualitySlider] = useState<number>(80);
-  const [targetKb, setTargetKb] = useState<number>(100);
+  const [targetKb, setTargetKb] = useState<number>(() => {
+    // Deep links such as /image-tools/compress-image-to-kb/?kb=20 land with the
+    // preset already selected instead of forcing a second click.
+    try {
+      const preset = Number(new URLSearchParams(window.location.search).get('kb'));
+      if ([10, 20, 50, 100, 200, 500].includes(preset)) return preset;
+    } catch {
+      // Ignore malformed URLs.
+    }
+    return 100;
+  });
   const [imageOutputFormat, setImageOutputFormat] = useState<'image/webp' | 'image/jpeg' | 'image/png'>('image/webp');
   const [pdfRotation, setPdfRotation] = useState<number>(0);
   const [pdfRangeSyntax, setPdfRangeSyntax] = useState<string>('1-2, 4');
@@ -527,6 +538,7 @@ export function ToolWorkspace({
       setIsProcessing(true);
       setForensicTable(null);
       setProcessingNotice(null);
+      setGauge(null);
 
       try {
         // Keep the heavy PDF/image/ZIP engines out of the initial page bundle.
@@ -539,9 +551,21 @@ export function ToolWorkspace({
             const statusLabel =
               res.status === 'met-target'
                 ? `Target met (≤ ${targetKb} KB)`
-                : res.status === 'already-optimal'
-                  ? 'Already optimised — original returned unchanged'
-                  : `Optimised, target NOT met (${Math.round(res.compressedSize / 1024)} KB)`;
+                : res.status === 'already-below-target'
+                  ? 'Already under the limit — returned unchanged'
+                  : res.status === 'no-gain'
+                    ? 'No gain possible — original returned unchanged'
+                    : `Optimised, target NOT met (${Math.round(res.compressedSize / 1024)} KB)`;
+            if (f === filesToProcess[0]) {
+              setGauge({
+                originalBytes: res.originalSize,
+                outputBytes: res.compressedSize,
+                targetBytes: targetKb * 1024,
+                targetMet: res.targetMet,
+                statusLabel,
+                details: [`${res.pageCount} page${res.pageCount === 1 ? '' : 's'}`, 'structure rebuilt, page layout preserved'],
+              });
+            }
             results.push({
               id: `${f.name}-${Date.now()}`,
               name: `${f.name.replace(/\.pdf$/i, '')}-optimised.pdf`,
@@ -592,10 +616,45 @@ export function ToolWorkspace({
             });
           }
         } else if (tool.id === 'pdf-to-image') {
-          // The previous build drew placeholder shapes and presented them as a
-          // rendered PDF page. That is not a conversion, so it was removed. Until
-          // a real rasteriser (pdf.js) ships, the UI states this honestly.
-          setProcessingNotice(PDF_RENDER_NOTICE);
+          // Real rasterisation with pdf.js. The module (and its worker) is only
+          // fetched when this tool runs, so the rest of the site keeps its bundle.
+          const raster = await import('../utils/pdfRasterBrowser');
+          for (const f of filesToProcess) {
+            const rendered = await raster.renderPdfPagesInBrowser(f, {
+              pages: pdfRangeSyntax || 'all',
+              dpi: pdfDpi,
+              format: imageOutputFormat,
+              quality: qualitySlider / 100,
+            });
+            if (rendered.pages.length === 0) {
+              setProcessingNotice('No pages matched the page selection.');
+            }
+            if (rendered.skipped > 0) {
+              setProcessingNotice(
+                `Rendered ${rendered.pages.length} pages. ${rendered.skipped} more were skipped because of the per-run page cap.`
+              );
+            }
+            for (const page of rendered.pages) {
+              const blob = new Blob([page.bytes as unknown as BlobPart], { type: page.mime });
+              results.push({
+                id: `${f.name}-p${page.pageNumber}-${Date.now()}`,
+                name: page.name,
+                originalSize: f.size,
+                outputSize: blob.size,
+                mimeType: page.mime,
+                blob,
+                previewUrl: URL.createObjectURL(blob),
+                metaSummary: {
+                  Page: `${page.pageNumber} of ${rendered.pageCount}`,
+                  Dimensions: `${page.width} × ${page.height} px`,
+                  'Render DPI': page.dpiReduced
+                    ? `${page.dpi} DPI (lowered from ${pdfDpi} DPI to stay inside browser memory limits)`
+                    : `${page.dpi} DPI`,
+                  Format: page.mime.replace('image/', '').toUpperCase(),
+                },
+              });
+            }
+          }
         } else if (tool.id === 'image-to-pdf') {
           const res = await binary.convertImagesToPdfClient(filesToProcess, {
             pageSize: pdfPageSize,
@@ -633,17 +692,41 @@ export function ToolWorkspace({
         } else if (tool.id === 'compress-image-to-kb') {
           for (const f of filesToProcess) {
             const res = await binary.compressImageToExactKbClient(f, targetKb, imageOutputFormat);
+            const statusLabel =
+              res.status === 'met-target'
+                ? `Target met (≤ ${targetKb} KB)`
+                : res.status === 'already-below-target'
+                  ? 'Already under the limit — returned unchanged'
+                  : res.status === 'best-effort'
+                    ? `Best effort — still above target (${(res.outputSize / 1024).toFixed(1)} KB)`
+                    : 'Target unreachable at usable quality';
+            if (f === filesToProcess[0]) {
+              setGauge({
+                originalBytes: res.originalSize,
+                outputBytes: res.outputSize,
+                targetBytes: targetKb * 1024,
+                targetMet: res.targetMet,
+                statusLabel,
+                details: [
+                  `${res.actualMime.replace('image/', '').toUpperCase()}`,
+                  `${res.finalDimensions}${res.scaled ? ' (scaled to fit the limit)' : ' (native dimensions)'}`,
+                  res.achievedQuality === null ? 'lossless PNG' : `quality ${res.achievedQuality}%`,
+                ],
+              });
+            }
             results.push({
               ...res,
               metaSummary: {
                 'Target Limit': `≤ ${targetKb} KB`,
-                Result: res.targetMet
-                  ? `Target met (${(res.outputSize / 1024).toFixed(1)} KB)`
-                  : `Could not reach target (${(res.outputSize / 1024).toFixed(1)} KB)`,
-                Output: `${res.mimeType.replace('image/', '').toUpperCase()} · ${res.dimensions}`,
+                Result: statusLabel,
+                Output: `${res.actualMime.replace('image/', '').toUpperCase()} · ${res.finalDimensions}`,
+                ...(res.formatFallback
+                  ? { Format: `Browser could not encode ${res.requestedMime.replace('image/', '').toUpperCase()} — saved as ${res.actualMime.replace('image/', '').toUpperCase()}` }
+                  : {}),
                 ...(res.achievedQuality === null
-                  ? { Lossless: 'PNG kept lossless (size reduced by scaling)' }
+                  ? { Lossless: res.scaled ? 'PNG kept lossless; resolution reduced to reach the limit' : 'PNG kept lossless' }
                   : { 'Quality Reached': `${res.achievedQuality}% (${res.iterations} passes)` }),
+                ...(res.transparencyNote ? { Transparency: res.transparencyNote } : {}),
               },
             });
           }
@@ -1250,6 +1333,7 @@ export function ToolWorkspace({
 
               {processedItems.length > 0 && (
                 <div className="space-y-3">
+                  {gauge && <ByteGauge {...gauge} />}
                   {/* Local Execution Speed & Savings Receipt */}
                   {(() => {
                     const totalOrig = processedItems.reduce((acc, i) => acc + i.originalSize, 0);
@@ -1262,7 +1346,7 @@ export function ToolWorkspace({
                         <div className="flex flex-wrap items-center gap-2 text-emerald-900 dark:text-emerald-200 font-medium tabular-nums">
                           <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span>
-                            Processed locally in <strong>{executionDurationMs ?? 24} ms</strong>
+                            Processed locally in <strong>{executionDurationMs === null ? '—' : `${executionDurationMs} ms`}</strong>
                           </span>
                           <span>·</span>
                           <span>No File Upload to Processing Server</span>
@@ -1791,25 +1875,69 @@ export function ToolWorkspace({
             )}
 
             {tool.id === 'pdf-to-image' && (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC]">
-                  Render DPI Scale
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {([150, 300, 600] as const).map((dpi) => (
-                    <button
-                      key={dpi}
-                      type="button"
-                      onClick={() => setPdfDpi(dpi)}
-                      className={`py-2 rounded-xl text-xs font-mono font-semibold border ${
-                        pdfDpi === dpi
-                          ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                          : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
-                      }`}
-                    >
-                      {dpi} DPI
-                    </button>
-                  ))}
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <span className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC]">
+                    Render resolution
+                  </span>
+                  <div className="grid grid-cols-3 gap-2" role="group" aria-label="Render resolution">
+                    {([150, 300, 600] as const).map((dpi) => (
+                      <button
+                        key={dpi}
+                        type="button"
+                        aria-pressed={pdfDpi === dpi}
+                        onClick={() => setPdfDpi(dpi)}
+                        className={`min-h-11 py-2 rounded-xl text-xs font-mono font-semibold border ${
+                          pdfDpi === dpi
+                            ? 'bg-[#7047EB] text-white border-[#7047EB]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                        }`}
+                      >
+                        {dpi} DPI
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                    Very high resolutions are lowered automatically on small devices; the result
+                    panel reports the DPI that was actually used.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="ngt-pdf-page-range"
+                    className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC]"
+                  >
+                    Pages (all, or 1-3, 5)
+                  </label>
+                  <input
+                    id="ngt-pdf-page-range"
+                    type="text"
+                    inputMode="text"
+                    value={pdfRangeSyntax}
+                    onChange={(e) => setPdfRangeSyntax(e.target.value)}
+                    placeholder="all"
+                    className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] px-3 py-2 min-h-11 text-xs font-mono"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="ngt-pdf-image-format"
+                    className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC]"
+                  >
+                    Image format
+                  </label>
+                  <select
+                    id="ngt-pdf-image-format"
+                    value={imageOutputFormat}
+                    onChange={(e) =>
+                      setImageOutputFormat(e.target.value as 'image/webp' | 'image/jpeg' | 'image/png')
+                    }
+                    className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] px-3 py-2 min-h-11 text-xs font-medium"
+                  >
+                    <option value="image/png">PNG (lossless)</option>
+                    <option value="image/jpeg">JPEG</option>
+                    <option value="image/webp">WebP</option>
+                  </select>
                 </div>
               </div>
             )}

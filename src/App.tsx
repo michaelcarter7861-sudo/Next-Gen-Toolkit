@@ -39,6 +39,10 @@ import {
   getHubById,
   getToolsByHub,
 } from './data/toolsCatalog';
+
+// Counts come from the catalogue so they cannot drift from reality.
+const LIVE_TOOL_COUNT = TOOLS_CATALOG.filter((tool) => tool.status !== 'preview').length;
+const BROWSER_LOCAL_COUNT = LIVE_TOOL_COUNT;
 import { HOME_FAQS } from './data/seoSchemaData';
 import { SchemaHeadInjector } from './components/SchemaHeadInjector';
 import { CommandModal, AiWorkflowModal } from './components/CommandModal';
@@ -226,7 +230,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const navigateToTool = (toolId: string) => {
+  const navigateToTool = (toolId: string, preset?: { kb?: number }) => {
     const found = getToolById(toolId);
     if (found) {
       setChainedPayload(null);
@@ -234,7 +238,8 @@ export default function App() {
       setSelectedHubId(found.hubId);
       setActiveView('tool');
       recordRecentTool(found.id);
-      window.history.pushState({}, '', toPublicPath(found.canonicalPath));
+      const query = preset?.kb ? `?kb=${preset.kb}` : '';
+      window.history.pushState({}, '', `${toPublicPath(found.canonicalPath)}${query}`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -496,17 +501,13 @@ export default function App() {
           /* MASTER HOMEPAGE (Clean Hero without SEO Sitemap/Schema Clutter at Top) */
           <div className="space-y-14 pb-16">
             {/* HERO SECTION */}
-            <section className="relative overflow-hidden pt-8 pb-12 sm:pt-12 sm:pb-16 border-b border-[#E8E6F2]/70 dark:border-[#2A2E42]/60 bg-gradient-to-b from-[#F4F0FF]/70 via-[#F8F7FC] to-[#F8F7FC] dark:from-[#1A1830] dark:via-[#131520] dark:to-[#131520]">
+            <section className="relative overflow-hidden pt-6 pb-10 sm:pt-8 sm:pb-12 border-b border-[#E8E6F2]/70 dark:border-[#2A2E42]/60 bg-[#F8F7FC] dark:bg-[#131520]">
               <div className="max-w-[1200px] mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
                 {/* Left / Center Hero Column */}
                 <div className="lg:col-span-7 text-center lg:text-left space-y-5">
-                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-xs font-bold uppercase tracking-wider text-[#7047EB] dark:text-[#A78BFA]">
-                    <span>Your Digital Toolkit</span>
-                    <span aria-hidden="true">·</span>
-                    <span>25 Free Browser Utilities</span>
-                    <span aria-hidden="true">·</span>
-                    <span>Local Processing on Core Tools</span>
-                  </div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#7047EB] dark:text-[#A78BFA]">
+                    {LIVE_TOOL_COUNT} tools available now · {BROWSER_LOCAL_COUNT} process files entirely on your device
+                  </p>
 
                   <h1
                     className="text-4xl sm:text-5xl lg:text-[54px] font-extrabold text-[#171927] dark:text-white tracking-tight leading-[1.12]"
@@ -547,6 +548,24 @@ export default function App() {
                       >
                         <Search className="w-4 h-4" aria-hidden="true" />
                       </button>
+                    </div>
+
+                    {/* Exact-size entry point: the one job this site does better
+                        than the big suites, one click from the first screen. */}
+                    <div className="mt-3 flex flex-wrap items-center justify-center lg:justify-start gap-2">
+                      <span className="text-xs font-semibold text-[#475569] dark:text-[#94A3B8]">
+                        Need a photo under a size limit?
+                      </span>
+                      {([20, 50, 100] as const).map((kb) => (
+                        <button
+                          key={kb}
+                          type="button"
+                          onClick={() => navigateToTool('compress-image-to-kb', { kb })}
+                          className="min-h-9 px-2.5 rounded-lg border border-[#D9D5EC] dark:border-[#2A2E42] bg-white dark:bg-[#1C1F2E] text-xs font-bold tabular-nums text-[#171927] dark:text-white hover:border-[#7047EB] hover:text-[#7047EB] transition-colors"
+                        >
+                          {kb} KB
+                        </button>
+                      ))}
                     </div>
 
                     {/* Live Search Dropdown Results */}
@@ -1703,7 +1722,7 @@ export default function App() {
                 </div>
                 <div className="text-left md:text-right shrink-0 space-y-0.5 tabular-nums">
                   <div className="font-bold text-[#7047EB] dark:text-[#C4B5FD]">
-                    15 Automated Engine Suites Passing
+                    Engine tests run in CI on every change
                   </div>
                   <div className="text-[#64748B] dark:text-[#94A3B8]">
                     Zero Paywalls · Zero Account Required

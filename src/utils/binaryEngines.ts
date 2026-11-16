@@ -232,8 +232,15 @@ export interface PdfCompressResult {
   targetMet: boolean;
   /** True when the optimiser could not beat the original and returned it unchanged. */
   returnedOriginal: boolean;
-  /** Machine-readable outcome used by the UI to show an honest status message. */
-  status: 'met-target' | 'optimized-only' | 'already-optimal';
+  /**
+   * Machine-readable outcome. Every state below is reachable and distinct:
+   *  - `already-below-target` — the input was already inside the ceiling; we did not touch it.
+   *  - `met-target`           — output is at or under the requested ceiling.
+   *  - `optimized-only`       — output shrank but is still above the ceiling.
+   *  - `no-gain`              — optimisation would not have helped, so the original came back.
+   * Processing failures throw instead of returning a fabricated result.
+   */
+  status: 'already-below-target' | 'met-target' | 'optimized-only' | 'no-gain';
 }
 
 /**
@@ -285,8 +292,26 @@ export async function compressPdfToTargetKb(
 
   const originalSize = file.size;
   const optimisedSize = optimisedBytes.byteLength;
+  const targetBytes = targetKb * 1024;
 
-  // Never hand back something bigger than what the user gave us.
+  // Case 1: the file already satisfies the ceiling. Do not re-encode it at all:
+  // a re-encode can only lose quality, and rewriting the bytes would imply work
+  // that was never needed.
+  if (originalSize <= targetBytes) {
+    return {
+      blob: new Blob([arrayBuffer], { type: 'application/pdf' }),
+      originalSize,
+      compressedSize: originalSize,
+      pageCount,
+      savingsPercent: 0,
+      targetKb,
+      targetMet: true,
+      returnedOriginal: true,
+      status: 'already-below-target',
+    };
+  }
+
+  // Case 2/3/4: structural rebuild must actually save bytes to be worth keeping.
   if (optimisedSize >= originalSize) {
     return {
       blob: new Blob([arrayBuffer], { type: 'application/pdf' }),
@@ -295,14 +320,14 @@ export async function compressPdfToTargetKb(
       pageCount,
       savingsPercent: 0,
       targetKb,
-      targetMet: originalSize <= targetKb * 1024,
+      targetMet: false,
       returnedOriginal: true,
-      status: 'already-optimal',
+      status: 'no-gain',
     };
   }
 
   const savingsPercent = Math.round(((originalSize - optimisedSize) / originalSize) * 100);
-  const targetMet = optimisedSize <= targetKb * 1024;
+  const targetMet = optimisedSize <= targetBytes;
 
   return {
     blob: new Blob([optimisedBytes as unknown as BlobPart], { type: 'application/pdf' }),
@@ -506,20 +531,30 @@ export async function transcodeImageClient(
 
 export type CompressImageMime = 'image/webp' | 'image/jpeg' | 'image/png';
 
-export function extensionForImageMime(mime: CompressImageMime): 'jpg' | 'png' | 'webp' {
-  if (mime === 'image/png') return 'png';
-  if (mime === 'image/webp') return 'webp';
-  return 'jpg';
-}
+/** Every reachable outcome of an image compression run. */
+export type ImageCompressStatus =
+  | 'met-target'
+  | 'best-effort'
+  | 'already-below-target'
+  | 'unreachable';
 
-/** Pure helper (unit-tested): builds an honest output filename for a target size. */
-export function buildCompressedImageName(
-  originalName: string,
-  targetKb: number,
-  mime: CompressImageMime
-): string {
-  const base = originalName.replace(/\.[^.]+$/, '') || 'image';
-  return `${base}-${targetKb}kb.${extensionForImageMime(mime)}`;
+export interface ImageCompressResult extends ProcessedFileItem {
+  status: ImageCompressStatus;
+  requestedMime: CompressImageMime;
+  /** The format the browser encoder actually produced (it may ignore the request). */
+  actualMime: string;
+  /** True when the browser substituted a different format than the one requested. */
+  formatFallback: boolean;
+  iterations: number;
+  achievedQuality: number | null;
+  originalDimensions: string;
+  finalDimensions: string;
+  scaled: boolean;
+  scaleApplied: number;
+  targetMet: boolean;
+  savingsPercent: number;
+  /** Set when the output format discards transparency. */
+  transparencyNote: string | null;
 }
 
 function encodeCanvas(
@@ -527,57 +562,135 @@ function encodeCanvas(
   mime: CompressImageMime,
   quality: number
 ): Promise<Blob> {
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob || new Blob()), mime, quality);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('The browser could not encode this image.'))),
+      mime,
+      quality
+    );
   });
 }
 
 /**
- * Target-size image compression with a real byte-level verification loop.
+ * Normalise the MIME type an encoder really produced.
  *
- * - JPEG/WebP: 8-step binary search over encoder quality, then progressive
- *   downscaling if the requested byte ceiling is still unreachable.
- * - PNG: quality is ignored by browsers, so size is controlled by progressive
- *   downscaling (PNG is kept lossless, never silently converted).
- * - Transparency is preserved for PNG/WebP output.
+ * `canvas.toBlob()` silently falls back to PNG when a browser cannot encode the
+ * requested type, so the returned Blob.type - not the request - is the source of
+ * truth for the file extension.
+ */
+export function resolveEncodedFormat(
+  requested: CompressImageMime,
+  actualType: string | null | undefined
+): { mime: string; fallback: boolean } {
+  const normalise = (type?: string | null): string | null => {
+    if (!type) return null;
+    const lower = type.toLowerCase().split(';')[0].trim();
+    if (lower === 'image/jpg') return 'image/jpeg';
+    if (lower === 'image/jpeg' || lower === 'image/png' || lower === 'image/webp') return lower;
+    return null;
+  };
+  const actual = normalise(actualType) ?? normalise(requested) ?? 'image/jpeg';
+  return { mime: actual, fallback: actual !== requested };
+}
+
+export function extensionForImageMime(mime: string): 'jpg' | 'png' | 'webp' | 'bin' {
+  const normalised = mime.toLowerCase().split(';')[0].trim();
+  if (normalised === 'image/png') return 'png';
+  if (normalised === 'image/webp') return 'webp';
+  if (normalised === 'image/jpeg' || normalised === 'image/jpg') return 'jpg';
+  return 'bin';
+}
+
+export function buildCompressedImageName(
+  originalName: string,
+  targetKb: number,
+  mime: string
+): string {
+  const base = originalName.replace(/\.[^.]+$/, '') || 'image';
+  return `${base}-${targetKb}kb.${extensionForImageMime(mime)}`;
+}
+
+/**
+ * Compress an image to a byte ceiling inside the browser.
+ *
+ * Guarantees:
+ *  - the returned file never carries an extension that disagrees with its real
+ *    encoded format (`actualMime` is read back from the Blob);
+ *  - PNG stays lossless - it is never run through a lossy quality search;
+ *  - downscaling is only used when the ceiling cannot be met otherwise, and the
+ *    fact that resolution was traded away is reported (`scaled`, dimensions);
+ *  - the target is verified against real bytes, never inferred;
+ *  - an input already under the ceiling is returned untouched.
  */
 export async function compressImageToExactKbClient(
   file: File,
   targetKb: number,
   mime: CompressImageMime = 'image/jpeg'
-): Promise<
-  ProcessedFileItem & {
-    iterations: number;
-    achievedQuality: number | null;
-    dimensions: string;
-    targetMet: boolean;
-    scaleApplied: number;
-    requestedMime: CompressImageMime;
-  }
-> {
+): Promise<ImageCompressResult> {
   const targetBytes = targetKb * 1024;
   const dataUrl = await fileToDataUrl(file);
   const img = await loadImageElement(dataUrl);
   const naturalW = img.naturalWidth || 800;
   const naturalH = img.naturalHeight || 600;
+  const originalDimensions = `${naturalW} × ${naturalH} px`;
+
+  // Already inside the ceiling: re-encoding can only lose quality.
+  if (file.size <= targetBytes) {
+    const actual = resolveEncodedFormat(mime, file.type);
+    return {
+      id: `${file.name}-already-under-${Date.now()}`,
+      name: file.name,
+      originalSize: file.size,
+      outputSize: file.size,
+      mimeType: actual.mime,
+      blob: file,
+      previewUrl: URL.createObjectURL(file),
+      sourcePreviewUrl: dataUrl,
+      status: 'already-below-target',
+      requestedMime: mime,
+      actualMime: actual.mime,
+      formatFallback: actual.fallback,
+      iterations: 0,
+      achievedQuality: null,
+      originalDimensions,
+      finalDimensions: originalDimensions,
+      scaled: false,
+      scaleApplied: 1,
+      targetMet: true,
+      savingsPercent: 0,
+      transparencyNote: null,
+    };
+  }
+
   const lossy = mime !== 'image/png';
+  const MIN_LONG_EDGE = 240;
+  const longEdge = Math.max(naturalW, naturalH);
 
   let scale = 1;
-  // Sensible starting scale so tiny targets do not waste eight encode passes.
-  if (targetKb <= 25 && Math.max(naturalW, naturalH) > 600) scale = 600 / Math.max(naturalW, naturalH);
-  else if (targetKb <= 55 && Math.max(naturalW, naturalH) > 900) scale = 900 / Math.max(naturalW, naturalH);
+  if (targetKb <= 25 && longEdge > 600) scale = 600 / longEdge;
+  else if (targetKb <= 55 && longEdge > 900) scale = 900 / longEdge;
 
   let iterations = 0;
-  let bestBlob: Blob | null = null;
-  let bestQuality: number | null = lossy ? 0.75 : null;
-  let bestScale = scale;
-  let bestCanvas: HTMLCanvasElement | null = null;
+  const best: {
+    blob: Blob | null;
+    quality: number | null;
+    scale: number;
+    width: number;
+    height: number;
+  } = {
+    blob: null,
+    quality: lossy ? 0.75 : null,
+    scale,
+    width: Math.round(naturalW * scale),
+    height: Math.round(naturalH * scale),
+  };
 
   const render = (scaleValue: number): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(64, Math.round(naturalW * scaleValue));
     canvas.height = Math.max(64, Math.round(naturalH * scaleValue));
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('This browser could not provide a 2D canvas context.');
     if (mime === 'image/jpeg') {
       // JPEG has no alpha channel: flatten onto white instead of rendering black.
       ctx.fillStyle = '#FFFFFF';
@@ -587,10 +700,22 @@ export async function compressImageToExactKbClient(
     return canvas;
   };
 
-  // Phase 1: quality search (lossy formats only).
+  const remember = (
+    blob: Blob,
+    quality: number | null,
+    scaleValue: number,
+    canvas: HTMLCanvasElement
+  ) => {
+    best.blob = blob;
+    best.quality = quality;
+    best.scale = scaleValue;
+    best.width = canvas.width;
+    best.height = canvas.height;
+  };
+
+  // Phase 1 - quality search at the current scale (lossy formats only).
   if (lossy) {
     const canvas = render(scale);
-    bestCanvas = canvas;
     let low = 0.05;
     let high = 0.95;
     for (let i = 0; i < 8; i++) {
@@ -598,52 +723,78 @@ export async function compressImageToExactKbClient(
       const mid = Number(((low + high) / 2).toFixed(3));
       const candidate = await encodeCanvas(canvas, mime, mid);
       if (candidate.size <= targetBytes) {
-        bestBlob = candidate;
-        bestQuality = mid;
+        remember(candidate, mid, scale, canvas);
         low = mid;
       } else {
         high = mid;
       }
     }
+  } else {
+    // Phase 1 (PNG) - one lossless encode at full resolution.
+    const canvas = render(1);
+    scale = 1;
+    iterations++;
+    remember(await encodeCanvas(canvas, mime, 1), null, 1, canvas);
   }
 
-  // Phase 2: progressive downscale until the ceiling is met (or we hit the floor).
+  // Phase 2 - trade resolution only when the ceiling is otherwise unreachable.
   let attempts = 0;
-  while ((!bestBlob || bestBlob.size > targetBytes) && attempts < 6 && Math.max(naturalW, naturalH) * scale > 96) {
+  while ((!best.blob || best.blob.size > targetBytes) && attempts < 8) {
+    if (longEdge * scale <= MIN_LONG_EDGE) break;
     attempts++;
     iterations++;
-    scale = Math.max(0.08, scale * 0.82);
+    scale = Math.max(MIN_LONG_EDGE / longEdge, scale * 0.85);
     const canvas = render(scale);
-    const candidate = await encodeCanvas(canvas, mime, lossy ? (bestQuality ?? 0.7) : 1);
-    if (!bestBlob || candidate.size <= bestBlob.size) {
-      bestBlob = candidate;
-      bestScale = scale;
-      bestCanvas = canvas;
+    const candidate = await encodeCanvas(canvas, mime, lossy ? (best.quality ?? 0.72) : 1);
+    if (!best.blob || candidate.size < best.blob.size) {
+      remember(candidate, lossy ? (best.quality ?? 0.72) : null, scale, canvas);
     }
-    if (bestBlob.size <= targetBytes) break;
+    if (candidate.size <= targetBytes) break;
   }
 
-  if (!bestBlob || !bestCanvas) {
-    bestCanvas = render(scale);
-    bestBlob = await encodeCanvas(bestCanvas, mime, lossy ? 0.1 : 1);
-    bestScale = scale;
+  if (!best.blob) {
+    const canvas = render(scale);
+    iterations++;
+    remember(await encodeCanvas(canvas, mime, lossy ? 0.1 : 1), lossy ? 0.1 : null, scale, canvas);
   }
+
+  const finalBlob = best.blob ?? file;
+  const actual = resolveEncodedFormat(mime, finalBlob.type);
+  const targetMet = finalBlob.size <= targetBytes;
+  const savingsPercent =
+    file.size > 0 ? Math.round(((file.size - finalBlob.size) / file.size) * 100) : 0;
+
+  const status: ImageCompressStatus = targetMet
+    ? 'met-target'
+    : finalBlob.size < file.size
+      ? 'best-effort'
+      : 'unreachable';
 
   return {
     id: `${file.name}-kb-${Date.now()}`,
-    name: buildCompressedImageName(file.name, targetKb, mime),
+    name: buildCompressedImageName(file.name, targetKb, actual.mime),
     originalSize: file.size,
-    outputSize: bestBlob.size,
-    mimeType: mime,
-    blob: bestBlob,
-    previewUrl: URL.createObjectURL(bestBlob),
+    outputSize: finalBlob.size,
+    mimeType: actual.mime,
+    blob: finalBlob,
+    previewUrl: URL.createObjectURL(finalBlob),
     sourcePreviewUrl: dataUrl,
-    iterations,
-    achievedQuality: bestQuality === null ? null : Math.round(bestQuality * 100),
-    dimensions: `${bestCanvas.width} × ${bestCanvas.height} px`,
-    targetMet: bestBlob.size <= targetBytes,
-    scaleApplied: Number(bestScale.toFixed(3)),
+    status,
     requestedMime: mime,
+    actualMime: actual.mime,
+    formatFallback: actual.fallback,
+    iterations,
+    achievedQuality: best.quality === null ? null : Math.round(best.quality * 100),
+    originalDimensions,
+    finalDimensions: `${best.width} × ${best.height} px`,
+    scaled: best.scale < 0.999,
+    scaleApplied: Number(best.scale.toFixed(3)),
+    targetMet,
+    savingsPercent,
+    transparencyNote:
+      actual.mime === 'image/jpeg'
+        ? 'JPEG has no transparency: transparent areas were filled with white.'
+        : null,
   };
 }
 

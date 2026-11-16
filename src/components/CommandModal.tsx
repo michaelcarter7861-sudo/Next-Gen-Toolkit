@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Search,
   X,
@@ -37,12 +37,59 @@ export function CommandModal({
   const [query, setQuery] = useState('');
   const [selectedHubFilter, setSelectedHubFilter] = useState<HubId | 'all' | 'favorites'>('all');
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!isOpen) {
       setQuery('');
       setSelectedHubFilter('all');
     }
   }, [isOpen]);
+
+  // Focus management: move focus in on open, keep Tab inside the dialog, and
+  // restore the trigger on close. Escape closes from anywhere in the dialog.
+  useEffect(() => {
+    if (!isOpen) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    const focusTimer = window.setTimeout(() => searchRef.current?.focus(), 0);
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusable = root.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    const { overflow } = document.body.style;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKeyDown, true);
+      document.body.style.overflow = overflow;
+      previouslyFocused.current?.focus?.();
+    };
+  }, [isOpen, onClose]);
 
   const q = query.trim().toLowerCase();
   const filteredTools = useMemo(() => {
@@ -73,14 +120,17 @@ export function CommandModal({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         className="w-full max-w-2xl rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-5 py-4 border-b border-[#E8E6F2] dark:border-[#2A2E42]">
           <Search className="w-5 h-5 text-[#7047EB] shrink-0" />
           <input
+            ref={searchRef}
             type="text"
             autoFocus
+            aria-label="Search tools"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search 25 utilities by name, LSI keyword, or format (e.g. 20KB, PDF, JSON, JWT, QR)..."
@@ -89,7 +139,7 @@ export function CommandModal({
           <button
             onClick={onClose}
             aria-label="Close launcher"
-            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#171927] dark:hover:text-white hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F]"
+            className="min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg text-[#64748B] hover:text-[#171927] dark:hover:text-white hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F]"
           >
             <X className="w-4 h-4" />
           </button>

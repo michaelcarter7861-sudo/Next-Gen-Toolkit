@@ -53,11 +53,13 @@ jobs:
             test -f "dist/$page/index.html" || { echo "Missing trust page: $page"; exit 1; }
           done
 
-          # Preview tools must exist for humans but stay out of search.
+          # The rasteriser is live now, so its page must be indexable...
           test -f dist/pdf-tools/pdf-to-image/index.html
+          grep -q 'rel="canonical"' dist/pdf-tools/pdf-to-image/index.html
+          # ...while the OCR page remains honestly quarantined.
           test -f dist/image-tools/image-to-text-ocr/index.html
-          grep -q 'name="robots" content="noindex' dist/pdf-tools/pdf-to-image/index.html
-          if grep -q 'pdf-to-image' dist/sitemap.xml; then
+          grep -q 'name="robots" content="noindex' dist/image-tools/image-to-text-ocr/index.html
+          if grep -q 'image-to-text-ocr' dist/sitemap.xml; then
             echo "Preview tool leaked into the sitemap"; exit 1
           fi
 
