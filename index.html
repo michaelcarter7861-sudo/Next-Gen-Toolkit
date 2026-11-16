@@ -36,11 +36,7 @@
     <meta name="twitter:description" content="Compress PDFs &amp; images to exact KB, format broken JSON, count LLM tokens, and run 25+ free browser-based tools with NextGenToolkit." />
     <meta name="twitter:image" content="https://nextgentoolkit.pages.dev/og-cover.png" />
     <meta name="theme-color" content="#7047EB" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
-    <noscript><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
+    <!-- Use system fonts to avoid an external font request on the critical rendering path. -->
     <script id="nextgentoolkit-jsonld-schema" type="application/ld+json">
       {
         "@context": "https://schema.org",
