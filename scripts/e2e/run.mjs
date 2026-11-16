@@ -116,16 +116,22 @@ async function main() {
   const page = await context.newPage();
   const consoleErrors = [];
   page.on('console', (m) => m.type() === 'error' && consoleErrors.push(m.text()));
+  page.on('response', (r) => {
+    if (r.status() === 404) consoleErrors.push(`404 ${new URL(r.url()).pathname}`);
+  });
   page.on('pageerror', (e) => consoleErrors.push(String(e.message)));
 
   console.log(`\nBrowser: ${process.env.BROWSER ?? 'chromium'} · target: ${BASE}\n`);
 
+  // Slugs come from src/data/toolsCatalog.ts: categories are /dev-tools/, /image-tools/,
+  // /pdf-tools/, /text-tools/, /generators/. An earlier draft of this suite guessed
+  // /developer-tools/ and /seo-tools/, which is what produced the 404 annotations.
   const routes = ['/', '/sitemap/', '/about/', '/contact/', '/privacy/', '/terms/',
     '/editorial-policy/', '/changelog/', '/pdf-tools/', '/image-tools/', '/text-tools/',
-    '/developer-tools/', '/seo-tools/', '/generator-tools/',
+    '/dev-tools/', '/generators/',
     '/image-tools/compress-image-to-kb/', '/pdf-tools/compress-pdf/',
     '/pdf-tools/pdf-to-image/', '/image-tools/image-to-text-ocr/',
-    '/developer-tools/json-formatter-validator/'];
+    '/dev-tools/json-formatter-validator/'];
 
   for (const route of routes) {
     await check(`direct navigation ${route}`, async () => {
@@ -169,13 +175,21 @@ async function main() {
     const kb = match[2] === 'KB' ? Number(match[1]) : match[2] === 'MB' ? Number(match[1]) * 1024 : Number(match[1]) / 1024;
     if (kb > 20.5) throw new Error(`output ${kb.toFixed(1)} KB exceeded the 20 KB ceiling`);
     if (!/Target met/i.test(gauge)) throw new Error(`expected "Target met", got: ${gauge}`);
-    const name = await page.locator('text=/-20kb\\./').first().innerText().catch(() => '');
+    const name = await page.getByText(/-20kb\./).first().innerText().catch(() => '');
     if (name && !/-(20)kb\\.(jpg|png|webp)$/i.test(name.trim())) throw new Error(`bad filename: ${name}`);
   });
 
-  await check('a download link exists for the compressed image', async () => {
-    const links = await page.locator('a[download]').count();
-    if (links === 0) throw new Error('no download control rendered');
+  await check('the compressed image downloads with a target-named file', async () => {
+    const button = page.getByRole('button', { name: /download/i }).first();
+    if (!(await button.count())) throw new Error('no download control rendered');
+    const [download] = await Promise.all([page.waitForEvent('download', { timeout: 30_000 }), button.click()]);
+    const name = download.suggestedFilename();
+    if (!/-20kb\.(jpg|png|webp)$/i.test(name)) throw new Error(`unexpected filename: ${name}`);
+    const stream = await download.createReadStream();
+    let bytes = 0;
+    for await (const chunk of stream) bytes += chunk.length;
+    if (bytes === 0) throw new Error('downloaded file is empty');
+    if (bytes > 20.5 * 1024) throw new Error(`downloaded file is ${(bytes / 1024).toFixed(1)} KB, above the 20 KB ceiling`);
   });
 
   await check('PDF to image renders every page by default', async () => {
@@ -186,7 +200,7 @@ async function main() {
     await page.waitForSelector('text=/page-0[12]/i', { timeout: 120_000 });
     const body = await page.locator('body').innerText();
     if (!/page-01/i.test(body) || !/page-02/i.test(body)) throw new Error('both pages should be rendered by default');
-    if (/Page 3 does not exist|valid page selection/i.test(body)) throw new Error('default page selection is broken');
+    if (/No pages matched|does not exist|valid page selection/i.test(body)) throw new Error('default page selection is broken');
   });
 
   await check('PDF to image rejects an impossible page range with a message', async () => {
@@ -195,7 +209,7 @@ async function main() {
     await page.locator('input[type=file]').first().setInputFiles({
       name: 'tiny.pdf', mimeType: 'application/pdf', buffer: await pdfBuffer(1),
     });
-    await page.waitForSelector('text=/does not exist|valid page/i', { timeout: 60_000 });
+    await page.waitForSelector('text=/No pages matched|does not exist|valid page/i', { timeout: 60_000 });
   });
 
   await check('PDF optimisation states an outcome instead of a fabricated saving', async () => {
@@ -252,6 +266,7 @@ async function main() {
 
   await check('no console errors during the suite (excluding tag manager)', async () => {
     const relevant = consoleErrors.filter((m) => !/googletagmanager|analytics|gtag|ERR_BLOCKED/i.test(m));
+    if (relevant.length) throw new Error(relevant.slice(0, 5).join(' | '));
     if (relevant.length) throw new Error(relevant.slice(0, 3).join(' | '));
   });
 
