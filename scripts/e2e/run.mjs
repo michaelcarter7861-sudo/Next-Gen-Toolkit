@@ -170,13 +170,13 @@ async function main() {
     });
     await page.waitForSelector('[role=img]', { timeout: 90_000 });
     const gauge = await page.locator('[role=img]').first().getAttribute('aria-label');
-    const match = /Result ([\\d.]+) (B|KB|MB)/.exec(gauge ?? '');
+    const match = /Result\s*([\d.]+)\s*(B|KB|MB)/i.exec(gauge ?? '');
     if (!match) throw new Error(`gauge did not report a result: ${gauge}`);
     const kb = match[2] === 'KB' ? Number(match[1]) : match[2] === 'MB' ? Number(match[1]) * 1024 : Number(match[1]) / 1024;
     if (kb > 20.5) throw new Error(`output ${kb.toFixed(1)} KB exceeded the 20 KB ceiling`);
     if (!/Target met/i.test(gauge)) throw new Error(`expected "Target met", got: ${gauge}`);
     const name = await page.getByText(/-20kb\./).first().innerText().catch(() => '');
-    if (name && !/-(20)kb\\.(jpg|png|webp)$/i.test(name.trim())) throw new Error(`bad filename: ${name}`);
+    if (name && !/-20kb\.(jpg|png|webp)$/i.test(name.trim())) throw new Error(`bad filename: ${name}`);
   });
 
   await check('the compressed image downloads with a target-named file', async () => {
