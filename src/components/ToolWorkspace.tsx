@@ -71,6 +71,8 @@ interface ToolWorkspaceProps {
   onSelectHub: (hubId: HubId) => void;
   onSelectTool: (toolId: string) => void;
   onOpenAiModal: (context: string) => void;
+  /** The AI assistant has no working backend in the static deployment. */
+  aiAssistantEnabled?: boolean;
   isFavorite?: boolean;
   onToggleFavorite?: (toolId: string) => void;
   chainedPayload?: ChainedToolPayload | null;
@@ -100,6 +102,7 @@ export function ToolWorkspace({
   onSelectHub,
   onSelectTool,
   onOpenAiModal,
+  aiAssistantEnabled = false,
   isFavorite = false,
   onToggleFavorite,
   chainedPayload = null,
@@ -1043,7 +1046,8 @@ export function ToolWorkspace({
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Processing details</span>
           </button>
-          <button
+          {aiAssistantEnabled && (
+<button
             type="button"
             onClick={() => onOpenAiModal(outputText || inputText)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F4E5FF] dark:bg-[#7047EB]/20 text-[#7E22CE] dark:text-[#C4B5FD] text-xs font-semibold hover:bg-[#EDE7FF] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
@@ -1051,6 +1055,7 @@ export function ToolWorkspace({
             <Sparkles className="w-3.5 h-3.5" />
             <span>AI Grounded Inspect</span>
           </button>
+            )}
         </div>
       </div>
 
@@ -1526,10 +1531,11 @@ export function ToolWorkspace({
                         const f = items[i].getAsFile();
                         if (f) {
                           setUploadedFiles([f]);
-                          setInputText(
-                            `[OCR Extracted from Clipboard Image: ${f.name || 'screenshot.png'} (${(
-                              f.size / 1024
-                            ).toFixed(1)} KB)]\nINVOICE #NGT-2026-8841   DATE: 2026-11-13\nTOTAL DUE: $1,420.00   STATUS: PAID\n100% Client-Side Browser OCR Extraction Complete.`
+                          // The OCR engine is not shipped. Never invent recognised
+                          // text here: say what actually happened instead.
+                          setInputText('');
+                          setProcessingNotice(
+                            'OCR is not available yet. The image was attached, but no text was extracted — nothing here is guesswork.'
                           );
                         }
                       }

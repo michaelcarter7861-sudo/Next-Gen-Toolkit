@@ -10,7 +10,9 @@ Priority levels: **P0** correctness/trust · **P1** core quality · **P2** diffe
 | D1 | Approve a public contact address (or a form endpoint) | Trust pages, legal review, support route | Contact stays "pending approval" |
 | D2 | Keep or remove Google Tag Manager; if keep, add Consent Mode v2 (default denied) | Privacy claim, EU/UK exposure | Keep as-is with the current disclosure |
 | D3 | Approve removing the non-functional AI launcher | Bundle size, honesty | Keep, still non-functional |
-| D4 | Approve the PDF target-size strategy (rasterise, with text becoming non-selectable) | The core PDF promise | Keep honest limitations |
+| D4 | ~~Approve the PDF target-size strategy~~ **DECIDED 2026-11-16: keep honest limits** — no rasterising target-size engine | — | Decided |
+| D2 | ~~Consent Mode vs GTM removal~~ **DECIDED: keep GTM for now** as an accepted risk | — | Decided |
+| D3 | ~~AI launcher~~ **DECIDED: host later** — entry points hidden now | — | Decided |
 
 ## Days 1–30 — close the P0s and prove the basics
 
@@ -28,7 +30,7 @@ Priority levels: **P0** correctness/trust · **P1** core quality · **P2** diffe
 
 | Item | Why | Cost | Risk | Confidence |
 |---|---|---|---|---|
-| True target-size PDF engine: rasterise pages at a DPI solved from the byte ceiling, rebuild, disclose that text becomes an image | Only remaining broken promise on a live tool | 3–5 d | Medium (quality trade-off must be explicit) | Medium |
+| ~~True target-size PDF engine~~ → replaced by **clear positioning**: keep structural optimisation, state the limitation on the page, and route scan owners to the new PDF→image + image compression chain | Owner decision D4: do not turn documents into images silently | 0.5 d copy + 1 d chain UX | Low | High |
 | Portal reference v1: ≥5 portals, each with quoted requirement, URL and date | Highest-value differentiation available | 3–4 d research | Low | High |
 | Signature and passport-photo modes (crop-to-spec, high contrast, exact KB) | Two of the three top scenarios | 1–2 d | Low | High |
 | Route-level splitting + catalogue lazy-load | 89 kB eager chunk on every page | 1 d | Low | High |

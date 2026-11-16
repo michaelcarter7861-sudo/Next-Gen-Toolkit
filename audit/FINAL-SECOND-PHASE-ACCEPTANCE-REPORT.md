@@ -23,6 +23,17 @@
 
 ---
 
+## 1a. Owner decisions recorded 2026-11-16 (after this audit was written)
+
+| # | Decision | Action taken |
+|---|---|---|
+| D1 | Contact: owner will supply an approved address | `PUBLIC_CONTACT` switch added in `src/data/sitePages.ts` (currently `null`) — setting it publishes the address on the contact page and switches the copy. Nothing is published until then. |
+| D2 | GTM: **leave as-is for now** | Recorded as a **knowingly accepted risk**, not a defect that was missed. The privacy page keeps its disclosure; no consent claim is made anywhere; the claim "100% private" remains prohibited. Revisit at the first legal review. |
+| D3 | AI launcher: host properly later | Entry points hidden (`AI_ASSISTANT_ENABLED = false` in `App.tsx`, `aiAssistantEnabled` prop in the workspace). Code retained; nothing advertises AI until a backend exists. |
+| D4 | PDF: **keep honest limits** | No rasterising target-size engine. The PDF tool keeps structural optimisation plus explicit limitations. The P1 item is removed from the roadmap rather than quietly dropped. |
+
+**Late defect found while implementing D3 (and fixed):** the OCR tool's clipboard-paste handler still injected a fabricated invoice ending "100% Client-Side Browser OCR Extraction Complete." — a phase-1 fabrication that survived its own cleanup. It now attaches the image, extracts nothing, and says so. The regression guard bans `INVOICE #NGT-` and `OCR Extraction Complete` from the source tree.
+
 ## 2. What is genuinely complete
 
 | Area | Evidence |

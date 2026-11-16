@@ -90,7 +90,11 @@ test('Regression guard: simulated output must not return to the source tree', ()
   const forbidden = [
     'Simulated document lines',
     'OCR VERIFICATION LINE',
+    'OCR Extraction Complete',
     'Math.max(4,',
+    // A fake invoice was injected on clipboard paste even after phase 1 removed
+    // the other fabricated OCR path. Any hard-coded document body is a defect.
+    'INVOICE #NGT-',
   ];
   const root = path.resolve('src');
   const offenders: string[] = [];

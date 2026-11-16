@@ -41,6 +41,10 @@ import {
 } from './data/toolsCatalog';
 
 // Counts come from the catalogue so they cannot drift from reality.
+// Owner decision (2026-11-16): keep the AI assistant code, but do not advertise
+// it until a backend actually exists. No entry point is rendered while false.
+const AI_ASSISTANT_ENABLED = false;
+
 const LIVE_TOOL_COUNT = TOOLS_CATALOG.filter((tool) => tool.status !== 'preview').length;
 const BROWSER_LOCAL_COUNT = LIVE_TOOL_COUNT;
 import { HOME_FAQS } from './data/seoSchemaData';
@@ -482,6 +486,7 @@ export default function App() {
             onSelectHub={navigateToHub}
             onSelectTool={navigateToTool}
             onOpenAiModal={openAiModal}
+            aiAssistantEnabled={AI_ASSISTANT_ENABLED}
             isFavorite={favoriteIds.includes(activeTool.id)}
             onToggleFavorite={toggleFavorite}
             chainedPayload={chainedPayload}
@@ -757,7 +762,8 @@ export default function App() {
                   </a>
                 ))}
 
-                <button
+                {AI_ASSISTANT_ENABLED && (
+<button
                   type="button"
                   onClick={() => openAiModal('')}
                   style={{ backgroundColor: darkMode ? undefined : '#F4E5FF' }}
@@ -778,6 +784,7 @@ export default function App() {
                     </p>
                   </div>
                 </button>
+                  )}
               </div>
             </section>
 

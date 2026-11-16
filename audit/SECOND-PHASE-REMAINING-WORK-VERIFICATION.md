@@ -49,6 +49,7 @@
 | N7 | PDF→image had no working engine but shipped a DPI selector that did nothing | Medium | Real pdf.js rasteriser shipped; selector, page range and format now functional |
 | N8 | `dist/_headers` had no preview-host rule | Medium | Fixed (see V11) |
 | N9 | No test executed the shipped image engine at all | High | 8 engine tests now execute it against a real encoder |
+| N10 | **A phase-1 fabrication survived phase 1**: pasting an image into the OCR tool injected a fake invoice ending "100% Client-Side Browser OCR Extraction Complete." | **P0** | Removed; regression guard extended to ban `INVOICE #NGT-` and `OCR Extraction Complete` |
 
 ## 4. What remains blocked (cannot be resolved from this environment)
 

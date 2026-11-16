@@ -33,7 +33,12 @@ export interface SitePageDefinition {
 const UPDATED = '2026-11-16';
 /** Public contact details are intentionally absent until the owner approves one.
  *  See audit/SECOND-PHASE-REMAINING-WORK-VERIFICATION.md — publishing an
- *  unapproved address is treated as a release blocker, not a placeholder. */
+ *  unapproved address is treated as a release blocker, not a placeholder.
+ *
+ *  Owner decision D1 (2026-11-16): an address will be supplied. Set it below and
+ *  the contact page, its JSON-LD description and the copy switch automatically.
+ *  Leave it null and the page keeps telling the truth: no channel yet. */
+export const PUBLIC_CONTACT: string | null = null;
 const REPO_URL = 'https://github.com/michaelcarter7861-sudo/Next-Gen-Toolkit';
 
 export const SITE_PAGES: SitePageDefinition[] = [
@@ -99,7 +104,9 @@ export const SITE_PAGES: SitePageDefinition[] = [
       {
         heading: 'Contact channel',
         paragraphs: [
-          'There is no published support address yet. A single, owner-approved contact channel has not been supplied, and inventing one would be worse than admitting the gap — so bug reports and corrections go through the public repository for now, where every message is visible and archived.',
+          PUBLIC_CONTACT
+            ? `Write to ${PUBLIC_CONTACT}. This is the owner-approved public channel for bug reports, corrections and privacy questions.`
+            : 'There is no published support address yet. A single, owner-approved contact channel has not been supplied, and inventing one would be worse than admitting the gap — so bug reports and corrections go through the public repository for now, where every message is visible and archived.',
           'Once the owner approves a public address it will be published here, on the About page and in the footer, and the change will be recorded in the changelog.',
         ],
       },
