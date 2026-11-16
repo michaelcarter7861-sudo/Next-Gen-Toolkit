@@ -497,18 +497,8 @@ const sitemapIndexXml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex x
 const sitemapTxt = `${sitemapUrls.join('\n')}\n`;
 
 await writeFile(path.join(DIST, 'sitemap.xml'), sitemapXml, 'utf8');
-await writeFile(path.join(DIST, 'sitemap-main.xml'), sitemapXml, 'utf8');
-await writeFile(path.join(DIST, 'sitemap-v2.xml'), sitemapXml, 'utf8');
-await writeFile(path.join(DIST, 'sitemap-index.xml'), sitemapIndexXml, 'utf8');
-await writeFile(path.join(DIST, 'sitemap_index.xml'), sitemapIndexXml, 'utf8');
-await writeFile(path.join(DIST, 'sitemap.txt'), sitemapTxt, 'utf8');
 try {
   await writeFile(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemapXml, 'utf8');
-  await writeFile(path.join(PUBLIC_DIR, 'sitemap-main.xml'), sitemapXml, 'utf8');
-  await writeFile(path.join(PUBLIC_DIR, 'sitemap-v2.xml'), sitemapXml, 'utf8');
-  await writeFile(path.join(PUBLIC_DIR, 'sitemap-index.xml'), sitemapIndexXml, 'utf8');
-  await writeFile(path.join(PUBLIC_DIR, 'sitemap_index.xml'), sitemapIndexXml, 'utf8');
-  await writeFile(path.join(PUBLIC_DIR, 'sitemap.txt'), sitemapTxt, 'utf8');
 } catch {
   // Ignore if public directory is read-only in CI
 }
@@ -536,8 +526,6 @@ const robotsTxt = [
   'Allow: /',
   '',
   `Sitemap: ${SITE_URL}/sitemap.xml`,
-  `Sitemap: ${SITE_URL}/sitemap-main.xml`,
-  `Sitemap: ${SITE_URL}/sitemap.txt`,
   '',
 ].join('\n');
 
@@ -546,41 +534,6 @@ await writeFile(path.join(DIST, 'robots.txt'), robotsTxt, 'utf8');
 // Ensure Cloudflare Pages _headers exists in dist/ so Googlebot gets strict XML/text MIME headers
 const headersConfig = `/sitemap.xml
   Content-Type: application/xml; charset=utf-8
-  Cache-Control: public, max-age=0, must-revalidate
-  X-Content-Type-Options: nosniff
-  X-Robots-Tag: all
-  Access-Control-Allow-Origin: *
-
-/sitemap-main.xml
-  Content-Type: application/xml; charset=utf-8
-  Cache-Control: public, max-age=0, must-revalidate
-  X-Content-Type-Options: nosniff
-  X-Robots-Tag: all
-  Access-Control-Allow-Origin: *
-
-/sitemap-v2.xml
-  Content-Type: application/xml; charset=utf-8
-  Cache-Control: public, max-age=0, must-revalidate
-  X-Content-Type-Options: nosniff
-  X-Robots-Tag: all
-  Access-Control-Allow-Origin: *
-
-/sitemap-index.xml
-  Content-Type: application/xml; charset=utf-8
-  Cache-Control: public, max-age=0, must-revalidate
-  X-Content-Type-Options: nosniff
-  X-Robots-Tag: all
-  Access-Control-Allow-Origin: *
-
-/sitemap_index.xml
-  Content-Type: application/xml; charset=utf-8
-  Cache-Control: public, max-age=0, must-revalidate
-  X-Content-Type-Options: nosniff
-  X-Robots-Tag: all
-  Access-Control-Allow-Origin: *
-
-/sitemap.txt
-  Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
   X-Robots-Tag: all
