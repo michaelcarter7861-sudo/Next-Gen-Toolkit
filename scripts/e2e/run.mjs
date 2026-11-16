@@ -115,9 +115,20 @@ async function main() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   const consoleErrors = [];
-  page.on('console', (m) => m.type() === 'error' && consoleErrors.push(m.text()));
+  let currentRoute = '/';
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    // Location matters: a 404 for a subresource is a defect, a 404 for the page we
+    // deliberately requested is the test doing its job.
+    consoleErrors.push(`[on ${currentRoute}] ${m.text()} @ ${m.location()?.url ?? 'unknown'}`);
+  });
   page.on('response', (r) => {
-    if (r.status() === 404) consoleErrors.push(`404 ${new URL(r.url()).pathname}`);
+    if (r.status() === 404) consoleErrors.push(`[on ${currentRoute}] 404 ${new URL(r.url()).pathname}`);
+  });
+  page.on('requestfailed', (r) => {
+    const failure = r.failure()?.errorText ?? 'unknown';
+    if (/ERR_ABORTED/.test(failure)) return;
+    consoleErrors.push(`[on ${currentRoute}] requestfailed ${new URL(r.url()).pathname} ${failure}`);
   });
   page.on('pageerror', (e) => consoleErrors.push(String(e.message)));
 
@@ -135,6 +146,7 @@ async function main() {
 
   for (const route of routes) {
     await check(`direct navigation ${route}`, async () => {
+      currentRoute = route;
       const response = await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
       if (!response || response.status() >= 400) throw new Error(`HTTP ${response?.status()}`);
       if (!(await page.locator('h1').first().innerText()).trim()) throw new Error('no H1');
