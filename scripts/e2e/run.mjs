@@ -180,7 +180,7 @@ async function main() {
   });
 
   await check('the compressed image downloads with a target-named file', async () => {
-    const button = page.getByRole('button', { name: /download/i }).first();
+    const button = page.getByRole('button', { name: 'Download', exact: true }).first();
     if (!(await button.count())) throw new Error('no download control rendered');
     const [download] = await Promise.all([page.waitForEvent('download', { timeout: 30_000 }), button.click()]);
     const name = download.suggestedFilename();
@@ -265,7 +265,10 @@ async function main() {
   }
 
   await check('no console errors during the suite (excluding tag manager)', async () => {
-    const relevant = consoleErrors.filter((m) => !/googletagmanager|analytics|gtag|ERR_BLOCKED/i.test(m));
+    // The invalid-route scenario deliberately requests a 404 document.
+    const relevant = consoleErrors.filter(
+      (m) => !/googletagmanager|analytics|gtag|ERR_BLOCKED|this-route-does-not-exist/i.test(m)
+    );
     if (relevant.length) throw new Error(relevant.slice(0, 5).join(' | '));
     if (relevant.length) throw new Error(relevant.slice(0, 3).join(' | '));
   });

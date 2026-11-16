@@ -765,6 +765,18 @@ export function ToolWorkspace({
         processedItemsRef.current = results;
         setProcessedItems(results);
         setExecutionDurationMs(Math.max(1, Math.round(performance.now() - t0)));
+      } catch (error) {
+        // Without this the engine's message ("Page 9 does not exist in this 1-page PDF.")
+        // was only an unhandled rejection: the spinner stopped and the user got nothing.
+        const message = error instanceof Error ? error.message : String(error);
+        setProcessedItems([]);
+        processedItemsRef.current = [];
+        setGauge(null);
+        setProcessingNotice(
+          /does not exist|no pages|matched/i.test(message)
+            ? `${message.replace(/\.$/, '')}. Use “all”, a single page or a range inside the document.`
+            : message
+        );
       } finally {
         setIsProcessing(false);
       }
@@ -774,6 +786,7 @@ export function ToolWorkspace({
       targetKb,
       pdfRotation,
       pdfRangeSyntax,
+      pdfImagePages,
       pdfDpi,
       imageOutputFormat,
       pdfPageSize,
