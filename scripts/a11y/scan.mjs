@@ -76,14 +76,19 @@ async function main() {
   for (const [route, name] of PAGES) {
     const themes = route === '/' ? ['light', 'dark'] : ['light'];
     for (const theme of themes) {
+      // The app stores its theme in localStorage and also honours the OS
+      // preference, so dark mode is scanned as a real reload — not by forcing a
+      // class the React tree does not know about.
+      await page.emulateMedia({ colorScheme: theme });
       await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
-      if (theme === 'dark') {
-        await page.evaluate(() => {
-          document.documentElement.classList.add('dark');
-          try { localStorage.setItem('ngt-theme', 'dark'); } catch { /* private mode */ }
-        });
-        await page.waitForTimeout(120);
-      }
+      await page.evaluate((value) => {
+        try { localStorage.setItem('ngt_theme_v1', value); } catch { /* private mode */ }
+      }, theme);
+      await page.reload({ waitUntil: 'networkidle' });
+      const appliedTheme = await page.evaluate(() =>
+        document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+      );
+      if (appliedTheme !== theme) throw new Error(`theme ${theme} did not apply (got ${appliedTheme})`);
       await page.addScriptTag({ content: AXE });
       const result = await page.evaluate(async (tags) => {
         // @ts-expect-error injected at runtime
@@ -102,6 +107,7 @@ async function main() {
           help: violation.help,
           nodes: violation.nodes.slice(0, 4).map((node) => ({
             target: node.target.join(' '),
+            html: (node.html ?? '').slice(0, 240),
             summary: (node.failureSummary ?? '').split('\n').slice(0, 3).join(' '),
           })),
           nodeCount: violation.nodes.length,
@@ -150,7 +156,7 @@ async function main() {
   for (const item of blocking.slice(0, 10)) {
     console.log(
       `::error title=a11y ${item.impact} ${item.rule} (${item.page} ${item.theme})::` +
-        `${item.help} — ${item.nodes[0]?.target ?? ''} — ${item.nodes[0]?.summary ?? ''}`.replace(/\r?\n/g, ' ').slice(0, 900)
+        `${item.help} — ${item.nodes[0]?.target ?? ''} — ${item.nodes[0]?.html ?? ''} — ${item.nodes[0]?.summary ?? ''}`.replace(/\r?\n/g, ' ').slice(0, 900)
     );
   }
   if (blocking.length) process.exitCode = 1;

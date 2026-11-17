@@ -270,8 +270,32 @@ async function main() {
     await check(`no horizontal overflow at ${width}px`, async () => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(BASE, { waitUntil: 'networkidle' });
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-      if (overflow > 2) throw new Error(`horizontal overflow: ${overflow}px`);
+      const report = await page.evaluate(() => {
+        const doc = document.documentElement;
+        const overflow = doc.scrollWidth - doc.clientWidth;
+        const offenders = [];
+        if (overflow > 2) {
+          for (const element of Array.from(document.querySelectorAll('body *'))) {
+            const box = element.getBoundingClientRect();
+            if (box.right > doc.clientWidth + 2 && box.width > 0) {
+              offenders.push({
+                tag: element.tagName.toLowerCase(),
+                classes: (element.getAttribute('class') ?? '').slice(0, 160),
+                width: Math.round(box.width),
+                right: Math.round(box.right),
+              });
+            }
+          }
+          offenders.sort((a, b) => b.right - a.right);
+        }
+        return { overflow, offenders: offenders.slice(0, 4) };
+      });
+      if (report.overflow > 2) {
+        const detail = report.offenders
+          .map((o) => `${o.tag}.${o.classes.split(' ').slice(0, 6).join('.')} (w=${o.width}, right=${o.right})`)
+          .join(' | ');
+        throw new Error(`horizontal overflow: ${report.overflow}px by ${detail || 'unknown element'}`);
+      }
       await page.screenshot({ path: path.join(SHOTS, `${label}.png`) });
     });
   }

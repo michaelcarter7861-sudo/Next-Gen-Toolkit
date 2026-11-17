@@ -1028,11 +1028,11 @@ export function ToolWorkspace({
                 Preview — engine not shipped
               </span>
             )}
-            <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-0.5">
+            <p className="text-sm text-[#5B6A80] dark:text-[#94A3B8] mt-0.5">
               {tool.valuePropSubtitle}
             </p>
             {TOOL_EDITORIAL_LINKS[tool.id] && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-[#5B6A80] dark:text-[#94A3B8]">
                 {TOOL_EDITORIAL_LINKS[tool.id].internalLinks[0] && (
                   <span>
                     Connected workflow:{' '}
@@ -1229,7 +1229,7 @@ export function ToolWorkspace({
                   setForensicTable(null);
                 }}
                 aria-label="Clear workspace"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[#64748B] hover:text-red-600 transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[#5B6A80] hover:text-red-600 transition-colors whitespace-nowrap shrink-0"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Clear</span>
@@ -1261,7 +1261,7 @@ export function ToolWorkspace({
                 <p className="text-base font-bold text-[#171927] dark:text-[#F8F7FC]">
                   Drop your {tool.hubId === 'pdf-tools' && tool.id !== 'image-to-pdf' ? 'PDF files' : 'images'} here
                 </p>
-                <p className="text-xs text-[#64748B] mt-1 mb-4">or click to browse files</p>
+                <p className="text-xs text-[#5B6A80] mt-1 mb-4">or click to browse files</p>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1272,7 +1272,7 @@ export function ToolWorkspace({
                 >
                   Select {tool.hubId === 'pdf-tools' && tool.id !== 'image-to-pdf' ? 'PDF Files' : 'Images'}
                 </button>
-                <p className="text-xs text-[#64748B] mt-4">
+                <p className="text-xs text-[#5B6A80] mt-4">
                   {tool.specTable.supportedFormats} · Batch capacity depends on file size and available browser memory
                 </p>
               </div>
@@ -1284,7 +1284,7 @@ export function ToolWorkspace({
                     <span className="font-bold text-[#171927] dark:text-[#F8F7FC] tabular-nums">
                       Queued Input Files ({uploadedFiles.length})
                     </span>
-                    <span className="text-[#64748B]">
+                    <span className="text-[#5B6A80]">
                       {uploadedFiles.length > 1
                         ? 'Use arrows to set order before processing'
                         : 'Processed locally in browser RAM'}
@@ -1303,7 +1303,7 @@ export function ToolWorkspace({
                           <span className="font-semibold text-[#171927] dark:text-[#F8F7FC] truncate">
                             {file.name}
                           </span>
-                          <span className="text-[#64748B] font-mono text-[11px] shrink-0 tabular-nums">
+                          <span className="text-[#5B6A80] font-mono text-[11px] shrink-0 tabular-nums">
                             {(file.size / 1024).toFixed(1)} KB
                           </span>
                         </div>
@@ -1315,7 +1315,7 @@ export function ToolWorkspace({
                                 onClick={() => moveQueuedFile(idx, -1)}
                                 disabled={idx === 0}
                                 aria-label={`Move ${file.name} up`}
-                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
                               >
                                 <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
@@ -1324,7 +1324,7 @@ export function ToolWorkspace({
                                 onClick={() => moveQueuedFile(idx, 1)}
                                 disabled={idx === uploadedFiles.length - 1}
                                 aria-label={`Move ${file.name} down`}
-                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
                               >
                                 <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
@@ -1334,7 +1334,7 @@ export function ToolWorkspace({
                             type="button"
                             onClick={() => removeQueuedFile(idx)}
                             aria-label={`Remove ${file.name}`}
-                            className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-red-600 cursor-pointer"
+                            className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80] hover:text-red-600 cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5" aria-hidden="true" />
                           </button>
@@ -1357,7 +1357,7 @@ export function ToolWorkspace({
                         key={k}
                         className="flex items-center justify-between gap-2 bg-white dark:bg-[#151824] px-3 py-1.5 rounded-lg border border-amber-200/60 dark:border-amber-800/40"
                       >
-                        <span className="font-semibold text-[#64748B]">{k}:</span>
+                        <span className="font-semibold text-[#5B6A80]">{k}:</span>
                         <span className="font-mono text-[#171927] dark:text-[#E2E8F0] truncate max-w-[200px]">
                           {v}
                         </span>
@@ -1491,7 +1491,7 @@ export function ToolWorkspace({
                               <div className="text-xs sm:text-sm font-bold text-[#171927] dark:text-[#F8F7FC] truncate">
                                 {item.name}
                               </div>
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B] tabular-nums mt-0.5">
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-[#5B6A80] tabular-nums mt-0.5">
                                 <span>{(item.originalSize / 1024).toFixed(1)} KB</span>
                                 <span>→</span>
                                 <span className="font-semibold text-emerald-700 dark:text-emerald-400">
@@ -1628,7 +1628,7 @@ export function ToolWorkspace({
                       }
                     }
                   }}
-                  className="p-4 rounded-xl border-2 border-dashed border-[#C7B8F9] dark:border-[#4C3D99] bg-[#F8F7FC] dark:bg-[#151824] text-center text-xs text-[#64748B]"
+                  className="p-4 rounded-xl border-2 border-dashed border-[#C7B8F9] dark:border-[#4C3D99] bg-[#F8F7FC] dark:bg-[#151824] text-center text-xs text-[#5B6A80]"
                 >
                   Press <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-[#1C1F2E] border font-mono">Ctrl+V</kbd> anywhere to paste a screenshot directly from your clipboard, or edit the recognized OCR text below.
                 </div>
@@ -1640,6 +1640,7 @@ export function ToolWorkspace({
                     {tool.id === 'code-diff-checker' ? 'Original Text / Code (A)' : 'Input Source'}
                   </label>
                   <textarea
+                  aria-label="Type, paste, or click Load Sample Data..."
                     id={`ngt-input-${tool.id}`}
                     rows={12}
                     value={inputText}
@@ -1718,7 +1719,7 @@ export function ToolWorkspace({
                       <div className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
                         100% Permanent Static QR Code (Never Expires)
                       </div>
-                      <p className="text-xs text-[#64748B]">
+                      <p className="text-xs text-[#5B6A80]">
                         Reed-Solomon Error Correction Level {qrEcc} · ISO/IEC 18004 Vector SVG & 600px PNG
                       </p>
                       <div className="flex flex-wrap items-center gap-2 pt-2">
@@ -1747,25 +1748,25 @@ export function ToolWorkspace({
                 <div className="pt-2 space-y-3">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="p-3 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42]">
-                      <div className="text-xs text-[#64748B]">Estimated BPE Tokens</div>
+                      <div className="text-xs text-[#5B6A80]">Estimated BPE Tokens</div>
                       <div className="text-lg font-extrabold text-[#7047EB] font-mono tabular-nums">
                         {tokenStats.tokens.toLocaleString()}
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42]">
-                      <div className="text-xs text-[#64748B]">Words</div>
+                      <div className="text-xs text-[#5B6A80]">Words</div>
                       <div className="text-lg font-extrabold text-[#171927] dark:text-[#F8F7FC] font-mono tabular-nums">
                         {tokenStats.words.toLocaleString()}
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42]">
-                      <div className="text-xs text-[#64748B]">Characters</div>
+                      <div className="text-xs text-[#5B6A80]">Characters</div>
                       <div className="text-lg font-extrabold text-[#171927] dark:text-[#F8F7FC] font-mono tabular-nums">
                         {tokenStats.chars.toLocaleString()}
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42]">
-                      <div className="text-xs text-[#64748B]">Lines</div>
+                      <div className="text-xs text-[#5B6A80]">Lines</div>
                       <div className="text-lg font-extrabold text-[#171927] dark:text-[#F8F7FC] font-mono tabular-nums">
                         {tokenStats.lines.toLocaleString()}
                       </div>
@@ -1774,7 +1775,7 @@ export function ToolWorkspace({
 
                   <div className="overflow-x-auto rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42]">
                     <table className="w-full text-left text-xs border-collapse tabular-nums">
-                      <thead className="bg-[#F8F7FC] dark:bg-[#151824] text-[#64748B]">
+                      <thead className="bg-[#F8F7FC] dark:bg-[#151824] text-[#5B6A80]">
                         <tr>
                           <th className="py-2.5 px-3 font-semibold">LLM Model & Tokenizer</th>
                           <th className="py-2.5 px-3 font-semibold">Tokens</th>
@@ -1794,7 +1795,7 @@ export function ToolWorkspace({
                             </td>
                             <td className="py-2.5 px-3 font-mono">${m.inputCostUsd.toFixed(6)}</td>
                             <td className="py-2.5 px-3 font-mono">${m.outputCostUsd.toFixed(6)}</td>
-                            <td className="py-2.5 px-3 font-mono text-[#64748B]">
+                            <td className="py-2.5 px-3 font-mono text-[#5B6A80]">
                               {(m.contextWindow / 1000).toFixed(0)}K
                             </td>
                           </tr>
@@ -1860,6 +1861,7 @@ export function ToolWorkspace({
                   <span className="font-mono text-[#7047EB] font-bold">≤ {targetKb} KB</span>
                 </div>
                 <input
+                  aria-label="Target size in kilobytes"
                   type="range"
                   min={20}
                   max={500}
@@ -1868,7 +1870,7 @@ export function ToolWorkspace({
                   onChange={(e) => setTargetKb(Number(e.target.value))}
                   className="w-full ngt-slider"
                 />
-                <div className="text-[11px] font-semibold text-[#64748B]">
+                <div className="text-[11px] font-semibold text-[#5B6A80]">
                   1-Click Portal &amp; Form Presets:
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -1886,7 +1888,7 @@ export function ToolWorkspace({
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors text-left truncate cursor-pointer ${
                         targetKb === preset.kb
                           ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                          : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:border-[#7047EB]'
+                          : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80] hover:border-[#7047EB]'
                       }`}
                     >
                       {preset.label}
@@ -1903,9 +1905,10 @@ export function ToolWorkspace({
                     <span className="font-semibold text-[#171927] dark:text-[#F8F7FC]">
                       Quality: {qualitySlider}%
                     </span>
-                    <span className="font-mono text-[#64748B]">{qualitySlider}%</span>
+                    <span className="font-mono text-[#5B6A80]">{qualitySlider}%</span>
                   </div>
                   <input
+                  aria-label="Quality level"
                     type="range"
                     min={10}
                     max={100}
@@ -1920,6 +1923,7 @@ export function ToolWorkspace({
                     Output Format
                   </label>
                   <select
+                  aria-label="Output image format"
                     value={imageOutputFormat}
                     onChange={(e) =>
                       setImageOutputFormat(e.target.value as 'image/webp' | 'image/jpeg' | 'image/png')
@@ -1940,6 +1944,7 @@ export function ToolWorkspace({
                   Normalize Page Rotation
                 </label>
                 <select
+                  aria-label="Page rotation"
                   value={pdfRotation}
                   onChange={(e) => setPdfRotation(Number(e.target.value))}
                   className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] px-3 py-2 text-xs font-medium text-[#171927] dark:text-[#F8F7FC]"
@@ -1958,6 +1963,7 @@ export function ToolWorkspace({
                   Custom Page Range Syntax
                 </label>
                 <input
+                  aria-label="Page range to extract"
                   type="text"
                   value={pdfRangeSyntax}
                   onChange={(e) => setPdfRangeSyntax(e.target.value)}
@@ -1983,14 +1989,14 @@ export function ToolWorkspace({
                         className={`min-h-11 py-2 rounded-xl text-xs font-mono font-semibold border ${
                           pdfDpi === dpi
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {dpi} DPI
                       </button>
                     ))}
                   </div>
-                  <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+                  <p className="text-[11px] text-[#5B6A80] dark:text-[#94A3B8]">
                     Very high resolutions are lowered automatically on small devices; the result
                     panel reports the DPI that was actually used.
                   </p>
@@ -2003,6 +2009,7 @@ export function ToolWorkspace({
                     Pages (all, or 1-3, 5)
                   </label>
                   <input
+                  aria-label="Pages to render as images"
                     id="ngt-pdf-page-range"
                     type="text"
                     inputMode="text"
@@ -2020,6 +2027,7 @@ export function ToolWorkspace({
                     Image format
                   </label>
                   <select
+                  aria-label="Output image format"
                     id="ngt-pdf-image-format"
                     value={imageOutputFormat}
                     onChange={(e) =>
@@ -2042,6 +2050,7 @@ export function ToolWorkspace({
                     Container Page Size
                   </label>
                   <select
+                  aria-label="PDF page size"
                     value={pdfPageSize}
                     onChange={(e) => setPdfPageSize(e.target.value as 'A4' | 'Letter' | 'Fit')}
                     className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] px-3 py-2 text-xs font-medium"
@@ -2062,7 +2071,7 @@ export function ToolWorkspace({
                         type="button"
                         onClick={() => setPdfOrientation(o)}
                         className={`px-2.5 py-1 rounded-lg capitalize font-semibold ${
-                          pdfOrientation === o ? 'bg-[#7047EB] text-white' : 'text-[#64748B]'
+                          pdfOrientation === o ? 'bg-[#7047EB] text-white' : 'text-[#5B6A80]'
                         }`}
                       >
                         {o}
@@ -2072,6 +2081,7 @@ export function ToolWorkspace({
                 </div>
                 <label className="flex items-center gap-2 text-xs cursor-pointer">
                   <input
+                  aria-label="Add page numbers"
                     type="checkbox"
                     checked={pdfStampNumbers}
                     onChange={(e) => setPdfStampNumbers(e.target.checked)}
@@ -2105,7 +2115,7 @@ export function ToolWorkspace({
                         className={`py-1.5 px-2 rounded-lg text-xs font-semibold border ${
                           jsonFormatTab === t.id
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {t.label}
@@ -2131,7 +2141,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg text-xs font-semibold border ${
                           jsonIndent === ind.n
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {ind.label}
@@ -2157,7 +2167,7 @@ export function ToolWorkspace({
                         className={`py-2 rounded-xl text-xs font-semibold uppercase border ${
                           llmPackFormat === fmt
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {fmt} Tags
@@ -2225,7 +2235,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg text-xs font-semibold uppercase border ${
                           regexLangTab === lang
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {lang}
@@ -2276,7 +2286,7 @@ export function ToolWorkspace({
                     className={`py-2 px-2 rounded-xl text-xs font-semibold border ${
                       codecMode === m.id
                         ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                        : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                        : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                     }`}
                   >
                     {m.label}
@@ -2306,7 +2316,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg font-mono font-semibold border ${
                           lineEndingMode === le
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {le} ({le === 'LF' ? 'Unix/Mac' : 'Windows'})
@@ -2344,8 +2354,9 @@ export function ToolWorkspace({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[#64748B] mb-1">Line Prefix</label>
+                    <label className="block text-[#5B6A80] mb-1">Line Prefix</label>
                     <input
+                  aria-label="e.g. '"
                       type="text"
                       value={dedupPrefix}
                       onChange={(e) => setDedupPrefix(e.target.value)}
@@ -2354,8 +2365,9 @@ export function ToolWorkspace({
                     />
                   </div>
                   <div>
-                    <label className="block text-[#64748B] mb-1">Line Suffix</label>
+                    <label className="block text-[#5B6A80] mb-1">Line Suffix</label>
                     <input
+                  aria-label="e.g. ',"
                       type="text"
                       value={dedupSuffix}
                       onChange={(e) => setDedupSuffix(e.target.value)}
@@ -2386,7 +2398,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg font-semibold border ${
                           qrMode === m.id
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {m.label}
@@ -2405,7 +2417,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg font-mono font-bold border ${
                           qrEcc === lvl
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {lvl}
@@ -2415,7 +2427,7 @@ export function ToolWorkspace({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[#64748B] mb-1">Foreground Hex</label>
+                    <label className="block text-[#5B6A80] mb-1">Foreground Hex</label>
                     <input
                       type="color"
                       value={qrDarkColor}
@@ -2424,7 +2436,7 @@ export function ToolWorkspace({
                     />
                   </div>
                   <div>
-                    <label className="block text-[#64748B] mb-1">Background Hex</label>
+                    <label className="block text-[#5B6A80] mb-1">Background Hex</label>
                     <input
                       type="color"
                       value={qrLightColor}
@@ -2443,6 +2455,7 @@ export function ToolWorkspace({
                   <span className="font-mono text-[#7047EB] font-bold">{pwdLength} chars</span>
                 </div>
                 <input
+                  aria-label="Password length"
                   type="range"
                   min={8}
                   max={64}
@@ -2526,7 +2539,7 @@ export function ToolWorkspace({
               </span>
             </button>
 
-            <div className="pt-2 border-t border-[#E8E6F2] dark:border-[#2A2E42] flex items-center justify-between text-xs text-[#64748B]">
+            <div className="pt-2 border-t border-[#E8E6F2] dark:border-[#2A2E42] flex items-center justify-between text-xs text-[#5B6A80]">
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
                   type="checkbox"

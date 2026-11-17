@@ -83,7 +83,7 @@ export function ByteGauge({
   return (
     <div className="rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-white dark:bg-[#151824] p-3.5 space-y-2.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#64748B] dark:text-[#94A3B8]">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#5B6A80] dark:text-[#94A3B8]">
           <span>Measured output</span>
           {met ? (
             <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
@@ -127,13 +127,13 @@ export function ByteGauge({
         <span>
           Result <strong>{formatBytes(outputBytes)}</strong>
         </span>
-        <span className="text-[#64748B] dark:text-[#94A3B8]">
+        <span className="text-[#5B6A80] dark:text-[#94A3B8]">
           {savedPct > 0 ? `${savedPct}% smaller` : 'no size change'}
         </span>
       </div>
 
       {details.length > 0 && (
-        <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#64748B] dark:text-[#94A3B8]">
+        <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#5B6A80] dark:text-[#94A3B8]">
           {details.map((detail) => (
             <li key={detail}>{detail}</li>
           ))}

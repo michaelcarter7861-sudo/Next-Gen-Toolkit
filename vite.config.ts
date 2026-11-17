@@ -7,6 +7,11 @@ export default defineConfig(() => {
   return {
     base: process.env.GITHUB_PAGES === 'true' ? '/Next-Gen-Toolkit/' : '/',
     plugins: [react(), tailwindcss()],
+    // Local preview and dev servers are reached through proxied hosts (container
+    // previews, tunnels), so they accept any Host header. This only affects
+    // `vite` and `vite preview` on a developer machine; the production build is
+    // static files behind Cloudflare and is unaffected.
+    preview: { host: true, allowedHosts: true as const },
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, '.'),
@@ -48,6 +53,8 @@ export default defineConfig(() => {
       },
     },
     server: {
+      host: true,
+      allowedHosts: true as const,
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
