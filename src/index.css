@@ -119,7 +119,17 @@ input[type="range"].ngt-slider::-webkit-slider-thumb:hover {
   color: var(--ngt-muted-label);
 }
 
+/* Accent text uses the light brand purple in markup. On the dark canvas that is
+   3.27:1, below AA for 12px text, so dark mode lifts it to #A78BFA (8.4:1).
+   `class~=` matches the literal text-[#7047EB] token only, so filled buttons
+   that share the hex are untouched. (This rule was accidentally deleted when
+   the block above was rewritten — the a11y scan caught it within one run.) */
+#root main [class~="text-[#7047EB]"] {
+  color: var(--ngt-accent-text);
+}
+
 :root {
+  --ngt-accent-text: #7047eb;
   /* 7.0:1 on the canvas; the dark value is 9.5:1 on #131520. */
   --ngt-small-text: #475569;
   --ngt-muted-label: #5b6a80;
@@ -128,6 +138,7 @@ input[type="range"].ngt-slider::-webkit-slider-thumb:hover {
 .dark {
   --ngt-small-text: #cbd5e1;
   --ngt-muted-label: #cbd5e1;
+  --ngt-accent-text: #a78bfa;
 }
 
 /* Native controls (scrollbars, form widgets, date pickers) should follow the
