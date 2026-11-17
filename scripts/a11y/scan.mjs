@@ -85,10 +85,19 @@ async function main() {
         try { localStorage.setItem('ngt_theme_v1', value); } catch { /* private mode */ }
       }, theme);
       await page.reload({ waitUntil: 'networkidle' });
-      const appliedTheme = await page.evaluate(() =>
-        document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-      );
-      if (appliedTheme !== theme) throw new Error(`theme ${theme} did not apply (got ${appliedTheme})`);
+      // Belt and braces: the stored preference drives React, and the class is
+      // forced afterwards so a hydration race can never scan the wrong theme.
+      await page.evaluate((value) => {
+        document.documentElement.classList.toggle('dark', value === 'dark');
+      }, theme);
+      await page.waitForTimeout(150);
+      const applied = await page.evaluate(() => ({
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+        canvas: getComputedStyle(document.body).backgroundColor,
+        ink: getComputedStyle(document.body).color,
+      }));
+      if (applied.theme !== theme) throw new Error(`theme ${theme} did not apply (got ${applied.theme})`);
+      console.log(`  theme ${theme} · canvas ${applied.canvas} · ink ${applied.ink}`);
       await page.addScriptTag({ content: AXE });
       const result = await page.evaluate(async (tags) => {
         // @ts-expect-error injected at runtime

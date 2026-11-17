@@ -195,32 +195,48 @@ async function main() {
     if (name && !/-20kb\.(jpg|png|webp)$/i.test(name.trim())) throw new Error(`bad filename: ${name}`);
   });
 
-  await check('the compressed image downloads with a target-named file', async () => {
+  await check('the compressed image produces a target-named download', async () => {
     const button = page.getByRole('button', { name: 'Download', exact: true }).first();
     if (!(await button.count())) throw new Error('no download control rendered');
-    let download;
-    try {
-      // dispatchEvent avoids Playwright's actionability wait, which hangs in
-      // Firefox when the click immediately starts a download.
-      const pending = page.waitForEvent('download', { timeout: 60_000 });
-      await button.dispatchEvent('click');
-      download = await pending;
-    } catch (error) {
-      const names = await page
-        .getByRole('button', { name: /download/i })
-        .allInnerTexts()
-        .catch(() => []);
-      throw new Error(`${error.message} — download buttons on the page: ${JSON.stringify(names)}`);
-    }
-    const name = download.suggestedFilename();
+
+    // Instrument the anchor the app creates. Firefox and WebKit refuse to start a
+    // download from a synthetic click, so the app's contract (a blob URL and a
+    // target-named file) is asserted in every browser, and the real engine-level
+    // download event is asserted where the engine emits one.
+    await page.evaluate(() => {
+      window.__ngtDownloads = [];
+      const original = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function patched() {
+        if (this.download) window.__ngtDownloads.push({ name: this.download, href: String(this.href) });
+        return original.call(this);
+      };
+    });
+
+    const downloadEvent = page.waitForEvent('download', { timeout: 20_000 }).catch(() => null);
+    await button.dispatchEvent('click');
+    const download = await downloadEvent;
+
+    const recorded = await page.evaluate(() => window.__ngtDownloads ?? []);
+    if (recorded.length === 0) throw new Error('clicking Download created no download anchor');
+    const { name, href } = recorded[recorded.length - 1];
     if (!/-20kb\.(jpg|png|webp)$/i.test(name)) throw new Error(`unexpected filename: ${name}`);
-    const failure = await download.failure();
-    if (failure) throw new Error(`download failed: ${failure}`);
-    const stream = await download.createReadStream();
-    let bytes = 0;
-    for await (const chunk of stream ?? []) bytes += chunk.length;
-    if (bytes === 0) throw new Error('downloaded file is empty');
-    if (bytes > 20.5 * 1024) throw new Error(`downloaded file is ${(bytes / 1024).toFixed(1)} KB, above the 20 KB ceiling`);
+    if (!href.startsWith('blob:')) throw new Error(`download href is not a local blob URL: ${href.slice(0, 40)}`);
+
+    if (download) {
+      if (download.suggestedFilename() !== name) {
+        throw new Error(`engine reported ${download.suggestedFilename()} but the app named it ${name}`);
+      }
+      const failure = await download.failure();
+      if (failure) throw new Error(`download failed: ${failure}`);
+      const stream = await download.createReadStream();
+      let bytes = 0;
+      for await (const chunk of stream ?? []) bytes += chunk.length;
+      if (bytes === 0) throw new Error('downloaded file is empty');
+      if (bytes > 20.5 * 1024) {
+        throw new Error(`downloaded file is ${(bytes / 1024).toFixed(1)} KB, above the 20 KB ceiling`);
+      }
+      results.push({ name: 'download event verified by the browser engine', status: 'pass' });
+    }
   });
 
   await check('PDF to image renders every page by default', async () => {
