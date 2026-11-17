@@ -5,20 +5,33 @@ The categories are kept strictly separate, as the order requires.
 
 ## Executed results
 
+Latest green run: GitHub Actions run `4407…` on commit `1887292` (branch
+`arena/8d148eee-next-gen-toolkit`), 2026-11-16.
+
 | Category | Where | Result |
 |---|---|---|
 | Type check | `npm run lint` (`tsc --noEmit`) | **clean** |
-| Unit + integration (Node, Skia, pdf-lib, pdf.js) | `npm test` | **40 / 40 pass, 0 fail, 0 skipped** |
-| Production build | `npm run build` | **green** — 37 indexable URLs (24/25 tools, `image-to-text-ocr` quarantined), 6 trust pages, robots, `_headers`, 1200×630 OG PNG |
-| Browser E2E, Chromium | GitHub Actions run `43942185418` on `f7d98f9` | **34 / 34 scenarios pass** |
-| Browser E2E, Firefox / WebKit | not run | suite supports `BROWSER=firefox|webkit`, never executed |
+| Unit + integration (Node, Skia, pdf-lib, pdf.js) | `npm test` | **61 / 61 pass, 0 fail, 0 skipped** |
+| Production build | `npm run build` | **green** — 37 indexable URLs, 6 trust pages, robots, `_headers`, OG PNG, manifest, 5 icons |
+| Browser E2E, **Chromium** | Actions | **42 / 42 scenarios pass** |
+| Browser E2E, **WebKit** (Safari engine) | Actions | **42 / 42 scenarios pass** |
+| Browser E2E, **Firefox** | Actions | **41 / 41 scenarios pass** |
+| Accessibility, axe-core (WCAG 2.0/2.1/2.2 A+AA, best practice) | Actions | **0 violations** across 14 page families in light and dark |
 | Manual device testing | not run | no physical devices available |
-| Automated accessibility scan | not run | no axe-core in the toolchain |
-| Screen-reader pass | not run | — |
+| Screen-reader pass | not run | still owed; automated scans do not replace one |
+| Field performance (CrUX/Lighthouse field data) | not run | needs a Production Search Console/CrUX property |
 
-The browser suite is real: GitHub Actions installs Chromium (`playwright install --with-deps`),
-builds `dist/`, serves it from a node static server and drives Chromium against it. Four
-iterations were needed, and the iterations are the interesting part.
+The Firefox count is one lower because the suite records an extra pass entry when
+the browser emits a real download event; Firefox does not emit one for a
+synthetic click, so the app's download contract is asserted there instead (blob
+URL + filename), and the engine-level event is verified in Chromium and WebKit.
+
+## How the browser suite reports from a sandbox
+
+Artifact and raw log download are blocked here, so `run.mjs` prints `::error`
+and `::notice` workflow commands. Those become check-run annotations readable
+through the API — that is where the 42/42, 41/41 and "0 violation types" figures
+above come from.
 
 ## Defects the browser suite found (and the fixes)
 

@@ -8,6 +8,15 @@ Commits in this final phase, newest last:
 | `b1afe52` | Second-phase commit: engine rewrite work, AI assistant gated off, contact scrubbed, 21→40 test expansion |
 | `61eb35a` | `fix(final)` — page-selection default, native-resolution compression, `conversionSkipped`, 120 MP document budget, URL revocation, real browser suite, 8 new final reports |
 | `02d15b5` | `test(e2e)` — CI annotations so browser failures are readable through the check-runs API |
+| `72576bf` | Final pass 1: icon set, manifest, design tokens, hero sheen, palette contrast test, cancel + results header, axe job, cross-browser matrix |
+| `f698b03` | 13 controls named, muted text raised to AA, footer touch targets, deterministic dark-mode scan |
+| `74bacdf` | `/favicon.svg/` 404 fixed on 37 pages, Firefox downloads fixed, 1024px header overflow fixed, label-in-name |
+| `83e5c2e` | Palette trigger name from visible text; explicit `acceptDownloads` |
+| `3a30b38` | Dark-mode accent text lifted to AA; cancellation assertion de-flaked |
+| `dbb9195` | Portable download assertion (instrumented anchor) across engines |
+| `339786c` | **Light-mode body copy was dark grey** — CSS minifier merged a selector list with its `.dark` twin; rewritten with variables |
+| `9b765d8` | Restored the dark accent rule as a variable after a rewrite dropped it |
+| `1887292` | Secondary greys remapped for dark surfaces; all four CI jobs green |
 
 ## Product fixes
 

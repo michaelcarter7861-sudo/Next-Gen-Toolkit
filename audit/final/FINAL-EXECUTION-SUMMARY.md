@@ -3,27 +3,47 @@
 Branch `arena/8d148eee-next-gen-toolkit`, base `4d229b6` (main). Run date 2026-11-16.
 This run implemented and verified; it did not stop at analysis.
 
-## What was actually proven
+## What was actually proven (final run, commit `1887292`)
 
-- **40/40** unit and integration tests pass (`npm test`).
-- **34/34** browser scenarios pass in real Chromium on GitHub Actions (run `43942185418`,
-  commit `f7d98f9`), against a real `dist/` build, with real Skia JPEG and pdf-lib PDF
-  fixtures and real download events.
-- `tsc --noEmit` clean; build emits **37 indexable URLs** with the OCR preview quarantined.
-- **244** packages install reproducibly.
+- **61/61** unit and integration tests (`npm test`).
+- **42/42** browser scenarios in **Chromium**, **42/42** in **WebKit** (Safari
+  engine) and **41/41** in **Firefox** — real browsers, real `dist/` build, real
+  Skia/PDF fixtures, real download events, four CI jobs green.
+- **0 axe-core violations** (WCAG 2.0/2.1/2.2 A + AA + best practice) across 14
+  page families scanned in light mode and the home page in dark mode.
+- `tsc --noEmit` clean; build emits **37 indexable URLs**, the manifest and 5 icons.
+- **245** packages install reproducibly (`npm ci`).
 
-## Defects fixed
+## Final pass — what changed for launch
 
-| Defect | Severity | Fix |
-|---|---|---|
-| Engine errors silently swallowed (no `catch`) — user saw nothing on an invalid page range | **High** | caught, message shown, stale results cleared |
-| PDF→image defaulted to the split tool's `1-2` range, failing on 1-page and 3-page PDFs | **High** | render defaults to `all`, own state |
-| Page-range edits did not re-run the job | Medium | added to effect dependencies |
-| Image encoder downscaled pre-emptively for small targets, wasting resolution | Medium | native-resolution-first quality search |
-| "Already under the limit" reported as a codec failure | Medium | `conversionSkipped` vs `formatFallback` |
-| Unbounded aggregate memory across a long PDF | Medium | 120 MP per-document budget with visible reason |
-| Preview blob URLs leaked for the tab's lifetime | Low | revoked per run |
-| Transparency tests were not testing transparency | Low | real alpha fixtures, pixel assertions |
+| Area | Change |
+|---|---|
+| Brand | Icon set generated from code (192/512/maskable/Apple/favicon.ico), web manifest with three shortcuts, light/dark theme colours, safe-area viewport |
+| Design system | Radius/elevation/motion/gradient tokens, CSS hero sheen, card/button/chip/skeleton primitives, themed scrollbars, selection colour, print stylesheet |
+| Accessibility | 13 unlabelled controls named, muted text raised from 4.46:1 to 5.16:1, dark-mode accent and secondary greys remapped, 24px touch targets in the footer, label-in-name fixed |
+| Behaviour | Cancel stops real work (checked between files and between PDF pages), processing skeleton, results panel with count and total |
+| CI | Three browser engines + axe scan on every push and PR, evidence uploaded as artifacts |
+
+## Real defects this pass found and fixed
+
+1. **Light-mode body copy was rendered in the dark grey** (`#CBD5E1` on `#F8F7FC`,
+   1.4:1). A selector list and its `.dark` twin were merged by the CSS minifier,
+   hoisting the `.dark` prefix onto later selectors. Rewritten as one rule plus a
+   CSS variable. *Found by axe, invisible to every existing test.*
+2. **Every prerendered page linked `/favicon.svg/`** — the page-route normaliser
+   appended a trailing slash to a file: 37 pages with a 404 favicon. Found by the
+   Firefox suite; now guarded in `verify-seo-build`.
+3. **Downloads never started in Firefox** (detached anchor click is ignored).
+   Found by the Firefox suite; all three download paths now share one helper.
+4. **The header overflowed by 264px at exactly 1024px.** Found by the new
+   viewport check; the inline category nav now starts at `xl` and the links stay
+   crawlable in the DOM.
+5. **The PDF tool swallowed engine errors** (no `catch`), and its page-range
+   setting was missing from the effect dependencies — the user saw nothing.
+6. **Three critical unlabelled form controls** per tool page (sliders, selects,
+   the KB input) — 13 controls named.
+7. **The palette trigger failed WCAG 2.5.3** on all 14 pages; the accessible name
+   now comes from the visible text.
 
 ## Contradictions resolved with evidence
 
@@ -57,6 +77,13 @@ This run implemented and verified; it did not stop at analysis.
 3. **No primary user research**, so product priorities rest on competitor observation.
 4. **GTM without consent management** — accepted risk (owner decision D2), documented here and
    in the SEO/trust report; it is also why no absolute privacy claim appears anywhere.
+
+## Remaining risks before launch
+
+1. No manual screen-reader pass; the axe baseline is green but that is not certification.
+2. The preview `noindex` header and the production sitemap must be verified after the
+   first real deploy (`FINAL-LAUNCH-CHECKLIST.md` §3).
+3. No field performance data yet; Core Web Vitals can only be judged after production traffic.
 
 ## Deliverables in this folder
 
