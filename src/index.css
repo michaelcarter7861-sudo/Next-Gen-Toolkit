@@ -128,8 +128,21 @@ input[type="range"].ngt-slider::-webkit-slider-thumb:hover {
   color: var(--ngt-accent-text);
 }
 
+/* Secondary greys are written as literal utilities in markup, often without a
+   dark variant (a compare table cell measured 2.97:1 on the dark surface). Dark
+   mode remaps the two muted tones; ink colours keep their explicit dark:
+   utilities because some cards stay white in dark mode by design. */
+#root main [class~="text-[#5B6A80]"] {
+  color: var(--ngt-secondary);
+}
+#root main [class~="text-[#475569]"] {
+  color: var(--ngt-tertiary);
+}
+
 :root {
   --ngt-accent-text: #7047eb;
+  --ngt-secondary: #5b6a80;
+  --ngt-tertiary: #475569;
   /* 7.0:1 on the canvas; the dark value is 9.5:1 on #131520. */
   --ngt-small-text: #475569;
   --ngt-muted-label: #5b6a80;
@@ -139,6 +152,8 @@ input[type="range"].ngt-slider::-webkit-slider-thumb:hover {
   --ngt-small-text: #cbd5e1;
   --ngt-muted-label: #cbd5e1;
   --ngt-accent-text: #a78bfa;
+  --ngt-secondary: #94a3b8;
+  --ngt-tertiary: #cbd5e1;
 }
 
 /* Native controls (scrollbars, form widgets, date pickers) should follow the
