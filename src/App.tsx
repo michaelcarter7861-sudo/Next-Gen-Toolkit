@@ -402,7 +402,7 @@ export default function App() {
           {/* Zone 2: 5 Clean Category Navigation Links (Crawlable <a> tags) */}
           <nav
             aria-label="Primary Categories"
-            className="hidden lg:flex items-center gap-6 text-sm font-semibold text-[#253044] dark:text-[#CBD5E1]"
+            className="hidden xl:flex items-center gap-5 text-sm font-semibold text-[#253044] dark:text-[#CBD5E1]"
           >
             {HUBS.map((hub) => (
               <a
@@ -428,7 +428,8 @@ export default function App() {
             <button
               type="button"
               onClick={() => setIsCommandOpen(true)}
-              aria-label="Quick search tools (Ctrl+K)"
+              aria-label="Quick Switch — open the command palette (Ctrl+K)"
+              aria-keyshortcuts="Control+K Meta+K"
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F8F7FC] dark:bg-[#252A3F] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#5B6A80] dark:text-[#CBD5E1] hover:border-[#7047EB] transition-colors cursor-pointer"
             >
               <Search className="w-3.5 h-3.5 text-[#7047EB]" aria-hidden="true" />

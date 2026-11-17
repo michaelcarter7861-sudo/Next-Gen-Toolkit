@@ -384,7 +384,10 @@ async function main() {
   await check('no console errors during the suite (excluding tag manager)', async () => {
     // The invalid-route scenario deliberately requests a 404 document.
     const relevant = consoleErrors.filter(
-      (m) => !/googletagmanager|analytics|gtag|ERR_BLOCKED|this-route-does-not-exist/i.test(m)
+      (m) =>
+        !/googletagmanager|analytics|gtag|ERR_BLOCKED|\/g\/collect|google-analytics|this-route-does-not-exist/i.test(
+          m
+        )
     );
     if (relevant.length) throw new Error(relevant.slice(0, 5).join(' | '));
   });

@@ -155,6 +155,22 @@ for (const [file, size] of [
   assert.equal(buf.readUInt32BE(16), size, `${file} width must be ${size}px`);
   assert.equal(buf.readUInt32BE(20), size, `${file} height must be ${size}px`);
 }
+// Static files must never be routed through the page-route normaliser: an
+// earlier build emitted href="/favicon.svg/" (a real 404) on every prerendered
+// page. Check every page we generate, not just the home page.
+for (const route of ['/', '/about/', '/pdf-tools/', '/image-tools/compress-image-to-kb/']) {
+  const html = readFileSync(htmlPathFor(route), 'utf8');
+  assert.ok(
+    !/href="[^"]+\.(svg|png|ico|xml|webmanifest|txt)\//.test(html),
+    `Static asset href gained a trailing slash in ${route}`
+  );
+  for (const match of html.matchAll(/<link rel="(?:icon|apple-touch-icon|manifest)"[^>]*href="([^"]+)"/g)) {
+    const href = match[1];
+    const filePath = `${'dist'}${href}`;
+    assert.ok(existsSync(filePath), `Linked asset does not exist: ${href} (from ${route})`);
+  }
+}
+
 const ico = readFileSync(`${dist}/favicon.ico`);
 assert.equal(ico.readUInt16LE(2), 1, 'favicon.ico must be an icon container');
 assert.ok(ico.length > 100, 'favicon.ico must not be empty');

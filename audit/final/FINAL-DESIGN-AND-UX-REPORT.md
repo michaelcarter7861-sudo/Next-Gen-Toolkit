@@ -36,6 +36,21 @@ this run and exercised in a real browser by `scripts/e2e/run.mjs` (see
 | A deliberate no-conversion ("already under 20 KB") was reported as a browser codec failure | `conversionSkipped` state with its own sentence |
 | Aggregate memory could blow up on a 200-page PDF even though each page was under the per-page cap | 120 MP per-document budget with the truncation reason shown |
 
+## Final design pass (2026-11-16, second run)
+
+| Change | Why it matters |
+|---|---|
+| Radius / elevation / motion / gradient tokens | One place to restyle; components had grown one-off shadows |
+| CSS-only hero sheen (three colour fields + hairline grid, masked) | Depth on the first screen with no image request and nothing on the critical path |
+| Card, button, chip, skeleton and empty-state primitives | Consistent interaction feel across 25 tools; press/hover states are defined once |
+| Light-mode muted text `#64748B` → `#5B6A80` | Measured 4.46:1 (just under AA) → 5.16:1; 10 components updated |
+| Form-boundary token at ≥3:1 | WCAG 1.4.11 for meaningful control edges |
+| Generated icon set (192/512/maskable/Apple/favicon.ico) + manifest | Installable on Android and iOS; the brand mark is code, not a stale asset |
+| Light/dark `theme-color`, safe-area viewport | Correct browser chrome on both themes, no notch clipping |
+| Skeleton shimmer while processing, Cancel button, results heading with count and total | Long jobs no longer feel frozen, and the result panel names itself |
+| Themed scrollbars, selection colour, print stylesheet | Finish, not decoration |
+| `prefers-reduced-motion` respected (verified in the browser suite) | WCAG 2.3.3 |
+
 ## Gaps still open (design work, not bugs)
 
 1. **No batch progress beyond a spinner.** A 200-page render shows a static message. Needs
@@ -46,7 +61,9 @@ this run and exercised in a real browser by `scripts/e2e/run.mjs` (see
    most likely follow-on jobs ("signature too big?", "PDF too large?", "need JPG?").
 4. **Mobile ergonomics at 320 px.** Layout does not overflow (verified), but the download row
    wraps to two lines and the gauge label truncates.
-5. **Empty state of the results list** is blank rather than explanatory.
+5. **Empty state of the results list** is blank rather than explanatory — the results
+   panel now has a heading and a count, but there is still no illustration/copy for
+   "you have not run anything yet".
 
 ## Accessibility (WCAG 2.2 AA) — honest position
 

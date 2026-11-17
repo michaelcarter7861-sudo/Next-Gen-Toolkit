@@ -46,6 +46,9 @@ const escapeHtml = (value: string) =>
 const absoluteUrl = (route: string) => `${SITE_URL}${normalizeRoute(route)}`;
 const publicPath = (route: string) => `${SITE_PATH}${normalizeRoute(route)}`;
 
+/** Static files keep their extension and never gain a trailing slash. */
+const assetPath = (file: string) => `${SITE_PATH}${file.startsWith('/') ? file : `/${file}`}`;
+
 const shortDescription = (value: string, max = 158) => {
   const clean = value.replace(/\s+/g, ' ').trim();
   return clean.length <= max ? clean : `${clean.slice(0, max - 1).replace(/\s+\S*$/, '')}…`;
@@ -448,7 +451,7 @@ const sitemapPageSchema = {
       '@id': `${absoluteUrl('/')}#organization`,
       name: 'NextGenToolkit',
       url: absoluteUrl('/'),
-      logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.svg` },
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/icon-512.png` },
     },
     {
       '@type': 'CollectionPage',
@@ -562,7 +565,10 @@ function renderTrustPage(page: (typeof SITE_PAGES)[number]): string {
 <meta property="og:description" content="${escapeForPage(shortDescription(page.description, 158))}" />
 <meta property="og:url" content="${escapeHtml(canonical)}" />
 <meta property="og:image" content="${SITE_URL}/og-cover.png" />
-<link rel="icon" type="image/svg+xml" href="${publicPath('/favicon.svg')}" />
+<link rel="icon" type="image/svg+xml" href="${assetPath('/favicon.svg')}" />
+<link rel="icon" type="image/png" sizes="32x32" href="${assetPath('/favicon.ico')}" />
+<link rel="apple-touch-icon" sizes="180x180" href="${assetPath('/apple-touch-icon.png')}" />
+<link rel="manifest" href="${assetPath('/manifest.webmanifest')}" />
 <meta name="theme-color" content="#7047EB" />
 <script type="application/ld+json">${jsonLd}</script>
 <style>

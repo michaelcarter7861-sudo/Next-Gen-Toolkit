@@ -910,13 +910,25 @@ export function ToolWorkspace({
     });
   };
 
+  /**
+   * Firefox only starts a download for an anchor that is attached to the
+   * document; a detached `a.click()` silently does nothing there. Append, click,
+   * remove, and keep the blob URL alive long enough for the browser to read it.
+   */
+  const triggerDownload = useCallback((url: string, filename: string) => {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.rel = 'noopener';
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }, []);
+
   const handleDownloadSingleItem = (item: ProcessedFileItem) => {
-    const url = URL.createObjectURL(item.blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = item.name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    triggerDownload(URL.createObjectURL(item.blob), item.name);
   };
 
   const handleDownloadAllZip = async () => {
@@ -925,12 +937,7 @@ export function ToolWorkspace({
       const zipBlob = await createBatchZipBlob(
         processedItems.map((it) => ({ name: it.name, content: it.blob }))
       );
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nextgentoolkit-${tool.slug}-batch.zip`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      triggerDownload(URL.createObjectURL(zipBlob), `nextgentoolkit-${tool.slug}-batch.zip`);
     } else if (outputText) {
       const { createBatchZipBlob } = await import('../utils/binaryEngines');
       const ext =
@@ -944,12 +951,7 @@ export function ToolWorkspace({
       const zipBlob = await createBatchZipBlob([
         { name: `nextgentoolkit-${tool.slug}-output.${ext}`, content: outputText },
       ]);
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nextgentoolkit-${tool.slug}-archive.zip`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      triggerDownload(URL.createObjectURL(zipBlob), `nextgentoolkit-${tool.slug}-archive.zip`);
     }
   };
 
