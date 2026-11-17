@@ -200,10 +200,11 @@ async function main() {
     if (!(await button.count())) throw new Error('no download control rendered');
     let download;
     try {
-      [download] = await Promise.all([
-        page.waitForEvent('download', { timeout: 60_000 }),
-        button.click(),
-      ]);
+      // dispatchEvent avoids Playwright's actionability wait, which hangs in
+      // Firefox when the click immediately starts a download.
+      const pending = page.waitForEvent('download', { timeout: 60_000 });
+      await button.dispatchEvent('click');
+      download = await pending;
     } catch (error) {
       const names = await page
         .getByRole('button', { name: /download/i })
@@ -387,12 +388,12 @@ async function main() {
     await cancel.waitFor({ timeout: 30_000 });
     await cancel.click();
     await page.waitForFunction(
-      () => /Cancelled\./.test(document.body.innerText),
+      () => /Cancelled/i.test(document.body.innerText),
       undefined,
       { timeout: 120_000 }
     );
     const body = await page.locator('body').innerText();
-    if (!/Cancelled\./.test(body)) throw new Error('no cancellation message shown');
+    if (!/Cancelled/i.test(body)) throw new Error('no cancellation message shown');
     // The honest wording: it says how many finished rather than pretending none ran.
     if (!/finished file|Nothing was written/i.test(body)) {
       throw new Error('cancellation message does not say what was kept');

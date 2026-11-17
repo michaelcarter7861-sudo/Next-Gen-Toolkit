@@ -108,13 +108,35 @@ input[type="range"].ngt-slider::-webkit-slider-thumb:hover {
 .dark #root main [class~="text-[#94A3B8]"] {
   color: #CBD5E1 !important;
 }
+/* Accent-coloured text uses the light brand purple in markup. On the dark canvas
+   that measures 3.27:1, below AA for 12px text, so dark mode lifts it. The
+   selector matches the class literal (text-, not bg-), so filled buttons that
+   share the same hex are untouched. */
+.dark #root [class~="text-[#7047EB]"] {
+  color: #a78bfa !important;
+}
+.dark #root [class~="hover:text-[#7047EB]"]:hover {
+  color: #a78bfa !important;
+}
+
 #root main p.text-xs,
 #root main [class~="text-[11px]"],
 #root main table thead th,
 #root main nav[aria-label="Breadcrumb"] span {
   color: #475569;
 }
-.dark #root main p.text-xs,
+.dark /* Accent-coloured text uses the light brand purple in markup. On the dark canvas
+   that measures 3.27:1, below AA for 12px text, so dark mode lifts it. The
+   selector matches the class literal (text-, not bg-), so filled buttons that
+   share the same hex are untouched. */
+.dark #root [class~="text-[#7047EB]"] {
+  color: #a78bfa !important;
+}
+.dark #root [class~="hover:text-[#7047EB]"]:hover {
+  color: #a78bfa !important;
+}
+
+#root main p.text-xs,
 .dark #root main [class~="text-[11px]"],
 .dark #root main table thead th,
 .dark #root main nav[aria-label="Breadcrumb"] span {
