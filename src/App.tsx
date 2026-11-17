@@ -506,7 +506,7 @@ export default function App() {
           /* MASTER HOMEPAGE (Clean Hero without SEO Sitemap/Schema Clutter at Top) */
           <div className="space-y-14 pb-16">
             {/* HERO SECTION */}
-            <section className="relative overflow-hidden pt-6 pb-10 sm:pt-8 sm:pb-12 border-b border-[#E8E6F2]/70 dark:border-[#2A2E42]/60 bg-[#F8F7FC] dark:bg-[#131520]">
+            <section className="ngt-sheen relative overflow-hidden pt-6 pb-10 sm:pt-8 sm:pb-12 border-b border-[#E8E6F2]/70 dark:border-[#2A2E42]/60 bg-[#F8F7FC] dark:bg-[#131520]">
               <div className="max-w-[1200px] mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
                 {/* Left / Center Hero Column */}
                 <div className="lg:col-span-7 text-center lg:text-left space-y-5">

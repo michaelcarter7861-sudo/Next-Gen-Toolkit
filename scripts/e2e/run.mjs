@@ -266,7 +266,7 @@ async function main() {
     await dialog.waitFor({ state: 'detached', timeout: 5000 });
   });
 
-  for (const [width, label] of [[320, 'mobile-320'], [768, 'tablet-768'], [1440, 'desktop-1440'], [1920, 'desktop-1920']]) {
+  for (const [width, label] of [[320, 'mobile-320'], [375, 'mobile-375'], [430, 'mobile-430'], [768, 'tablet-768'], [1024, 'tablet-1024'], [1440, 'desktop-1440'], [1920, 'desktop-1920']]) {
     await check(`no horizontal overflow at ${width}px`, async () => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(BASE, { waitUntil: 'networkidle' });
@@ -276,13 +276,93 @@ async function main() {
     });
   }
 
+  await check('manifest, icons and theme colours are wired', async () => {
+    const html = await page.goto(BASE, { waitUntil: 'networkidle' }).then(() => page.content());
+    for (const needle of ['rel="manifest"', 'apple-touch-icon', 'manifest.webmanifest']) {
+      if (!html.includes(needle)) throw new Error(`missing ${needle}`);
+    }
+    const themeColours = await page.locator('meta[name=theme-color]').count();
+    if (themeColours < 2) throw new Error(`expected light and dark theme-color meta, found ${themeColours}`);
+
+    const manifestResponse = await page.request.get(`${BASE}/manifest.webmanifest`);
+    if (manifestResponse.status() !== 200) throw new Error(`manifest HTTP ${manifestResponse.status()}`);
+    const manifest = await manifestResponse.json();
+    if (!manifest.icons?.some((icon) => icon.purpose === 'maskable')) throw new Error('no maskable icon');
+    if (manifest.display !== 'standalone') throw new Error(`unexpected display mode: ${manifest.display}`);
+
+    for (const [path, expected] of [
+      ['/icon-192.png', 192],
+      ['/icon-512.png', 512],
+      ['/icon-512-maskable.png', 512],
+      ['/apple-touch-icon.png', 180],
+      ['/favicon.ico', null],
+    ]) {
+      const response = await page.request.get(`${BASE}${path}`);
+      if (response.status() !== 200) throw new Error(`${path} HTTP ${response.status()}`);
+      const body = await response.body();
+      if (expected && body.readUInt32BE(16) !== expected) {
+        throw new Error(`${path} is ${body.readUInt32BE(16)}px wide, expected ${expected}px`);
+      }
+      if (!expected && body.readUInt16LE(2) !== 1) throw new Error('favicon.ico is not an icon container');
+    }
+  });
+
+  await check('the results panel names itself and counts the output', async () => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${BASE}/image-tools/compress-image-to-kb/?kb=40`, { waitUntil: 'networkidle' });
+    await page.locator('input[type=file]').first().setInputFiles({
+      name: 'photo.jpg', mimeType: 'image/jpeg', buffer: photoBuffer(),
+    });
+    await page.getByRole('heading', { name: /^Results/ }).waitFor({ timeout: 90_000 });
+    const heading = await page.getByRole('heading', { name: /^Results/ }).innerText();
+    if (!/1 file/.test(heading)) throw new Error(`results heading did not count the file: ${heading}`);
+  });
+
+  await check('reduced motion removes long animations', async () => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    const longAnimations = await page.evaluate(() => {
+      let count = 0;
+      for (const element of Array.from(document.querySelectorAll('*'))) {
+        const style = getComputedStyle(element);
+        const duration = Number.parseFloat(style.animationDuration || '0');
+        if (duration > 0.05 && style.animationIterationCount !== '1') count += 1;
+      }
+      return count;
+    });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    if (longAnimations > 0) throw new Error(`${longAnimations} elements still animate with reduced motion`);
+  });
+
+  await check('a cancelled run says what happened', async () => {
+    await page.goto(`${BASE}/pdf-tools/pdf-to-image/`, { waitUntil: 'networkidle' });
+    // 24 pages is deliberately more work than the click needs, so the button is
+    // still on screen when the test presses it.
+    await page.locator('input[type=file]').first().setInputFiles({
+      name: 'many-pages.pdf', mimeType: 'application/pdf', buffer: await pdfBuffer(24),
+    });
+    const cancel = page.getByRole('button', { name: 'Cancel', exact: true });
+    await cancel.waitFor({ timeout: 30_000 });
+    await cancel.click();
+    await page.waitForFunction(
+      () => /Cancelled\./.test(document.body.innerText),
+      undefined,
+      { timeout: 120_000 }
+    );
+    const body = await page.locator('body').innerText();
+    if (!/Cancelled\./.test(body)) throw new Error('no cancellation message shown');
+    // The honest wording: it says how many finished rather than pretending none ran.
+    if (!/finished file|Nothing was written/i.test(body)) {
+      throw new Error('cancellation message does not say what was kept');
+    }
+  });
+
   await check('no console errors during the suite (excluding tag manager)', async () => {
     // The invalid-route scenario deliberately requests a 404 document.
     const relevant = consoleErrors.filter(
       (m) => !/googletagmanager|analytics|gtag|ERR_BLOCKED|this-route-does-not-exist/i.test(m)
     );
     if (relevant.length) throw new Error(relevant.slice(0, 5).join(' | '));
-    if (relevant.length) throw new Error(relevant.slice(0, 3).join(' | '));
   });
 
   await browser.close();

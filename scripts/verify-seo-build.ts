@@ -114,10 +114,60 @@ assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'Social pre
 assert.equal(png.readUInt32BE(16), 1200, 'Social preview width must be 1200px');
 assert.equal(png.readUInt32BE(20), 630, 'Social preview height must be 630px');
 
+// ---------------------------------------------------------------------------
+// Web app manifest, icon set and the preview-noindex rule.
+// ---------------------------------------------------------------------------
+const manifestPath = `${dist}/manifest.webmanifest`;
+assert.ok(existsSync(manifestPath), 'manifest.webmanifest must be emitted');
+const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+  name?: string;
+  short_name?: string;
+  start_url?: string;
+  display?: string;
+  theme_color?: string;
+  icons?: Array<{ src: string; sizes: string; type: string; purpose?: string }>;
+};
+assert.ok(manifest.name && manifest.short_name, 'Manifest needs name and short_name');
+assert.equal(manifest.start_url, '/', 'Manifest start_url must be the site root');
+assert.ok(['standalone', 'minimal-ui', 'browser'].includes(manifest.display ?? ''), 'Manifest needs a valid display mode');
+assert.ok(manifest.icons && manifest.icons.length >= 3, 'Manifest needs at least 192, 512 and a maskable icon');
+assert.ok(
+  manifest.icons!.some((icon) => icon.purpose === 'maskable'),
+  'Manifest must include a maskable icon for Android launchers'
+);
+
+const homeHtml = readFileSync(`${dist}/index.html`, 'utf8');
+assert.ok(homeHtml.includes('rel="manifest" href="/manifest.webmanifest"'), 'HTML must link the manifest');
+assert.ok(homeHtml.includes('rel="apple-touch-icon"'), 'HTML must expose an Apple touch icon');
+
+const pngMagic = (file: string) => {
+  const buf = readFileSync(`${dist}/${file}`);
+  assert.equal(buf.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `${file} must be a PNG`);
+  return buf;
+};
+for (const [file, size] of [
+  ['icon-192.png', 192],
+  ['icon-512.png', 512],
+  ['icon-512-maskable.png', 512],
+  ['apple-touch-icon.png', 180],
+] as Array<[string, number]>) {
+  const buf = pngMagic(file);
+  assert.equal(buf.readUInt32BE(16), size, `${file} width must be ${size}px`);
+  assert.equal(buf.readUInt32BE(20), size, `${file} height must be ${size}px`);
+}
+const ico = readFileSync(`${dist}/favicon.ico`);
+assert.equal(ico.readUInt16LE(2), 1, 'favicon.ico must be an icon container');
+assert.ok(ico.length > 100, 'favicon.ico must not be empty');
+assert.ok(headers.includes('/manifest.webmanifest'), '_headers must declare the manifest type');
+assert.ok(
+  headers.includes('https://:version.:project.pages.dev/*') && headers.includes('X-Robots-Tag: noindex'),
+  'Preview deployments must be noindexed'
+);
+
 // 404 must exist and be noindex
 const notFound = readFileSync(`${dist}/404.html`, 'utf8');
 assert.ok(/noindex/.test(notFound), '404 page must be noindex');
 
 console.log(
-  `Verified ${urls.length} indexable routes, ${previewTools.length} quarantined preview routes, ${SITE_PAGES.length} trust pages, robots, headers and the 1200x630 OG PNG.`
+  `Verified ${urls.length} indexable routes, ${previewTools.length} quarantined preview routes, ${SITE_PAGES.length} trust pages, robots, headers, the 1200x630 OG PNG, the manifest and 5 icons.`
 );

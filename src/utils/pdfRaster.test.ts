@@ -164,6 +164,28 @@ test('the per-document pixel budget stops the run and says why', async () => {
   assert.equal(result.skipped, 6 - result.pages.length);
 });
 
+test('cancelling stops between pages and keeps what was already rendered', async () => {
+  const bytes = await makePdf(5);
+  let checks = 0;
+  const result = await renderPdfPages(
+    bytes,
+    {
+      pages: 'all',
+      dpi: 72,
+      format: 'image/png',
+      // The engine asks before each page; answer "yes" from the third page on,
+      // which is what pressing Cancel after two finished pages looks like.
+      shouldAbort: () => checks++ >= 2,
+    },
+    await adapters()
+  );
+  assert.equal(result.pages.length, 2, `expected two completed pages, got ${result.pages.length}`);
+  assert.equal(result.truncatedReason, 'cancelled');
+  assert.equal(result.skipped, 3);
+  // Cancelling must never look like a completed document.
+  assert.ok(result.pages.every((page) => page.bytes.byteLength > 0));
+});
+
 test('a page request outside the document fails loudly', async () => {
   const bytes = await makePdf(2);
   await assert.rejects(

@@ -9,8 +9,16 @@
   --color-ink: #171927;
   --color-canvas: #F8F7FC;
   --color-surface: #FFFFFF;
-  --color-muted: #64748B;
+  /* Measured 2026-11-16: #64748B was 4.46:1 on --color-canvas, just under AA for
+     body text. #5B6A80 measures 5.16:1 on canvas and 5.50:1 on surface. */
+  --color-muted: #5B6A80;
   --color-border: #E8E6F2;
+  /* Form controls and other meaningful boundaries need 3:1 (WCAG 1.4.11). */
+  --color-border-strong: #7D8AA0;
+  /* Filled actions keep the brand hue; white on #7047EB measures 5.54:1. */
+  --color-primary-solid: #6D48E8;
+  /* Accent text: 5.20:1 on canvas in light, 5.58:1 in dark. */
+  --color-accent-text: #7047EB;
 
   /* Extracted Category Accents from Reference UI Design Image */
   --accent-text: #EDE7FF;
@@ -39,6 +47,9 @@
   --color-deep: #E2E8F0;
   --color-muted: #94A3B8;
   --color-border: #2A2E42;
+  --color-border-strong: #6B7595;
+  --color-primary-solid: #7C5CFA;
+  --color-accent-text: #9F7AEA;
 }
 
 @layer base {
@@ -141,4 +152,209 @@ html.dark {
 }
 html.dark :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline-color: #9f7aea;
+}
+
+/* ---------------------------------------------------------------------------
+   Design tokens
+   Radius, elevation, motion and gradient primitives. Components reference the
+   tokens instead of inventing one-off shadows, so the whole surface stays
+   consistent and restyling happens in one place.
+--------------------------------------------------------------------------- */
+:root {
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+
+  --shadow-xs: 0 1px 2px rgb(23 25 39 / 0.06);
+  --shadow-sm: 0 1px 3px rgb(23 25 39 / 0.07), 0 1px 2px rgb(23 25 39 / 0.04);
+  --shadow-md: 0 6px 20px -6px rgb(23 25 39 / 0.14), 0 2px 6px rgb(23 25 39 / 0.06);
+  --shadow-lg: 0 20px 45px -18px rgb(56 32 128 / 0.28), 0 6px 16px -8px rgb(23 25 39 / 0.12);
+  --shadow-glow: 0 0 0 1px rgb(112 71 235 / 0.18), 0 12px 38px -14px rgb(112 71 235 / 0.55);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+
+  --sheen-a: radial-gradient(120% 90% at 12% 0%, rgb(112 71 235 / 0.16) 0%, transparent 58%);
+  --sheen-b: radial-gradient(90% 80% at 92% 6%, rgb(29 78 216 / 0.12) 0%, transparent 60%);
+  --sheen-c: radial-gradient(70% 70% at 60% 100%, rgb(225 29 72 / 0.08) 0%, transparent 65%);
+  --grid-line: rgb(112 71 235 / 0.08);
+}
+
+.dark {
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.45);
+  --shadow-md: 0 8px 24px -10px rgb(0 0 0 / 0.65);
+  --shadow-lg: 0 24px 50px -20px rgb(0 0 0 / 0.8);
+  --shadow-glow: 0 0 0 1px rgb(159 122 234 / 0.25), 0 14px 40px -16px rgb(112 71 235 / 0.6);
+  --sheen-a: radial-gradient(120% 90% at 12% 0%, rgb(112 71 235 / 0.26) 0%, transparent 60%);
+  --sheen-b: radial-gradient(90% 80% at 92% 6%, rgb(29 78 216 / 0.2) 0%, transparent 62%);
+  --sheen-c: radial-gradient(70% 70% at 60% 100%, rgb(225 29 72 / 0.12) 0%, transparent 65%);
+  --grid-line: rgb(159 122 234 / 0.14);
+}
+
+/* Hero and section backdrops: three soft colour fields plus a hairline grid that
+   fades out. Pure CSS, no image request, nothing to block first paint. */
+.ngt-sheen {
+  position: relative;
+  isolation: isolate;
+}
+.ngt-sheen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: var(--sheen-a), var(--sheen-b), var(--sheen-c);
+  pointer-events: none;
+}
+.ngt-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 10%, transparent 72%);
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 10%, transparent 72%);
+  pointer-events: none;
+}
+
+/* Elevated surface used by panels and result cards. */
+.ngt-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+}
+.ngt-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: rgb(112 71 235 / 0.35);
+}
+
+/* Filled and ghost actions. The filled colour is the audited 5.5:1 pair. */
+.ngt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.ngt-btn:active {
+  transform: scale(0.98);
+}
+.ngt-btn-primary {
+  background-image: linear-gradient(135deg, #7c5cfa 0%, #5b2fd1 100%);
+  color: #ffffff;
+  box-shadow: var(--shadow-glow);
+}
+.ngt-btn-primary:hover {
+  filter: saturate(1.08) brightness(1.04);
+}
+.ngt-btn-ghost {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}
+.ngt-btn-ghost:hover {
+  border-color: var(--color-border-strong);
+  background-color: rgb(112 71 235 / 0.06);
+}
+
+/* Status chips (target met / best effort / unreachable). Text is always paired
+   with an icon or a word, never colour alone. */
+.ngt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+/* Skeleton shimmer for work in progress. */
+.ngt-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.ngt-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.45), transparent);
+  animation: ngt-shimmer 1.4s infinite;
+}
+.dark .ngt-skeleton::after {
+  background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.08), transparent);
+}
+@keyframes ngt-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* The drop zone pulses once to invite a file; reduced-motion turns it off. */
+@keyframes ngt-invite {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(112 71 235 / 0.28); }
+  50% { box-shadow: 0 0 0 8px rgb(112 71 235 / 0); }
+}
+.ngt-invite {
+  animation: ngt-invite 2.6s var(--ease-out) 2;
+}
+
+/* Tidy selection and scrollbars; both follow the active theme. */
+::selection {
+  background-color: rgb(112 71 235 / 0.22);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(112 71 235 / 0.4) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(112 71 235 / 0.35);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* iOS safe areas for the sticky header and the bottom action bar. */
+.ngt-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+/* Print: result panels should print cleanly (people do print receipts/reports). */
+@media print {
+  .ngt-no-print {
+    display: none !important;
+  }
+  .ngt-card {
+    box-shadow: none;
+    border-color: #cbd5e1;
+  }
+  a[href^='/']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.75em;
+    color: #475569;
+  }
 }

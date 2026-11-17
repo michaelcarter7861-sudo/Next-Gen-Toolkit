@@ -125,6 +125,10 @@ export function ToolWorkspace({
   const [processedItems, setProcessedItems] = useState<ProcessedFileItem[]>([]);
   const [forensicTable, setForensicTable] = useState<Record<string, string> | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  // Cooperative cancellation: engines check this between files and between PDF
+  // pages, so Cancel stops real work instead of only hiding the spinner.
+  const cancelRequestedRef = useRef(false);
+  const [cancelAvailable, setCancelAvailable] = useState(false);
   const [processingNotice, setProcessingNotice] = useState<string | null>(null);
   const [gauge, setGauge] = useState<ByteGaugeProps | null>(null);
   const processedItemsRef = useRef<ProcessedFileItem[]>([]);
@@ -542,6 +546,8 @@ export function ToolWorkspace({
       if (filesToProcess.length === 0) return;
       const t0 = performance.now();
       setIsProcessing(true);
+      cancelRequestedRef.current = false;
+      setCancelAvailable(true);
       setForensicTable(null);
       setProcessingNotice(null);
       setGauge(null);
@@ -557,6 +563,7 @@ export function ToolWorkspace({
 
         if (tool.id === 'compress-pdf') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.compressPdfToTargetKb(f, targetKb);
             const statusLabel =
               res.status === 'met-target'
@@ -611,6 +618,7 @@ export function ToolWorkspace({
           });
         } else if (tool.id === 'split-pdf') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.splitPdfByRangesClient(f, pdfRangeSyntax);
             results.push({
               id: `split-${f.name}`,
@@ -630,20 +638,24 @@ export function ToolWorkspace({
           // fetched when this tool runs, so the rest of the site keeps its bundle.
           const raster = await import('../utils/pdfRasterBrowser');
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const rendered = await raster.renderPdfPagesInBrowser(f, {
               pages: pdfImagePages.trim() || 'all',
               dpi: pdfDpi,
               format: imageOutputFormat,
               quality: qualitySlider / 100,
+              shouldAbort: () => cancelRequestedRef.current,
             });
             if (rendered.pages.length === 0) {
               setProcessingNotice('No pages matched the page selection.');
             }
             if (rendered.skipped > 0) {
               const reason =
-                rendered.truncatedReason === 'pixel-budget'
-                  ? 'the per-document pixel budget was reached (high DPI on a long document needs more memory than this device should give)'
-                  : 'the per-run page cap was reached';
+                rendered.truncatedReason === 'cancelled'
+                  ? 'you cancelled the run'
+                  : rendered.truncatedReason === 'pixel-budget'
+                    ? 'the per-document pixel budget was reached (high DPI on a long document needs more memory than this device should give)'
+                    : 'the per-run page cap was reached';
               setProcessingNotice(
                 `Rendered ${rendered.pages.length} page${rendered.pages.length === 1 ? '' : 's'}. ${rendered.skipped} more were skipped because ${reason}. Lower the DPI or render them in a second run.`
               );
@@ -691,6 +703,7 @@ export function ToolWorkspace({
           });
         } else if (tool.id === 'pdf-metadata-cleaner') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.inspectAndCleanPdfMetadata(f, true);
             setForensicTable(res.metadata);
             results.push({
@@ -705,6 +718,7 @@ export function ToolWorkspace({
           }
         } else if (tool.id === 'compress-image-to-kb') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.compressImageToExactKbClient(f, targetKb, imageOutputFormat);
             const statusLabel =
               res.status === 'met-target'
@@ -748,11 +762,13 @@ export function ToolWorkspace({
           }
         } else if (tool.id === 'bulk-webp-avif-converter') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.transcodeImageClient(f, imageOutputFormat, qualitySlider / 100);
             results.push(res);
           }
         } else if (tool.id === 'exif-metadata-remover') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.inspectAndScrubExifClient(f);
             setForensicTable(res.forensicTags);
             results.push(res.cleanItem);
@@ -765,6 +781,13 @@ export function ToolWorkspace({
         processedItemsRef.current = results;
         setProcessedItems(results);
         setExecutionDurationMs(Math.max(1, Math.round(performance.now() - t0)));
+        if (cancelRequestedRef.current) {
+          setProcessingNotice(
+            results.length === 0
+              ? 'Cancelled before the first file finished. Nothing was written and no file left your device.'
+              : `Cancelled. ${results.length} finished file${results.length === 1 ? '' : 's'} kept below — the rest were not started.`
+          );
+        }
       } catch (error) {
         // Without this the engine's message ("Page 9 does not exist in this 1-page PDF.")
         // was only an unhandled rejection: the spinner stopped and the user got nothing.
@@ -779,6 +802,7 @@ export function ToolWorkspace({
         );
       } finally {
         setIsProcessing(false);
+        setCancelAvailable(false);
       }
     },
     [
@@ -1357,14 +1381,50 @@ export function ToolWorkspace({
 
               {/* Processed Batch Queue Results */}
               {isProcessing && (
-                <div className="p-4 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] text-xs font-semibold text-[#7047EB] flex items-center gap-2">
-                  <RotateCcw className="w-4 h-4 animate-spin" />
-                  <span>Processing files inside browser RAM...</span>
+                <div
+                  className="ngt-card p-4 space-y-3"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Processing files"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold text-[#7047EB] dark:text-[#A78BFA] flex items-center gap-2">
+                      <RotateCcw className="w-4 h-4 animate-spin" aria-hidden="true" />
+                      Working inside your browser — nothing is uploaded
+                    </span>
+                    {cancelAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          cancelRequestedRef.current = true;
+                          setProcessingNotice('Cancelling — finishing the file already in progress…');
+                        }}
+                        className="ngt-btn ngt-btn-ghost px-3 py-1.5 text-xs"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2" aria-hidden="true">
+                    <div className="ngt-skeleton h-2.5 w-11/12" />
+                    <div className="ngt-skeleton h-2.5 w-8/12" />
+                  </div>
                 </div>
               )}
 
               {processedItems.length > 0 && (
                 <div className="space-y-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 className="text-sm font-bold text-[#171927] dark:text-white">
+                      Results
+                      <span className="ml-2 font-medium text-[#5B6A80] dark:text-[#94A3B8] tabular-nums">
+                        {processedItems.length} file{processedItems.length === 1 ? '' : 's'}
+                      </span>
+                    </h2>
+                    <span className="text-xs text-[#5B6A80] dark:text-[#94A3B8] tabular-nums">
+                      {(processedItems.reduce((acc, item) => acc + item.outputSize, 0) / 1024).toFixed(1)} KB total
+                    </span>
+                  </div>
                   {gauge && <ByteGauge {...gauge} />}
                   {/* Local Execution Speed & Savings Receipt */}
                   {(() => {

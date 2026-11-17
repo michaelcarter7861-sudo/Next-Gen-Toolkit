@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "node scripts/render-og-image.mjs && vite build && tsx scripts/generate-seo-pages.ts && tsx scripts/verify-seo-build.ts",
+    "build": "node scripts/generate-icons.mjs && node scripts/render-og-image.mjs && vite build && tsx scripts/generate-seo-pages.ts && tsx scripts/verify-seo-build.ts",
     "start": "node server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx --test src/utils/toolEngines.test.ts src/utils/binaryEngines.test.ts src/utils/imageEngine.test.ts src/utils/pdfRaster.test.ts",
-    "test:e2e": "node scripts/e2e/run.mjs"
+    "test": "tsx --test src/utils/toolEngines.test.ts src/utils/binaryEngines.test.ts src/utils/imageEngine.test.ts src/utils/pdfRaster.test.ts src/utils/contrast.test.ts",
+    "test:e2e": "node scripts/e2e/run.mjs",
+    "test:a11y": "node scripts/a11y/scan.mjs"
   },
   "dependencies": {
     "@google/genai": "^3.3.0",
@@ -42,6 +43,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
+    "axe-core": "^4.14.1",
     "pdfjs-dist": "^5.7.284",
     "playwright": "^1.65.1",
     "tailwindcss": "^4.3.3",

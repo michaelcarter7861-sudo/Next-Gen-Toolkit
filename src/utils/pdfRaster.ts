@@ -20,6 +20,8 @@ export interface RasterOptions {
   baseName?: string;
   /** Override the per-document pixel budget (tests and constrained devices). */
   maxPixels?: number;
+  /** Cooperative cancellation: checked between pages, so Cancel is responsive. */
+  shouldAbort?: () => boolean;
 }
 
 export interface RasterPageResult {
@@ -152,7 +154,7 @@ export async function renderPdfPages(
   pageCount: number;
   skipped: number;
   /** Why the run stopped early, when it did. */
-  truncatedReason: 'page-cap' | 'pixel-budget' | null;
+  truncatedReason: 'page-cap' | 'pixel-budget' | 'cancelled' | null;
 }> {
   const format: 'image/png' | 'image/jpeg' | 'image/webp' =
     options.format === 'image/jpeg'
@@ -171,9 +173,16 @@ export async function renderPdfPages(
     const rendered: RasterPageResult[] = [];
     let skipped = 0;
     let spentPixels = 0;
-    let limitReason: 'page-cap' | 'pixel-budget' | null = null;
+    let limitReason: 'page-cap' | 'pixel-budget' | 'cancelled' | null = null;
 
     for (const pageIndex of selection) {
+      // Cooperative cancellation: stop before starting another page, keep what is
+      // already rendered, and say so rather than pretending the document ended.
+      if (options.shouldAbort?.()) {
+        skipped = selection.length - rendered.length;
+        limitReason = 'cancelled';
+        break;
+      }
       if (rendered.length >= maxPages) {
         skipped = selection.length - rendered.length;
         limitReason = 'page-cap';

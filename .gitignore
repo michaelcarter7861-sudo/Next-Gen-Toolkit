@@ -7,3 +7,4 @@ coverage/
 .env*
 !.env.example
 audit/screenshots/
+audit/a11y/
