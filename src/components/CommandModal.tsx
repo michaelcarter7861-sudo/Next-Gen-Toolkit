@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Search,
   X,
@@ -37,12 +37,59 @@ export function CommandModal({
   const [query, setQuery] = useState('');
   const [selectedHubFilter, setSelectedHubFilter] = useState<HubId | 'all' | 'favorites'>('all');
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!isOpen) {
       setQuery('');
       setSelectedHubFilter('all');
     }
   }, [isOpen]);
+
+  // Focus management: move focus in on open, keep Tab inside the dialog, and
+  // restore the trigger on close. Escape closes from anywhere in the dialog.
+  useEffect(() => {
+    if (!isOpen) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    const focusTimer = window.setTimeout(() => searchRef.current?.focus(), 0);
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusable = root.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    const { overflow } = document.body.style;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKeyDown, true);
+      document.body.style.overflow = overflow;
+      previouslyFocused.current?.focus?.();
+    };
+  }, [isOpen, onClose]);
 
   const q = query.trim().toLowerCase();
   const filteredTools = useMemo(() => {
@@ -73,23 +120,26 @@ export function CommandModal({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         className="w-full max-w-2xl rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-5 py-4 border-b border-[#E8E6F2] dark:border-[#2A2E42]">
           <Search className="w-5 h-5 text-[#7047EB] shrink-0" />
           <input
+            ref={searchRef}
             type="text"
             autoFocus
+            aria-label="Search tools"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search 25 utilities by name, LSI keyword, or format (e.g. 20KB, PDF, JSON, JWT, QR)..."
-            className="w-full bg-transparent text-sm text-[#171927] dark:text-[#F8F7FC] placeholder-[#64748B] focus:outline-none"
+            className="w-full bg-transparent text-sm text-[#171927] dark:text-[#F8F7FC] placeholder-[#5B6A80] focus:outline-none"
           />
           <button
             onClick={onClose}
             aria-label="Close launcher"
-            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#171927] dark:hover:text-white hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F]"
+            className="min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg text-[#5B6A80] hover:text-[#171927] dark:hover:text-white hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -103,7 +153,7 @@ export function CommandModal({
             className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
               selectedHubFilter === 'all'
                 ? 'bg-[#7047EB] text-white'
-                : 'text-[#64748B] hover:text-[#171927] dark:hover:text-white'
+                : 'text-[#5B6A80] hover:text-[#171927] dark:hover:text-white'
             }`}
           >
             All ({TOOLS_CATALOG.length})
@@ -114,7 +164,7 @@ export function CommandModal({
             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
               selectedHubFilter === 'favorites'
                 ? 'bg-[#7047EB] text-white'
-                : 'text-[#64748B] hover:text-[#171927] dark:hover:text-white'
+                : 'text-[#5B6A80] hover:text-[#171927] dark:hover:text-white'
             }`}
           >
             <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -128,7 +178,7 @@ export function CommandModal({
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                 selectedHubFilter === hub.id
                   ? 'bg-[#7047EB] text-white'
-                  : 'text-[#64748B] hover:text-[#171927] dark:hover:text-white'
+                  : 'text-[#5B6A80] hover:text-[#171927] dark:hover:text-white'
               }`}
             >
               {hub.shortTitle}
@@ -139,7 +189,7 @@ export function CommandModal({
         <div className="max-h-[400px] overflow-y-auto p-3 space-y-4">
           {!q && selectedHubFilter === 'all' && (
             <div>
-              <div className="px-3 py-1 text-xs font-semibold text-[#64748B]">
+              <div className="px-3 py-1 text-xs font-semibold text-[#5B6A80]">
                 Topical Category Hubs (5)
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-1">
@@ -161,12 +211,12 @@ export function CommandModal({
           )}
 
           <div>
-            <div className="px-3 py-1 text-xs font-semibold text-[#64748B]">
+            <div className="px-3 py-1 text-xs font-semibold text-[#5B6A80]">
               Matching Utilities ({filteredTools.length})
             </div>
             <div className="space-y-1 mt-1">
               {filteredTools.length === 0 ? (
-                <div className="p-6 text-center text-xs text-[#64748B]">
+                <div className="p-6 text-center text-xs text-[#5B6A80]">
                   {selectedHubFilter === 'favorites'
                     ? 'No pinned tools yet. Click the star icon next to any utility to pin it for instant access.'
                     : `No utilities matched "${query}". Try searching by format (PDF, WebP, JSON, CSV, SVG).`}
@@ -192,13 +242,13 @@ export function CommandModal({
                           <span className="text-sm font-semibold text-[#171927] dark:text-[#F8F7FC] group-hover:text-[#7047EB] transition-colors">
                             {tool.name}
                           </span>
-                          <span className="text-xs text-[#64748B]">· {hub?.shortTitle}</span>
+                          <span className="text-xs text-[#5B6A80]">· {hub?.shortTitle}</span>
                         </div>
-                        <p className="text-xs text-[#64748B] truncate">{tool.shortDesc}</p>
+                        <p className="text-xs text-[#5B6A80] truncate">{tool.shortDesc}</p>
                       </button>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="hidden sm:inline px-2 py-0.5 rounded-md bg-[#F8F7FC] dark:bg-[#1C1F2E] text-xs font-medium text-[#64748B] group-hover:text-[#7047EB]">
+                        <span className="hidden sm:inline px-2 py-0.5 rounded-md bg-[#F8F7FC] dark:bg-[#1C1F2E] text-xs font-medium text-[#5B6A80] group-hover:text-[#7047EB]">
                           {tool.subCategory}
                         </span>
                         {onToggleFavorite && (
@@ -209,7 +259,7 @@ export function CommandModal({
                               onToggleFavorite(tool.id);
                             }}
                             aria-label={isFav ? `Unpin ${tool.name}` : `Pin ${tool.name}`}
-                            className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1C1F2E] text-[#64748B] hover:text-amber-500 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1C1F2E] text-[#5B6A80] hover:text-amber-500 transition-colors"
                           >
                             <Star
                               className={`w-4 h-4 ${
@@ -227,7 +277,7 @@ export function CommandModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-5 py-3 bg-[#F8F7FC] dark:bg-[#151824] border-t border-[#E8E6F2] dark:border-[#2A2E42] text-xs text-[#64748B]">
+        <div className="flex items-center justify-between px-5 py-3 bg-[#F8F7FC] dark:bg-[#151824] border-t border-[#E8E6F2] dark:border-[#2A2E42] text-xs text-[#5B6A80]">
           <span>NextGenToolkit · 25 Free Browser Utilities</span>
           <span>Press Esc to close</span>
         </div>
@@ -329,7 +379,7 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
               <h2 className="text-base font-bold text-[#171927] dark:text-[#F8F7FC]">
                 NextGenToolkit Hybrid AI Workflow & Search Grounding Studio
               </h2>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[#5B6A80]">
                 Server-side proxy powered by Google Search Grounding (gemini-4-hydrogen) & High Thinking (gemini-4-carbon)
               </p>
             </div>
@@ -337,7 +387,7 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
           <button
             onClick={onClose}
             aria-label="Close AI Studio"
-            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#171927] dark:hover:text-white"
+            className="p-1.5 rounded-lg text-[#5B6A80] hover:text-[#171927] dark:hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
@@ -356,7 +406,7 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-colors ${
                 mode === 'search'
                   ? 'bg-[#7047EB] text-white'
-                  : 'text-[#64748B] hover:text-[#171927] dark:hover:text-white'
+                  : 'text-[#5B6A80] hover:text-[#171927] dark:hover:text-white'
               }`}
             >
               <Globe className="w-4 h-4" />
@@ -373,7 +423,7 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-colors ${
                 mode === 'think'
                   ? 'bg-[#7047EB] text-white'
-                  : 'text-[#64748B] hover:text-[#171927] dark:hover:text-white'
+                  : 'text-[#5B6A80] hover:text-[#171927] dark:hover:text-white'
               }`}
             >
               <BrainCircuit className="w-4 h-4" />
@@ -398,7 +448,7 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#64748B] mb-1">
+              <label className="block text-xs font-semibold text-[#5B6A80] mb-1">
                 Optional Code / JSON / SEO Context Snippet
               </label>
               <textarea
@@ -411,7 +461,7 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center gap-2 text-xs text-[#64748B]">
+              <div className="flex items-center gap-2 text-xs text-[#5B6A80]">
                 <span>
                   {mode === 'search'
                     ? 'Uses googleSearch tool for live web citations'
@@ -442,7 +492,7 @@ export function AiWorkflowModal({ isOpen, onClose, initialContext = '' }: AiStud
 
           {resultText && (
             <div className="p-4 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42] space-y-3">
-              <div className="flex items-center justify-between text-xs text-[#64748B] border-b border-[#E8E6F2] dark:border-[#2A2E42] pb-2">
+              <div className="flex items-center justify-between text-xs text-[#5B6A80] border-b border-[#E8E6F2] dark:border-[#2A2E42] pb-2">
                 <span className="font-semibold text-[#7047EB]">{resultModel}</span>
                 <button
                   type="button"

@@ -8,6 +8,7 @@ import {
   HUB_EDITORIAL_LINKS,
   TOOL_EDITORIAL_LINKS,
 } from '../src/data/seoSchemaData';
+import { SITE_PAGES } from '../src/data/sitePages';
 
 const DIST = path.resolve('dist');
 const PUBLIC_DIR = path.resolve('public');
@@ -17,6 +18,13 @@ const SITE_URL = (
   'https://nextgentoolkit.pages.dev'
 ).replace(/\/+$/, '');
 const SITE_PATH = new URL(SITE_URL).pathname.replace(/\/+$/, '');
+
+// Preview tools are reachable by humans but deliberately excluded from search
+// (noindex + absent from the sitemap) until their engine ships.
+const INDEXABLE_TOOLS = TOOLS_CATALOG.filter((tool) => tool.status !== 'preview');
+const PREVIEW_TOOLS = TOOLS_CATALOG.filter((tool) => tool.status === 'preview');
+const INDEXABLE_URL_COUNT =
+  1 + 1 + SITE_PAGES.length + HUBS.length + INDEXABLE_TOOLS.length;
 
 const normalizeRoute = (route: string) => {
   if (!route || route === '/') return '/';
@@ -37,6 +45,9 @@ const escapeHtml = (value: string) =>
 
 const absoluteUrl = (route: string) => `${SITE_URL}${normalizeRoute(route)}`;
 const publicPath = (route: string) => `${SITE_PATH}${normalizeRoute(route)}`;
+
+/** Static files keep their extension and never gain a trailing slash. */
+const assetPath = (file: string) => `${SITE_PATH}${file.startsWith('/') ? file : `/${file}`}`;
 
 const shortDescription = (value: string, max = 158) => {
   const clean = value.replace(/\s+/g, ' ').trim();
@@ -59,18 +70,25 @@ const formatBrandedSeoTitle = (subject: string): string => {
   return `${trimmed}${suffix}`;
 };
 
+const trustFooterHtml = () =>
+  `<nav aria-label="Site information"><p>${SITE_PAGES.map(
+    (page) => `<a href="${escapeHtml(publicPath(page.slug))}">${escapeHtml(page.navLabel)}</a>`
+  ).join(' · ')}</p></nav>`;
+
 function createPage({
   route,
   title,
   description,
   content,
   schema,
+  noindex = false,
 }: {
   route: string;
   title: string;
   description: string;
   content: string;
   schema: unknown;
+  noindex?: boolean;
 }) {
   const canonical = absoluteUrl(route);
   const safeTitle = escapeHtml(shortDescription(title, 60));
@@ -89,7 +107,9 @@ function createPage({
   html = html.replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${safeDescription}" />`);
   html = html.replace(
     /<meta name="robots"[^>]*>/,
-    '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />'
+    noindex
+      ? '<meta name="robots" content="noindex,follow" />'
+      : '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />'
   );
   html = html.replace(/<meta property="og:title"[^>]*>/, `<meta property="og:title" content="${safeTitle}" />`);
   html = html.replace(
@@ -112,12 +132,12 @@ function createPage({
   );
   html = html.replace(
     '<div id="root"></div>',
-    `<div id="root"><main style="max-width:980px;margin:0 auto;padding:32px 20px;font:16px/1.65 system-ui,sans-serif;color:#171927"><div style="font-weight:800;letter-spacing:.04em">NextGenToolkit</div>${content}<p><a href="${escapeHtml(publicPath('/'))}">NextGenToolkit Home</a> · <a href="${escapeHtml(publicPath('/sitemap/'))}">All Tools Directory</a></p></main></div>`
+    `<div id="root"><main style="max-width:980px;margin:0 auto;padding:32px 20px;font:16px/1.65 system-ui,sans-serif;color:#171927"><div style="font-weight:800;letter-spacing:.04em">NextGenToolkit</div>${content}<p><a href="${escapeHtml(publicPath('/'))}">NextGenToolkit Home</a> · <a href="${escapeHtml(publicPath('/sitemap/'))}">All Tools Directory</a></p>${trustFooterHtml()}</main></div>`
   );
   return html;
 }
 
-const homeContent = `<h1>NextGenToolkit | Free Online PDF, Image, Text and Developer Tools</h1>
+const homeContent = `<h1>Free PDF, Image, Text and Developer Tools that run in your browser.</h1>
 <p>NextGenToolkit brings together 25 browser-based utilities for working with PDF documents, images, text, developer data, and everyday generators. Processing depends on the individual utility: many core tools handle files or text locally in your browser, while AI-powered and other remote-service features may send the data needed for the requested operation to the relevant provider. Check each tool's processing notes before submitting sensitive information.</p>
 <p>Popular workflows include <a href="${escapeHtml(publicPath('/image-tools/compress-image-to-kb/'))}">compressing images to exact 20KB or 50KB limits</a>, <a href="${escapeHtml(publicPath('/pdf-tools/merge-pdf/'))}">merging confidential PDF files locally</a>, <a href="${escapeHtml(publicPath('/dev-tools/json-formatter-validator/'))}">formatting and auto-fixing broken JSON syntax</a> per the <a href="https://datatracker.ietf.org/doc/html/rfc8259" target="_blank" rel="noopener noreferrer">IETF RFC 8259 JSON standard</a>, and creating permanent <a href="https://www.iso.org/standard/62021.html" target="_blank" rel="noopener noreferrer">ISO/IEC 18004 QR Code</a> vectors in our <a href="${escapeHtml(publicPath('/generators/custom-qr-code-generator/'))}">Custom SVG/PNG QR Code Studio</a>.</p>
 ${HUBS.map((hub) => {
@@ -196,7 +216,7 @@ await writeFile(
   path.join(DIST, 'index.html'),
   createPage({
     route: '/',
-    title: 'NextGenToolkit | 25+ Free PDF, Image & Developer Tools',
+    title: 'Free PDF, Image, Text & Developer Tools | NextGenToolkit',
     description:
       'Compress PDFs & images to exact KB, format broken JSON, count LLM tokens, and run 25+ free browser-based tools with NextGenToolkit.',
     content: homeContent,
@@ -403,6 +423,7 @@ ${toolEditorialHtml}
       description: tool.aeoSummaryParagraph,
       content,
       schema,
+      noindex: tool.status === 'preview',
     }),
     'utf8'
   );
@@ -411,8 +432,8 @@ ${toolEditorialHtml}
 // Prerender dedicated HTML SEO Sitemap page (/sitemap/)
 const sitemapPageRoute = '/sitemap/';
 const sitemapPageContent = `<nav aria-label="Breadcrumb"><ol itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"><a itemprop="item" href="${escapeHtml(publicPath('/'))}"><span itemprop="name">Home</span></a><meta itemprop="position" content="1" /></li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"><span itemprop="name">All Tools Directory</span><meta itemprop="position" content="2" /></li></ol></nav>
-<h1>NextGenToolkit All Tools &amp; Categories Directory (All 31 Pages)</h1>
-<p>Browse all 31 canonical URLs across NextGenToolkit including the Homepage, 5 Topical Category Hubs, and 25 Client-Side Browser Utilities.</p>
+<h1>NextGenToolkit All Tools &amp; Categories Directory (All ${INDEXABLE_URL_COUNT} Pages)</h1>
+<p>Browse all ${INDEXABLE_URL_COUNT} indexable URLs across NextGenToolkit: the homepage, this directory, ${SITE_PAGES.length} site-information pages, ${HUBS.length} topical category hubs, and ${TOOLS_CATALOG.length} browser utilities.</p>
 <h2>Category Hubs (${HUBS.length})</h2>
 <ul>${HUBS.map((h) => link(h.slug, `${h.name}: ${h.description}`)).join('')}</ul>
 ${HUBS.map((h) => {
@@ -430,14 +451,14 @@ const sitemapPageSchema = {
       '@id': `${absoluteUrl('/')}#organization`,
       name: 'NextGenToolkit',
       url: absoluteUrl('/'),
-      logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.svg` },
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/icon-512.png` },
     },
     {
       '@type': 'CollectionPage',
       '@id': `${absoluteUrl(sitemapPageRoute)}#webpage`,
       name: 'NextGenToolkit Complete SEO Sitemap & Directory',
       description:
-        'Browse all 32 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.',
+        `Browse all ${INDEXABLE_URL_COUNT} indexable pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.`,
       url: absoluteUrl(sitemapPageRoute),
       isPartOf: { '@type': 'WebSite', '@id': `${absoluteUrl('/')}#website`, name: 'NextGenToolkit', url: absoluteUrl('/') },
       mainEntity: {
@@ -470,12 +491,151 @@ await writeFile(
     route: sitemapPageRoute,
     title: formatBrandedSeoTitle('Complete SEO Sitemap & All 25 Tools Directory'),
     description:
-      'Browse all 32 canonical pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.',
+      `Browse all ${INDEXABLE_URL_COUNT} indexable pages on NextGenToolkit across PDF Tools, Image Tools, Developer Tools, Text Tools, and Calculators & Generators.`,
     content: sitemapPageContent,
     schema: sitemapPageSchema,
   }),
   'utf8'
 );
+
+// ============================================================================
+// Trust pages (About / Contact / Privacy / Terms / Editorial policy / Changelog)
+// Generated as self-contained static documents: they need no JavaScript, load
+// in one request, and are crawlable without executing the React bundle.
+// ============================================================================
+const escapeForPage = (value: string) => escapeHtml(value);
+
+function renderTrustPage(page: (typeof SITE_PAGES)[number]): string {
+  const canonical = absoluteUrl(page.slug);
+  const nav = SITE_PAGES.map(
+    (item) =>
+      `<a href="${escapeHtml(publicPath(item.slug))}"${
+        item.slug === page.slug ? ' aria-current="page"' : ''
+      }>${escapeHtml(item.navLabel)}</a>`
+  ).join('');
+
+  const sectionsHtml = page.sections
+    .map((section) => {
+      const paragraphs = (section.paragraphs || [])
+        .map((text) => `<p>${escapeForPage(text)}</p>`)
+        .join('');
+      const bullets = section.bullets
+        ? `<ul>${section.bullets.map((item) => `<li>${escapeForPage(item)}</li>`).join('')}</ul>`
+        : '';
+      return `<section><h2>${escapeForPage(section.heading)}</h2>${paragraphs}${bullets}</section>`;
+    })
+    .join('\n');
+
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `${canonical}#webpage`,
+        url: canonical,
+        name: page.title,
+        description: page.description,
+        dateModified: page.updated,
+        isPartOf: { '@type': 'WebSite', name: 'NextGenToolkit', url: absoluteUrl('/') },
+        inLanguage: 'en',
+      },
+      {
+        '@type': 'BreadcrumbList',
+        '@id': `${canonical}#breadcrumb`,
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
+          { '@type': 'ListItem', position: 2, name: page.navLabel, item: canonical },
+        ],
+      },
+    ],
+  }).replace(/</g, '\\u003c');
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${escapeForPage(shortDescription(page.title, 65))}</title>
+<meta name="description" content="${escapeForPage(shortDescription(page.description, 158))}" />
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
+<link rel="canonical" href="${escapeHtml(canonical)}" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="NextGenToolkit" />
+<meta property="og:title" content="${escapeForPage(page.title)}" />
+<meta property="og:description" content="${escapeForPage(shortDescription(page.description, 158))}" />
+<meta property="og:url" content="${escapeHtml(canonical)}" />
+<meta property="og:image" content="${SITE_URL}/og-cover.png" />
+<link rel="icon" type="image/svg+xml" href="${assetPath('/favicon.svg')}" />
+<link rel="icon" type="image/png" sizes="32x32" href="${assetPath('/favicon.ico')}" />
+<link rel="apple-touch-icon" sizes="180x180" href="${assetPath('/apple-touch-icon.png')}" />
+<link rel="manifest" href="${assetPath('/manifest.webmanifest')}" />
+<meta name="theme-color" content="#7047EB" />
+<script type="application/ld+json">${jsonLd}</script>
+<style>
+:root{--ink:#171927;--deep:#253044;--muted:#52607a;--line:#E8E6F2;--brand:#7047EB;--canvas:#F8F7FC}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.7 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--brand)}
+header.site{background:#fff;border-bottom:1px solid var(--line)}
+.wrap{max-width:820px;margin:0 auto;padding:0 20px}
+header.site .wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-top:16px;padding-bottom:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;text-decoration:none;color:var(--ink);font-size:17px}
+.brand span.mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#7047EB,#5E35D9);color:#fff;display:grid;place-items:center;font-size:11px}
+nav.site{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;font-weight:600}
+nav.site a{text-decoration:none;color:var(--muted)}
+nav.site a[aria-current="page"]{color:var(--brand)}
+main{padding:36px 0 8px}
+.crumbs{font-size:12px;color:var(--muted);margin-bottom:14px}
+h1{font-size:clamp(28px,5vw,38px);line-height:1.15;letter-spacing:-.02em;margin:0 0 12px}
+.lede{font-size:17px;color:var(--deep);margin:0 0 8px}
+.updated{font-size:12px;color:var(--muted);margin:0 0 28px}
+section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:0 0 16px}
+h2{font-size:18px;margin:0 0 10px;letter-spacing:-.01em}
+p{margin:0 0 12px;color:var(--deep)}
+p:last-child{margin-bottom:0}
+ul{margin:0;padding-left:20px;color:var(--deep)}
+li{margin-bottom:6px}
+footer.site{border-top:1px solid var(--line);margin-top:32px;padding:24px 0 40px;font-size:13px;color:var(--muted)}
+footer.site nav{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-weight:600}
+footer.site a{color:var(--muted);text-decoration:none}
+footer.site a:hover{color:var(--brand)}
+@media (prefers-color-scheme:dark){
+:root{--ink:#F8F7FC;--deep:#D7DEEE;--muted:#A9B4CA;--line:#2A2E42;--canvas:#131520}
+header.site,section,footer.site{background:#1C1F2E;border-color:var(--line)}
+.brand{color:#fff}
+}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="${publicPath('/')}"><span class="mark">NG</span>NextGenToolkit</a>
+    <nav class="site" aria-label="Site information">${nav}</nav>
+  </div>
+</header>
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="${publicPath('/')}">Home</a> › ${escapeForPage(page.navLabel)}</nav>
+  <h1>${escapeForPage(page.h1)}</h1>
+  <p class="lede">${escapeForPage(page.intro)}</p>
+  <p class="updated">Last reviewed ${escapeForPage(page.updated)} · <a href="${publicPath('/changelog/')}">See all changes</a></p>
+  ${sectionsHtml}
+</main>
+<footer class="site">
+  <div class="wrap">
+    <nav aria-label="Footer">${nav}<a href="${publicPath('/sitemap/')}">All tools</a></nav>
+    <p>NextGenToolkit — browser-first utilities, honestly described.</p>
+  </div>
+</footer>
+</body>
+</html>
+`;
+}
+
+for (const page of SITE_PAGES) {
+  const folder = path.join(DIST, page.slug.replace(/^\/+|\/+$/g, ''));
+  await mkdir(folder, { recursive: true });
+  await writeFile(path.join(folder, 'index.html'), renderTrustPage(page), 'utf8');
+}
 
 // ============================================================================
 // Generate sitemap XML & sitemap index.
@@ -484,9 +644,16 @@ await writeFile(
 const sitemapUrls = [
   absoluteUrl('/'),
   absoluteUrl('/sitemap/'),
+  ...SITE_PAGES.map((page) => absoluteUrl(page.slug)),
   ...HUBS.map((hub) => absoluteUrl(hub.slug)),
-  ...TOOLS_CATALOG.map((tool) => absoluteUrl(tool.canonicalPath)),
+  ...INDEXABLE_TOOLS.map((tool) => absoluteUrl(tool.canonicalPath)),
 ];
+
+// Preview tools are reachable by humans but deliberately excluded from search:
+// noindex + absent from the sitemap. Counted here for the build log.
+console.log(
+  `Indexable URLs: ${sitemapUrls.length} (tools indexable: ${INDEXABLE_TOOLS.length}/${TOOLS_CATALOG.length}; preview excluded: ${PREVIEW_TOOLS.map((t) => t.slug).join(', ')})`
+);
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls
   .map((loc) => `  <url>\n    <loc>${escapeHtml(loc)}</loc>\n  </url>`)
@@ -532,7 +699,8 @@ const robotsTxt = [
 await writeFile(path.join(DIST, 'robots.txt'), robotsTxt, 'utf8');
 
 // Ensure Cloudflare Pages _headers exists in dist/ so Googlebot gets strict XML/text MIME headers
-const headersConfig = `/sitemap.xml
+const headersConfig = `# Search and AI discovery files
+/sitemap.xml
   Content-Type: application/xml; charset=utf-8
   Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
@@ -556,6 +724,65 @@ const headersConfig = `/sitemap.xml
   Cache-Control: public, max-age=3600
   X-Content-Type-Options: nosniff
   Access-Control-Allow-Origin: *
+
+# Hashed build assets never change, so they can be cached permanently.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+/og-cover.png
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+# Web app manifest and icon set (installable site, Android/iOS home screen).
+/manifest.webmanifest
+  Content-Type: application/manifest+json; charset=utf-8
+  Cache-Control: public, max-age=3600
+  X-Content-Type-Options: nosniff
+
+/icon-192.png
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+/icon-512.png
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+/icon-512-maskable.png
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+/favicon.ico
+  Cache-Control: public, max-age=604800
+  X-Content-Type-Options: nosniff
+
+# Baseline security headers. Deliberately no Content-Security-Policy and no
+# X-Frame-Options:
+#  - the GTM container loads vendor tags we cannot enumerate from this repo, so a
+#    strict script-src would silently break analytics;
+#  - the product ships an embed widget that must be frameable by third parties.
+# Both are tracked as follow-ups in the technical report rather than guessed at.
+# Preview and branch deployments live on <alias>.nextgentoolkit.pages.dev.
+# Cloudflare Pages supports host placeholders in _headers, so these aliases can
+# be noindexed without touching production. The two-placeholder pattern only
+# matches 3+ label hosts, so the production host (nextgentoolkit.pages.dev) and
+# any custom domain are unaffected.
+# Verify after deploy:
+#   curl -sI https://<branch>.nextgentoolkit.pages.dev/ | grep -i x-robots-tag   -> noindex
+#   curl -sI https://nextgentoolkit.pages.dev/            | grep -i x-robots-tag   -> no header
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+# Baseline security headers applied to every path on every host.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
 `;
 
 await writeFile(path.join(DIST, '_headers'), headersConfig, 'utf8');

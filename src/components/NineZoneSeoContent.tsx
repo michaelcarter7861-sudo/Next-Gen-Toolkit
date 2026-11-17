@@ -60,7 +60,7 @@ export function NineZoneSeoContent({
     );
   const relatedMesh = [...siblingTools, ...companionTools].slice(0, 6);
 
-  const embedSnippet = `<iframe src="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}?embed=1" width="100%" height="520" style="border:1px solid #E8E6F2;border-radius:16px;" loading="lazy" title="NextGenToolkit ${tool.name}"></iframe>\n<p style="font-size:12px;color:#64748B;margin-top:6px;">Powered by <a href="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}" target="_blank" rel="noopener">NextGenToolkit ${tool.name}</a></p>`;
+  const embedSnippet = `<iframe src="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}?embed=1" width="100%" height="520" style="border:1px solid #E8E6F2;border-radius:16px;" loading="lazy" title="NextGenToolkit ${tool.name}"></iframe>\n<p style="font-size:12px;color:#5B6A80;margin-top:6px;">Powered by <a href="${import.meta.env.VITE_SITE_URL || window.location.origin}${tool.canonicalPath}" target="_blank" rel="noopener">NextGenToolkit ${tool.name}</a></p>`;
 
   const handleCopyEmbed = () => {
     navigator.clipboard.writeText(embedSnippet);
@@ -81,35 +81,35 @@ export function NineZoneSeoContent({
           <span className="font-extrabold text-[#171927] dark:text-[#F8F7FC]">On this page:</span>
           <a
             href="#how-to-use"
-            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+            className="font-semibold text-[#5B6A80] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
           >
             How to Use
           </a>
           <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
           <a
             href="#specifications"
-            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+            className="font-semibold text-[#5B6A80] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
           >
             Specifications
           </a>
           <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
           <a
             href="#technical-guide"
-            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+            className="font-semibold text-[#5B6A80] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
           >
             Methodology &amp; Workflows
           </a>
           <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
           <a
             href="#tool-faq"
-            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+            className="font-semibold text-[#5B6A80] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
           >
             FAQ
           </a>
           <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
           <a
             href="#related-tools"
-            className="font-semibold text-[#64748B] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
+            className="font-semibold text-[#5B6A80] dark:text-[#94A3B8] hover:text-[#7047EB] dark:hover:text-[#A78BFA] transition-colors"
           >
             Related Tools
           </a>
@@ -214,7 +214,7 @@ export function NineZoneSeoContent({
                   <span className="font-semibold text-[#171927] dark:text-[#F8F7FC]">
                     {step.name}:{' '}
                   </span>
-                  <span className="text-[#64748B] dark:text-[#94A3B8]">
+                  <span className="text-[#5B6A80] dark:text-[#94A3B8]">
                     <RichSeoText
                       text={step.text}
                       excludeToolId={tool.id}
@@ -256,7 +256,7 @@ export function NineZoneSeoContent({
 
           <div className="pt-3 border-t border-[#DDD6FE] dark:border-[#37306B] space-y-2 text-xs">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#64748B] dark:text-[#94A3B8]">Category Hub:</span>
+              <span className="text-[#5B6A80] dark:text-[#94A3B8]">Category Hub:</span>
               {parentHub && (
                 <a
                   href={resolveHref(parentHub.slug)}
@@ -272,7 +272,7 @@ export function NineZoneSeoContent({
             </div>
             {editorialPack && editorialPack.externalLinks[0] && (
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[#64748B] dark:text-[#94A3B8]">Official Standard:</span>
+                <span className="text-[#5B6A80] dark:text-[#94A3B8]">Official Standard:</span>
                 <a
                   href={editorialPack.externalLinks[0].url}
                   target="_blank"
@@ -285,7 +285,7 @@ export function NineZoneSeoContent({
               </div>
             )}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#64748B] dark:text-[#94A3B8]">Supported formats:</span>
+              <span className="text-[#5B6A80] dark:text-[#94A3B8]">Supported formats:</span>
               <span className="font-medium text-[#171927] dark:text-[#F8F7FC] text-right">
                 {tool.specTable.supportedFormats}
               </span>
@@ -305,7 +305,7 @@ export function NineZoneSeoContent({
           <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
             Specifications &amp; Capabilities for {tool.name}
           </h2>
-          <p className="text-xs text-[#64748B]">
+          <p className="text-xs text-[#5B6A80]">
             Overview of supported file formats, batch processing, and browser privacy features.
           </p>
         </div>
@@ -313,7 +313,7 @@ export function NineZoneSeoContent({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs sm:text-sm">
             <thead>
-              <tr className="border-b border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]">
+              <tr className="border-b border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]">
                 <th className="py-3 pr-4 font-semibold">Feature</th>
                 <th className="py-3 px-4 font-semibold text-[#7047EB]">
                   NextGenToolkit ({tool.name})
@@ -329,7 +329,7 @@ export function NineZoneSeoContent({
                 <td className="py-3 px-4 font-semibold text-emerald-700 dark:text-emerald-400">
                   {tool.specTable.privacyModel}
                 </td>
-                <td className="py-3 pl-4 text-[#64748B]">
+                <td className="py-3 pl-4 text-[#5B6A80]">
                   Files are typically uploaded to remote servers for processing.
                 </td>
               </tr>
@@ -340,7 +340,7 @@ export function NineZoneSeoContent({
                 <td className="py-3 px-4 text-[#171927] dark:text-[#E2E8F0]">
                   {tool.specTable.executionEngine}
                 </td>
-                <td className="py-3 pl-4 text-[#64748B]">
+                <td className="py-3 pl-4 text-[#5B6A80]">
                   Varies by provider and server queue load.
                 </td>
               </tr>
@@ -351,7 +351,7 @@ export function NineZoneSeoContent({
                 <td className="py-3 px-4 font-mono text-xs text-[#171927] dark:text-[#E2E8F0]">
                   {tool.specTable.supportedFormats}
                 </td>
-                <td className="py-3 pl-4 text-[#64748B]">
+                <td className="py-3 pl-4 text-[#5B6A80]">
                   Often restricted on free tiers.
                 </td>
               </tr>
@@ -362,7 +362,7 @@ export function NineZoneSeoContent({
                 <td className="py-3 px-4 text-[#171927] dark:text-[#E2E8F0]">
                   {tool.specTable.batchSupport}
                 </td>
-                <td className="py-3 pl-4 text-[#64748B]">
+                <td className="py-3 pl-4 text-[#5B6A80]">
                   Daily file limits or paid upgrades often required.
                 </td>
               </tr>
@@ -373,7 +373,7 @@ export function NineZoneSeoContent({
                 <td className="py-3 px-4 font-semibold text-[#7047EB]">
                   100% Free · No Sign-Up or Watermarks
                 </td>
-                <td className="py-3 pl-4 text-[#64748B]">
+                <td className="py-3 pl-4 text-[#5B6A80]">
                   Account registration or subscription often required.
                 </td>
               </tr>
@@ -394,7 +394,7 @@ export function NineZoneSeoContent({
             <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
               Connected Workflows &amp; Technical Methodology for {tool.name}
             </h2>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-xs text-[#5B6A80]">
               Multi-step workflows across NextGenToolkit and official specifications governing {tool.name}.
             </p>
           </div>
@@ -485,7 +485,7 @@ export function NineZoneSeoContent({
                             <ExternalLink className="w-3 h-3 inline shrink-0" aria-hidden="true" />
                           </a>
                           {parts[1]}{' '}
-                          <span className="text-[11px] font-medium text-[#64748B]">
+                          <span className="text-[11px] font-medium text-[#5B6A80]">
                             ({ext.sourceName})
                           </span>
                         </>
@@ -502,7 +502,7 @@ export function NineZoneSeoContent({
                             <ExternalLink className="w-3 h-3 inline shrink-0" aria-hidden="true" />
                           </a>
                           .{' '}
-                          <span className="text-[11px] font-medium text-[#64748B]">
+                          <span className="text-[11px] font-medium text-[#5B6A80]">
                             ({ext.sourceName})
                           </span>
                         </>
@@ -529,7 +529,7 @@ export function NineZoneSeoContent({
           <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
             Frequently Asked Questions About {tool.name}
           </h2>
-          <p className="text-xs text-[#64748B]">
+          <p className="text-xs text-[#5B6A80]">
             Common questions and tips for getting the best results with {tool.name}.
           </p>
         </div>
@@ -547,7 +547,7 @@ export function NineZoneSeoContent({
               <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-semibold text-[#171927] dark:text-[#F8F7FC] hover:text-[#7047EB]">
                 <span itemProp="name">{faq.q}</span>
                 <ChevronDown
-                  className="w-4 h-4 text-[#64748B] group-open:rotate-180 transition-transform shrink-0 ml-2"
+                  className="w-4 h-4 text-[#5B6A80] group-open:rotate-180 transition-transform shrink-0 ml-2"
                   aria-hidden="true"
                 />
               </summary>
@@ -555,7 +555,7 @@ export function NineZoneSeoContent({
                 itemScope
                 itemProp="acceptedAnswer"
                 itemType="https://schema.org/Answer"
-                className="mt-2 text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed"
+                className="mt-2 text-xs sm:text-sm text-[#5B6A80] dark:text-[#94A3B8] leading-relaxed"
               >
                 <p itemProp="text">
                   <RichSeoText
@@ -580,7 +580,7 @@ export function NineZoneSeoContent({
             <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
               Related Tools You Might Like
             </h2>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-xs text-[#5B6A80]">
               Explore more utilities in {parentHub?.name} and across NextGenToolkit.
             </p>
           </div>
@@ -614,11 +614,11 @@ export function NineZoneSeoContent({
                 className="group p-4 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] hover:border-[#7047EB] text-left transition-all flex items-center justify-between gap-3 cursor-pointer"
               >
                 <div className="min-w-0">
-                  <div className="text-xs text-[#64748B] mb-0.5">{relHub?.name}</div>
+                  <div className="text-xs text-[#5B6A80] mb-0.5">{relHub?.name}</div>
                   <div className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC] group-hover:text-[#7047EB] transition-colors truncate">
                     {rel.name}
                   </div>
-                  <p className="text-xs text-[#64748B] line-clamp-1 mt-0.5">{rel.shortDesc}</p>
+                  <p className="text-xs text-[#5B6A80] line-clamp-1 mt-0.5">{rel.shortDesc}</p>
                 </div>
                 <ArrowRight
                   className="w-4 h-4 text-[#7047EB] shrink-0 group-hover:translate-x-0.5 transition-transform"

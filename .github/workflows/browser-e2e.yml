@@ -1,0 +1,106 @@
+name: Browser, accessibility and cross-browser checks
+
+# Real browsers against a real production build. Never deploys, never touches
+# Cloudflare or production data.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['arena/**']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  SITE_URL: https://nextgentoolkit.pages.dev
+  VITE_SITE_URL: https://nextgentoolkit.pages.dev
+  VITE_STATIC_DEPLOYMENT: 'true'
+
+jobs:
+  browser:
+    name: Functional suite (chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Type-check and unit tests
+        run: |
+          npm run lint
+          npm test
+      - name: Build
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser suite
+        run: node scripts/e2e/run.mjs
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence-chromium
+          path: audit/screenshots
+          if-no-files-found: warn
+          retention-days: 14
+
+  accessibility:
+    name: axe-core WCAG 2.2 AA scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: []
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Scan every page family in light and dark mode
+        run: npm run test:a11y
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report
+          path: audit/a11y
+          if-no-files-found: warn
+          retention-days: 30
+
+  cross-browser:
+    name: Functional suite (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: Install ${{ matrix.browser }}
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Run browser suite on ${{ matrix.browser }}
+        run: node scripts/e2e/run.mjs
+        env:
+          BROWSER: ${{ matrix.browser }}
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence-${{ matrix.browser }}
+          path: audit/screenshots
+          if-no-files-found: warn
+          retention-days: 14

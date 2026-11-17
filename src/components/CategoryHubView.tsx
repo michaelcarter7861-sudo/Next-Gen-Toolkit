@@ -103,7 +103,7 @@ export function CategoryHubView({
             {renderHubIcon(hub.iconName, 'w-8 h-8')}
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#171927] dark:text-[#171927] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#171927] dark:text-white tracking-tight">
               {hub.name}
             </h1>
             <p className="text-sm text-[#253044] max-w-xl">{hub.description}</p>
@@ -182,7 +182,7 @@ export function CategoryHubView({
 
         <div className="relative w-full md:w-72">
           <Search
-            className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2"
+            className="w-4 h-4 text-[#5B6A80] absolute left-3.5 top-1/2 -translate-y-1/2"
             aria-hidden="true"
           />
           <input
@@ -190,7 +190,7 @@ export function CategoryHubView({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`Search ${hub.name.toLowerCase()}...`}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs text-[#171927] dark:text-[#F8F7FC] placeholder-[#64748B] focus:outline-none focus:border-[#7047EB]"
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs text-[#171927] dark:text-[#F8F7FC] placeholder-[#5B6A80] focus:outline-none focus:border-[#7047EB]"
           />
         </div>
       </div>
@@ -224,7 +224,7 @@ export function CategoryHubView({
                     <h2 className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC] group-hover:text-[#7047EB] transition-colors truncate">
                       {tool.name}
                     </h2>
-                    <p className="text-xs text-[#64748B] dark:text-[#94A3B8] line-clamp-2 mt-1 leading-relaxed">
+                    <p className="text-xs text-[#5B6A80] dark:text-[#94A3B8] line-clamp-2 mt-1 leading-relaxed">
                       {tool.shortDesc}
                     </p>
                   </div>
@@ -253,7 +253,7 @@ export function CategoryHubView({
                 }}
                 className="pt-3 border-t border-[#E8E6F2]/70 dark:border-[#2A2E42]/70 flex items-center justify-between gap-2 cursor-pointer"
               >
-                <div className="text-[11px] font-medium text-[#64748B] dark:text-[#94A3B8] truncate">
+                <div className="text-[11px] font-medium text-[#5B6A80] dark:text-[#94A3B8] truncate">
                   {tool.subCategory} · <span className="font-mono">{tool.specTable.supportedFormats}</span>
                 </div>
                 <ArrowRight
@@ -273,7 +273,7 @@ export function CategoryHubView({
             <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
               Connected Workflows &amp; Technical Standards for {hub.name}
             </h2>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-xs text-[#5B6A80]">
               {editorialPack.editorialSummary}
             </p>
           </div>
@@ -330,7 +330,7 @@ export function CategoryHubView({
                             <ExternalLink className="w-3 h-3 inline shrink-0" aria-hidden="true" />
                           </a>
                           {parts[1]}{' '}
-                          <span className="text-[11px] font-medium text-[#64748B]">
+                          <span className="text-[11px] font-medium text-[#5B6A80]">
                             ({ext.sourceName})
                           </span>
                         </>
@@ -346,7 +346,7 @@ export function CategoryHubView({
                             <span>{ext.keywordAnchor}</span>
                             <ExternalLink className="w-3 h-3 inline shrink-0" aria-hidden="true" />
                           </a>{' '}
-                          <span className="text-[11px] font-medium text-[#64748B]">
+                          <span className="text-[11px] font-medium text-[#5B6A80]">
                             ({ext.sourceName})
                           </span>
                         </>
@@ -370,7 +370,7 @@ export function CategoryHubView({
           <h2 className="text-lg font-bold text-[#171927] dark:text-[#F8F7FC]">
             Frequently Asked Questions About {hub.name}
           </h2>
-          <p className="text-xs text-[#64748B]">
+          <p className="text-xs text-[#5B6A80]">
             Answers to common technical, privacy, and workflow questions about NextGenToolkit {hub.name}.
           </p>
         </div>
@@ -388,7 +388,7 @@ export function CategoryHubView({
               <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-semibold text-[#171927] dark:text-[#F8F7FC] hover:text-[#7047EB]">
                 <span itemProp="name">{faq.q}</span>
                 <ChevronDown
-                  className="w-4 h-4 text-[#64748B] group-open:rotate-180 transition-transform shrink-0 ml-2"
+                  className="w-4 h-4 text-[#5B6A80] group-open:rotate-180 transition-transform shrink-0 ml-2"
                   aria-hidden="true"
                 />
               </summary>
@@ -396,7 +396,7 @@ export function CategoryHubView({
                 itemScope
                 itemProp="acceptedAnswer"
                 itemType="https://schema.org/Answer"
-                className="mt-2 text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed"
+                className="mt-2 text-xs sm:text-sm text-[#5B6A80] dark:text-[#94A3B8] leading-relaxed"
               >
                 <p itemProp="text">
                   <RichSeoText
@@ -434,7 +434,7 @@ export function CategoryHubView({
               }`}
             >
               <div className="text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">{h.name}</div>
-              <div className="text-xs text-[#64748B] mt-0.5">{getToolsByHub(h.id).length} Utilities</div>
+              <div className="text-xs text-[#5B6A80] mt-0.5">{getToolsByHub(h.id).length} Utilities</div>
             </a>
           ))}
         </div>

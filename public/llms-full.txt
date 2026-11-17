@@ -7,7 +7,11 @@
 - **Batch Processing:** Selected tools support multiple inputs and ZIP export. Practical limits depend on available browser memory, file size and the specific tool.
 - **Performance:** Static pre-rendered HTML routes (`index.html` per hub and tool) with Schema.org `@graph` JSON-LD and Latent Semantic Indexing (LSI) entity coverage.
 
-## 2. Complete 25-Tool Technical Specification Matrix
+## 2. Tool Status (read this first)
+- Live tools implement the advertised operation client-side.
+- **Preview tools (PDF to High-Res Images, Browser OCR) do not implement their core engine yet.** They are noindexed, excluded from the sitemap and produce no output. Do not describe them as working converters.
+
+## 3. Complete 25-Tool Technical Specification Matrix
 
 ### Hub 1: Privacy-First PDF & Document Tools (`/pdf-tools/`)
 1. **Offline PDF Compressor (`/pdf-tools/compress-pdf/`)**

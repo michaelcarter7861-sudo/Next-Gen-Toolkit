@@ -27,7 +27,7 @@ export function BreadcrumbsNav({ items, rightSlot, className = '' }: Breadcrumbs
   return (
     <nav
       aria-label="Breadcrumb"
-      className={`flex flex-wrap items-center justify-between gap-2 text-xs text-[#64748B] dark:text-[#94A3B8] ${className}`}
+      className={`flex flex-wrap items-center justify-between gap-2 text-xs text-[#5B6A80] dark:text-[#94A3B8] ${className}`}
     >
       <ol
         itemScope
@@ -48,7 +48,7 @@ export function BreadcrumbsNav({ items, rightSlot, className = '' }: Breadcrumbs
             >
               {idx > 0 && (
                 <ChevronRight
-                  className="w-3.5 h-3.5 text-[#94A3B8] dark:text-[#64748B] shrink-0"
+                  className="w-3.5 h-3.5 text-[#94A3B8] dark:text-[#5B6A80] shrink-0"
                   aria-hidden="true"
                 />
               )}

@@ -7,6 +7,24 @@
     <loc>https://nextgentoolkit.pages.dev/sitemap/</loc>
   </url>
   <url>
+    <loc>https://nextgentoolkit.pages.dev/about/</loc>
+  </url>
+  <url>
+    <loc>https://nextgentoolkit.pages.dev/contact/</loc>
+  </url>
+  <url>
+    <loc>https://nextgentoolkit.pages.dev/privacy/</loc>
+  </url>
+  <url>
+    <loc>https://nextgentoolkit.pages.dev/terms/</loc>
+  </url>
+  <url>
+    <loc>https://nextgentoolkit.pages.dev/editorial-policy/</loc>
+  </url>
+  <url>
+    <loc>https://nextgentoolkit.pages.dev/changelog/</loc>
+  </url>
+  <url>
     <loc>https://nextgentoolkit.pages.dev/text-tools/</loc>
   </url>
   <url>
@@ -50,9 +68,6 @@
   </url>
   <url>
     <loc>https://nextgentoolkit.pages.dev/image-tools/social-media-image-resizer/</loc>
-  </url>
-  <url>
-    <loc>https://nextgentoolkit.pages.dev/image-tools/image-to-text-ocr/</loc>
   </url>
   <url>
     <loc>https://nextgentoolkit.pages.dev/dev-tools/json-formatter-validator/</loc>

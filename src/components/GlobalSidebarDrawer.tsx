@@ -130,7 +130,7 @@ export function GlobalSidebarDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#171927] dark:hover:text-white hover:bg-white dark:hover:bg-[#1C1F2E] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[#5B6A80] hover:text-[#171927] dark:hover:text-white hover:bg-white dark:hover:bg-[#1C1F2E] transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -140,7 +140,7 @@ export function GlobalSidebarDrawer({
         <div className="p-3 border-b border-[#E8E6F2] dark:border-[#2A2E42]">
           <div className="relative">
             <Search
-              className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2"
+              className="w-3.5 h-3.5 text-[#5B6A80] absolute left-3 top-1/2 -translate-y-1/2"
               aria-hidden="true"
             />
             <input
@@ -148,14 +148,14 @@ export function GlobalSidebarDrawer({
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               placeholder="Search tools..."
-              className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-[#F8F7FC] dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs text-[#171927] dark:text-white placeholder-[#64748B] focus:outline-none focus:border-[#7047EB]"
+              className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-[#F8F7FC] dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs text-[#171927] dark:text-white placeholder-[#5B6A80] focus:outline-none focus:border-[#7047EB]"
             />
             {filterQuery && (
               <button
                 type="button"
                 onClick={() => setFilterQuery('')}
                 aria-label="Clear filter"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-[#64748B] hover:text-[#171927] dark:hover:text-white cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-[#5B6A80] hover:text-[#171927] dark:hover:text-white cursor-pointer"
               >
                 ✕
               </button>
@@ -231,7 +231,7 @@ export function GlobalSidebarDrawer({
           {/* Pinned Tools (Names Only) */}
           {!q && favoriteIds.length > 0 && (
             <div className="space-y-1">
-              <div className="px-2.5 flex items-center gap-1.5 text-[11px] font-bold text-[#64748B] dark:text-[#94A3B8]">
+              <div className="px-2.5 flex items-center gap-1.5 text-[11px] font-bold text-[#5B6A80] dark:text-[#94A3B8]">
                 <Star className="w-3 h-3 text-amber-500 fill-amber-400" aria-hidden="true" />
                 <span>Pinned Tools</span>
               </div>
@@ -315,7 +315,7 @@ export function GlobalSidebarDrawer({
                       type="button"
                       onClick={() => toggleHubExpand(hub.id)}
                       aria-label={isExpanded ? `Collapse ${hub.name}` : `Expand ${hub.name}`}
-                      className="p-1 rounded-md text-[#64748B] hover:text-[#171927] dark:hover:text-white cursor-pointer"
+                      className="p-1 rounded-md text-[#5B6A80] hover:text-[#171927] dark:hover:text-white cursor-pointer"
                     >
                       {isExpanded ? (
                         <ChevronDown className="w-3.5 h-3.5" />

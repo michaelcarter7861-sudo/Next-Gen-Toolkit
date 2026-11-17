@@ -47,7 +47,7 @@ export function SeoSitemapView({
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#171927] dark:text-white tracking-tight">
             NextGenToolkit All Tools &amp; Categories Directory
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#5B6A80] dark:text-[#94A3B8] leading-relaxed">
             Browse all {TOOLS_CATALOG.length} browser utilities and {HUBS.length} category hubs in one place. Many tools process data locally in your browser; processing varies by utility, and optional AI or remote-service features may send required data to their providers. Review each tool's processing notes before submitting sensitive information.{' '}
             <a
               href="https://webassembly.org/"
@@ -93,7 +93,7 @@ export function SeoSitemapView({
             <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Tool-Specific Processing &amp; Privacy Notes</span>
           </div>
-          <div className="flex items-center gap-2 text-[#64748B] dark:text-[#94A3B8]">
+          <div className="flex items-center gap-2 text-[#5B6A80] dark:text-[#94A3B8]">
             <CheckCircle2 className="w-4 h-4 text-[#7047EB] shrink-0" aria-hidden="true" />
             <span>{TOOLS_CATALOG.length} Free Utilities · {HUBS.length} Categories</span>
           </div>
@@ -107,7 +107,7 @@ export function SeoSitemapView({
             <Layers className="w-4 h-4 text-[#7047EB]" aria-hidden="true" />
             <span>Main Categories</span>
           </h2>
-          <span className="text-xs font-semibold text-[#64748B]">{HUBS.length} Categories</span>
+          <span className="text-xs font-semibold text-[#5B6A80]">{HUBS.length} Categories</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -123,7 +123,7 @@ export function SeoSitemapView({
               <div className="text-sm font-bold text-[#171927] dark:text-white group-hover:text-[#7047EB] transition-colors">
                 NextGenToolkit Home
               </div>
-              <p className="text-xs text-[#64748B] line-clamp-1 mt-1">
+              <p className="text-xs text-[#5B6A80] line-clamp-1 mt-1">
                 Master workbench, live search &amp; popular utilities
               </p>
             </div>
@@ -146,7 +146,7 @@ export function SeoSitemapView({
                   <div className="text-sm font-bold text-[#171927] dark:text-white group-hover:text-[#7047EB] transition-colors">
                     {hub.name} ({count})
                   </div>
-                  <p className="text-xs text-[#64748B] line-clamp-1 mt-1">{hub.description}</p>
+                  <p className="text-xs text-[#5B6A80] line-clamp-1 mt-1">{hub.description}</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-[#7047EB] shrink-0" aria-hidden="true" />
               </a>
@@ -202,7 +202,7 @@ export function SeoSitemapView({
                         <div className="text-sm font-bold text-[#171927] dark:text-white group-hover:text-[#7047EB] transition-colors truncate">
                           {tool.name}
                         </div>
-                        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] line-clamp-1 mt-0.5">
+                        <p className="text-xs text-[#5B6A80] dark:text-[#94A3B8] line-clamp-1 mt-0.5">
                           {tool.shortDesc}
                         </p>
                       </div>

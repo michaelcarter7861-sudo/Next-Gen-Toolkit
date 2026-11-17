@@ -1,0 +1,41 @@
+{
+  "name": "NextGenToolkit — PDF, image, text and developer tools",
+  "short_name": "NextGenToolkit",
+  "description": "Compress PDFs and images to an exact KB, convert PDF to JPG, format JSON and 20 more tools. Most files are processed inside your browser.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#F8F7FC",
+  "theme_color": "#6D48E8",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "utilities", "photo"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Compress an image to an exact KB",
+      "short_name": "Image to KB",
+      "url": "/image-tools/compress-image-to-kb/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Compress a PDF",
+      "short_name": "Compress PDF",
+      "url": "/pdf-tools/compress-pdf/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Convert PDF pages to images",
+      "short_name": "PDF to JPG",
+      "url": "/pdf-tools/pdf-to-image/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

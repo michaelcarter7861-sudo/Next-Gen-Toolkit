@@ -48,7 +48,7 @@ export function ImageCompareModal({ item, onClose, onDownload }: ImageCompareMod
               <h2 className="text-sm sm:text-base font-extrabold text-[#171927] dark:text-white truncate">
                 Before &amp; After Quality Inspector: {item.name}
               </h2>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] tabular-nums">
+              <p className="text-xs text-[#5B6A80] dark:text-[#94A3B8] tabular-nums">
                 Original {(item.originalSize / 1024).toFixed(1)} KB vs Output{' '}
                 {(item.outputSize / 1024).toFixed(1)} KB
                 {savedPct > 0 ? ` (${savedPct}% smaller)` : ''}
@@ -60,7 +60,7 @@ export function ImageCompareModal({ item, onClose, onDownload }: ImageCompareMod
             type="button"
             onClick={onClose}
             aria-label="Close visual comparison"
-            className="p-2 rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-[#171927] dark:hover:text-white cursor-pointer"
+            className="p-2 rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80] hover:text-[#171927] dark:hover:text-white cursor-pointer"
           >
             <X className="w-4 h-4" aria-hidden="true" />
           </button>
@@ -112,7 +112,7 @@ export function ImageCompareModal({ item, onClose, onDownload }: ImageCompareMod
           {/* Slider Control & Download Footer */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">
+              <div className="flex items-center justify-between text-xs font-semibold text-[#5B6A80] dark:text-[#94A3B8]">
                 <label htmlFor="image-split-slider">Drag Split Divider ({splitPercent}%)</label>
                 <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
                   <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />

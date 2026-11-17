@@ -39,6 +39,14 @@ import {
   getHubById,
   getToolsByHub,
 } from './data/toolsCatalog';
+
+// Counts come from the catalogue so they cannot drift from reality.
+// Owner decision (2026-11-16): keep the AI assistant code, but do not advertise
+// it until a backend actually exists. No entry point is rendered while false.
+const AI_ASSISTANT_ENABLED = false;
+
+const LIVE_TOOL_COUNT = TOOLS_CATALOG.filter((tool) => tool.status !== 'preview').length;
+const BROWSER_LOCAL_COUNT = LIVE_TOOL_COUNT;
 import { HOME_FAQS } from './data/seoSchemaData';
 import { SchemaHeadInjector } from './components/SchemaHeadInjector';
 import { CommandModal, AiWorkflowModal } from './components/CommandModal';
@@ -60,7 +68,16 @@ export default function App() {
   const [activeView, setActiveView] = useState<'home' | 'hub' | 'tool' | 'sitemap'>('home');
   const [selectedHubId, setSelectedHubId] = useState<HubId>('image-tools');
   const [selectedToolId, setSelectedToolId] = useState<string>('compress-image-to-kb');
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('ngt_theme_v1');
+      if (saved === 'dark') return true;
+      if (saved === 'light') return false;
+      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+    } catch {
+      return false;
+    }
+  });
 
   // Homepage live search query & quick-category filter
   const [heroSearch, setHeroSearch] = useState<string>('');
@@ -119,10 +136,11 @@ export default function App() {
   // Toggle dark class on <html>
   useEffect(() => {
     const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    root.classList.toggle('dark', darkMode);
+    try {
+      localStorage.setItem('ngt_theme_v1', darkMode ? 'dark' : 'light');
+    } catch {
+      // Ignore storage errors (private mode, quota).
     }
   }, [darkMode]);
 
@@ -216,7 +234,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const navigateToTool = (toolId: string) => {
+  const navigateToTool = (toolId: string, preset?: { kb?: number }) => {
     const found = getToolById(toolId);
     if (found) {
       setChainedPayload(null);
@@ -224,7 +242,8 @@ export default function App() {
       setSelectedHubId(found.hubId);
       setActiveView('tool');
       recordRecentTool(found.id);
-      window.history.pushState({}, '', toPublicPath(found.canonicalPath));
+      const query = preset?.kb ? `?kb=${preset.kb}` : '';
+      window.history.pushState({}, '', `${toPublicPath(found.canonicalPath)}${query}`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -383,7 +402,7 @@ export default function App() {
           {/* Zone 2: 5 Clean Category Navigation Links (Crawlable <a> tags) */}
           <nav
             aria-label="Primary Categories"
-            className="hidden lg:flex items-center gap-6 text-sm font-semibold text-[#253044] dark:text-[#CBD5E1]"
+            className="hidden xl:flex items-center gap-5 text-sm font-semibold text-[#253044] dark:text-[#CBD5E1]"
           >
             {HUBS.map((hub) => (
               <a
@@ -409,8 +428,9 @@ export default function App() {
             <button
               type="button"
               onClick={() => setIsCommandOpen(true)}
-              aria-label="Quick search tools (Ctrl+K)"
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F8F7FC] dark:bg-[#252A3F] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#64748B] dark:text-[#CBD5E1] hover:border-[#7047EB] transition-colors cursor-pointer"
+              aria-keyshortcuts="Control+K Meta+K"
+              title="Open the command palette (Ctrl+K)"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F8F7FC] dark:bg-[#252A3F] border border-[#E8E6F2] dark:border-[#2A2E42] text-xs font-semibold text-[#5B6A80] dark:text-[#CBD5E1] hover:border-[#7047EB] transition-colors cursor-pointer"
             >
               <Search className="w-3.5 h-3.5 text-[#7047EB]" aria-hidden="true" />
               <span>Quick Switch</span>
@@ -467,6 +487,7 @@ export default function App() {
             onSelectHub={navigateToHub}
             onSelectTool={navigateToTool}
             onOpenAiModal={openAiModal}
+            aiAssistantEnabled={AI_ASSISTANT_ENABLED}
             isFavorite={favoriteIds.includes(activeTool.id)}
             onToggleFavorite={toggleFavorite}
             chainedPayload={chainedPayload}
@@ -486,25 +507,21 @@ export default function App() {
           /* MASTER HOMEPAGE (Clean Hero without SEO Sitemap/Schema Clutter at Top) */
           <div className="space-y-14 pb-16">
             {/* HERO SECTION */}
-            <section className="relative overflow-hidden pt-8 pb-12 sm:pt-12 sm:pb-16 border-b border-[#E8E6F2]/70 dark:border-[#2A2E42]/60 bg-gradient-to-b from-[#F4F0FF]/70 via-[#F8F7FC] to-[#F8F7FC] dark:from-[#1A1830] dark:via-[#131520] dark:to-[#131520]">
+            <section className="ngt-sheen relative overflow-hidden pt-6 pb-10 sm:pt-8 sm:pb-12 border-b border-[#E8E6F2]/70 dark:border-[#2A2E42]/60 bg-[#F8F7FC] dark:bg-[#131520]">
               <div className="max-w-[1200px] mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
                 {/* Left / Center Hero Column */}
                 <div className="lg:col-span-7 text-center lg:text-left space-y-5">
-                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-xs font-bold uppercase tracking-wider text-[#7047EB] dark:text-[#A78BFA]">
-                    <span>Your Digital Toolkit</span>
-                    <span aria-hidden="true">·</span>
-                    <span>25 Free Browser Utilities</span>
-                    <span aria-hidden="true">·</span>
-                    <span>Local Processing on Core Tools</span>
-                  </div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#7047EB] dark:text-[#A78BFA]">
+                    {LIVE_TOOL_COUNT} tools available now · {BROWSER_LOCAL_COUNT} process files entirely on your device
+                  </p>
 
                   <h1
                     className="text-4xl sm:text-5xl lg:text-[54px] font-extrabold text-[#171927] dark:text-white tracking-tight leading-[1.12]"
                     style={{ textWrap: 'balance' }}
                   >
-                    Get more done.{' '}
+                    Free PDF, image, text &amp; developer tools
                     <span className="block text-[#7047EB] dark:text-[#9F7AEA]">
-                      With less effort.
+                      that run in your browser.
                     </span>
                   </h1>
 
@@ -515,13 +532,13 @@ export default function App() {
                   {/* Search Bar */}
                   <div className="max-w-xl mx-auto lg:mx-0 pt-1">
                     <div className="flex items-center bg-white dark:bg-[#1C1F2E] rounded-2xl p-1.5 shadow-lg shadow-[#7047EB]/8 border border-[#E8E6F2] dark:border-[#2A2E42] focus-within:border-[#7047EB] transition-colors">
-                      <Search className="w-5 h-5 text-[#64748B] ml-3.5 shrink-0" aria-hidden="true" />
+                      <Search className="w-5 h-5 text-[#5B6A80] ml-3.5 shrink-0" aria-hidden="true" />
                       <input
                         type="text"
                         value={heroSearch}
                         onChange={(e) => setHeroSearch(e.target.value)}
                         placeholder="Search for tools... (e.g. image compressor, PDF merge, word counter)"
-                        className="w-full px-3 py-2.5 text-sm bg-transparent text-[#171927] dark:text-white placeholder-[#64748B] focus:outline-none"
+                        className="w-full px-3 py-2.5 text-sm bg-transparent text-[#171927] dark:text-white placeholder-[#5B6A80] focus:outline-none"
                       />
                       <button
                         type="button"
@@ -539,11 +556,29 @@ export default function App() {
                       </button>
                     </div>
 
+                    {/* Exact-size entry point: the one job this site does better
+                        than the big suites, one click from the first screen. */}
+                    <div className="mt-3 flex flex-wrap items-center justify-center lg:justify-start gap-2">
+                      <span className="text-xs font-semibold text-[#475569] dark:text-[#94A3B8]">
+                        Need a photo under a size limit?
+                      </span>
+                      {([20, 50, 100] as const).map((kb) => (
+                        <button
+                          key={kb}
+                          type="button"
+                          onClick={() => navigateToTool('compress-image-to-kb', { kb })}
+                          className="min-h-9 px-2.5 rounded-lg border border-[#D9D5EC] dark:border-[#2A2E42] bg-white dark:bg-[#1C1F2E] text-xs font-bold tabular-nums text-[#171927] dark:text-white hover:border-[#7047EB] hover:text-[#7047EB] transition-colors"
+                        >
+                          {kb} KB
+                        </button>
+                      ))}
+                    </div>
+
                     {/* Live Search Dropdown Results */}
                     {homeSearchTrimmed && (
                       <div className="mt-2 rounded-2xl bg-white dark:bg-[#1C1F2E] border border-[#E8E6F2] dark:border-[#2A2E42] shadow-xl p-2 max-h-72 overflow-y-auto text-left">
                         {homeFilteredTools.length === 0 ? (
-                          <div className="p-3 text-xs text-[#64748B]">
+                          <div className="p-3 text-xs text-[#5B6A80]">
                             No matching tools found for &quot;{heroSearch}&quot;.
                           </div>
                         ) : (
@@ -564,7 +599,7 @@ export default function App() {
                                     {t.subCategory}
                                   </span>
                                 </div>
-                                <div className="text-xs text-[#64748B] truncate">{t.shortDesc}</div>
+                                <div className="text-xs text-[#5B6A80] truncate">{t.shortDesc}</div>
                               </div>
                               <ArrowRight className="w-3.5 h-3.5 text-[#7047EB] shrink-0" aria-hidden="true" />
                             </a>
@@ -728,7 +763,8 @@ export default function App() {
                   </a>
                 ))}
 
-                <button
+                {AI_ASSISTANT_ENABLED && (
+<button
                   type="button"
                   onClick={() => openAiModal('')}
                   style={{ backgroundColor: darkMode ? undefined : '#F4E5FF' }}
@@ -749,6 +785,7 @@ export default function App() {
                     </p>
                   </div>
                 </button>
+                  )}
               </div>
             </section>
 
@@ -759,7 +796,7 @@ export default function App() {
                   <h2 className="text-xl sm:text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
                     Popular Tools
                   </h2>
-                  <p className="text-xs text-[#64748B] mt-0.5">
+                  <p className="text-xs text-[#5B6A80] mt-0.5">
                     Pin your favorite utilities with a star or filter by category.
                   </p>
                 </div>
@@ -820,7 +857,7 @@ export default function App() {
                             <h3 className="text-sm font-bold text-[#171927] dark:text-white group-hover:text-[#7047EB] transition-colors truncate">
                               {card.title}
                             </h3>
-                            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1 line-clamp-2">
+                            <p className="text-xs text-[#5B6A80] dark:text-[#94A3B8] mt-1 line-clamp-2">
                               {card.desc}
                             </p>
                           </div>
@@ -833,7 +870,7 @@ export default function App() {
                             className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                               isPinned
                                 ? 'text-amber-500 bg-amber-500/10'
-                                : 'text-[#64748B] hover:text-amber-500 hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F]'
+                                : 'text-[#5B6A80] hover:text-amber-500 hover:bg-[#F8F7FC] dark:hover:bg-[#252A3F]'
                             }`}
                           >
                             <Star className={`w-4 h-4 ${isPinned ? 'fill-amber-400' : ''}`} />
@@ -864,7 +901,7 @@ export default function App() {
                       <p className="text-sm font-bold text-[#171927] dark:text-white">
                         No pinned tools yet.
                       </p>
-                      <p className="text-xs text-[#64748B]">
+                      <p className="text-xs text-[#5B6A80]">
                         Click the star icon on any tool card to pin it to your personal workbench.
                       </p>
                     </div>
@@ -895,7 +932,7 @@ export default function App() {
                                   {tool.name}
                                 </h3>
                               </div>
-                              <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1 line-clamp-2">
+                              <p className="text-xs text-[#5B6A80] dark:text-[#94A3B8] mt-1 line-clamp-2">
                                 {tool.shortDesc}
                               </p>
                             </a>
@@ -906,7 +943,7 @@ export default function App() {
                               className={`p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
                                 isPinned
                                   ? 'text-amber-500 bg-amber-500/10'
-                                  : 'text-[#64748B] hover:text-amber-500'
+                                  : 'text-[#5B6A80] hover:text-amber-500'
                               }`}
                             >
                               <Star className={`w-4 h-4 ${isPinned ? 'fill-amber-400' : ''}`} />
@@ -914,7 +951,7 @@ export default function App() {
                           </div>
 
                           <div className="flex items-center justify-between pt-2 border-t border-[#E8E6F2]/60 dark:border-[#2A2E42]/60">
-                            <div className="text-[11px] font-medium text-[#64748B] dark:text-[#94A3B8] truncate">
+                            <div className="text-[11px] font-medium text-[#5B6A80] dark:text-[#94A3B8] truncate">
                               {tool.subCategory} · <span className="font-mono">{tool.specTable.supportedFormats}</span>
                             </div>
                             <a
@@ -939,7 +976,7 @@ export default function App() {
               {/* Recently Used Strip */}
               {recentIds.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2 pt-2">
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-[#64748B]">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-[#5B6A80]">
                     <Clock className="w-3.5 h-3.5 text-[#7047EB]" aria-hidden="true" />
                     <span>Recently Used:</span>
                   </span>
@@ -1005,7 +1042,7 @@ export default function App() {
                   <h2 className="text-xl sm:text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
                     Why Users Switch to NextGenToolkit
                   </h2>
-                  <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] mt-0.5">
+                  <p className="text-xs sm:text-sm text-[#5B6A80] dark:text-[#94A3B8] mt-0.5">
                     Built to solve the four biggest frustrations with traditional cloud utility websites.
                   </p>
                 </div>
@@ -1021,7 +1058,7 @@ export default function App() {
                       <th className="py-3.5 px-4 font-bold text-[#171927] dark:text-white">
                         Real User Need
                       </th>
-                      <th className="py-3.5 px-4 font-bold text-[#64748B]">
+                      <th className="py-3.5 px-4 font-bold text-[#5B6A80]">
                         Traditional Online Tool Sites
                       </th>
                       <th className="py-3.5 px-4 font-bold text-[#7047EB] dark:text-[#C4B5FD]">
@@ -1034,7 +1071,7 @@ export default function App() {
                       <td className="py-3.5 px-4 font-bold text-[#171927] dark:text-white">
                         Exact Portal Size Limits (20KB, 50KB, 100KB)
                       </td>
-                      <td className="py-3.5 px-4 text-[#64748B]">
+                      <td className="py-3.5 px-4 text-[#5B6A80]">
                         Vague &quot;Low / Medium / High&quot; sliders that miss strict exam &amp; visa portal limits
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-emerald-700 dark:text-emerald-400">
@@ -1055,7 +1092,7 @@ export default function App() {
                       <td className="py-3.5 px-4 font-bold text-[#171927] dark:text-white">
                         Confidential PDFs, IDs &amp; API Keys
                       </td>
-                      <td className="py-3.5 px-4 text-[#64748B]">
+                      <td className="py-3.5 px-4 text-[#5B6A80]">
                         Some online tools upload inputs to remote cloud services
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-emerald-700 dark:text-emerald-400">
@@ -1075,7 +1112,7 @@ export default function App() {
                       <td className="py-3.5 px-4 font-bold text-[#171927] dark:text-white">
                         Multi-Step Document &amp; Code Workflows
                       </td>
-                      <td className="py-3.5 px-4 text-[#64748B]">
+                      <td className="py-3.5 px-4 text-[#5B6A80]">
                         Must download output and manually re-upload into the next tool
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-emerald-700 dark:text-emerald-400">
@@ -1107,7 +1144,7 @@ export default function App() {
                       <td className="py-3.5 px-4 font-bold text-[#171927] dark:text-white">
                         Batch Processing &amp; QR Longevity
                       </td>
-                      <td className="py-3.5 px-4 text-[#64748B]">
+                      <td className="py-3.5 px-4 text-[#5B6A80]">
                         &quot;Max 2 files/day&quot; paywalls &amp; redirecting QR codes that expire after 14 days
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-emerald-700 dark:text-emerald-400">
@@ -1136,7 +1173,7 @@ export default function App() {
                   <h2 className="text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
                     Explore All 25 Tools by Category
                   </h2>
-                  <p className="text-sm text-[#64748B] mt-0.5">
+                  <p className="text-sm text-[#5B6A80] mt-0.5">
                     Organized across five categories for everyday document, media, text, and developer tasks.
                   </p>
                 </div>
@@ -1158,7 +1195,7 @@ export default function App() {
                         <h3 className="text-base sm:text-lg font-bold text-[#171927] dark:text-white">
                           {hub.name}
                         </h3>
-                        <span className="text-xs text-[#64748B]">{hubTools.length} tools</span>
+                        <span className="text-xs text-[#5B6A80]">{hubTools.length} tools</span>
                       </div>
                       <a
                         href={toPublicPath(hub.slug)}
@@ -1189,11 +1226,11 @@ export default function App() {
                               <span className="text-sm font-bold text-[#171927] dark:text-white group-hover:text-[#7047EB] transition-colors truncate">
                                 {tool.name}
                               </span>
-                              <span className="px-2 py-0.5 rounded-md bg-[#F8F7FC] dark:bg-[#252A3F] text-[10px] font-medium text-[#64748B] shrink-0">
+                              <span className="px-2 py-0.5 rounded-md bg-[#F8F7FC] dark:bg-[#252A3F] text-[10px] font-medium text-[#5B6A80] shrink-0">
                                 {tool.subCategory}
                               </span>
                             </div>
-                            <p className="text-xs text-[#64748B] dark:text-[#94A3B8] line-clamp-1 mt-1">
+                            <p className="text-xs text-[#5B6A80] dark:text-[#94A3B8] line-clamp-1 mt-1">
                               {tool.shortDesc}
                             </p>
                           </div>
@@ -1221,7 +1258,7 @@ export default function App() {
                     <h2 className="text-xl sm:text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
                       Built for Real-World Deadlines &amp; Strict Technical Limits
                     </h2>
-                    <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8]">
+                    <p className="text-xs sm:text-sm text-[#5B6A80] dark:text-[#94A3B8]">
                       See how students, engineers, and operations teams chain NextGenToolkit utilities together without uploading sensitive files.
                     </p>
                   </div>
@@ -1286,7 +1323,7 @@ export default function App() {
                         <h3 className="text-sm sm:text-base font-extrabold text-[#171927] dark:text-white">
                           {playbook.title}
                         </h3>
-                        <p className="text-xs text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
+                        <p className="text-xs text-[#5B6A80] dark:text-[#94A3B8] leading-relaxed">
                           <strong className="text-[#171927] dark:text-[#E2E8F0]">The Problem:</strong>{' '}
                           <RichSeoText
                             text={playbook.problem}
@@ -1343,7 +1380,7 @@ export default function App() {
                       <h2 className="text-xl sm:text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight mt-0.5">
                         Direct Shortcuts to Specialized Browser Workflows
                       </h2>
-                      <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8]">
+                      <p className="text-xs sm:text-sm text-[#5B6A80] dark:text-[#94A3B8]">
                         Jump directly to the exact utility for your document, media, code, or security task.
                       </p>
                     </div>
@@ -1424,7 +1461,7 @@ export default function App() {
                     <h3 className="text-lg sm:text-xl font-extrabold text-[#171927] dark:text-white tracking-tight mt-0.5">
                       Official Specifications Backing NextGenToolkit Engines
                     </h3>
-                    <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
+                    <p className="text-xs text-[#5B6A80] dark:text-[#94A3B8]">
                       We link directly to the primary technical standards bodies whose specifications govern our client-side encoders and parsers.
                     </p>
                   </div>
@@ -1499,7 +1536,7 @@ export default function App() {
                           >
                             {ref.anchor}
                           </a>
-                          <p className="text-[11px] text-[#64748B] dark:text-[#94A3B8] leading-relaxed">
+                          <p className="text-[11px] text-[#5B6A80] dark:text-[#94A3B8] leading-relaxed">
                             {ref.desc}
                           </p>
                         </div>
@@ -1544,7 +1581,7 @@ export default function App() {
                       <h3 className="text-base font-bold text-[#171927] dark:text-white">
                         {item.step}
                       </h3>
-                      <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] mt-1 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-[#5B6A80] dark:text-[#94A3B8] mt-1 leading-relaxed">
                         {item.desc}
                       </p>
                     </div>
@@ -1559,7 +1596,7 @@ export default function App() {
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
                     <span>Tool-Specific Processing Notes</span>
                   </div>
-                  <p className="text-[#64748B] dark:text-[#94A3B8]">
+                  <p className="text-[#5B6A80] dark:text-[#94A3B8]">
                     Every file you drop into NextGenToolkit is read into local browser memory via the{' '}
                     <a
                       href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer"
@@ -1599,7 +1636,7 @@ export default function App() {
                     <Cpu className="w-4 h-4 text-[#7047EB] shrink-0" aria-hidden="true" />
                     <span>Audited Open Specifications</span>
                   </div>
-                  <p className="text-[#64748B] dark:text-[#94A3B8]">
+                  <p className="text-[#5B6A80] dark:text-[#94A3B8]">
                     Built on official industry standards:{' '}
                     <a
                       href="https://www.iso.org/standard/51502.html"
@@ -1644,7 +1681,7 @@ export default function App() {
                     <CheckCircle2 className="w-4 h-4 text-[#7047EB] shrink-0" aria-hidden="true" />
                     <span>Core Web Vitals &amp; Portal Ready</span>
                   </div>
-                  <p className="text-[#64748B] dark:text-[#94A3B8]">
+                  <p className="text-[#5B6A80] dark:text-[#94A3B8]">
                     Whether you need to{' '}
                     <a
                       href={toPublicPath('/image-tools/bulk-webp-avif-converter/')}
@@ -1693,9 +1730,9 @@ export default function App() {
                 </div>
                 <div className="text-left md:text-right shrink-0 space-y-0.5 tabular-nums">
                   <div className="font-bold text-[#7047EB] dark:text-[#C4B5FD]">
-                    15 Automated Engine Suites Passing
+                    Engine tests run in CI on every change
                   </div>
-                  <div className="text-[#64748B] dark:text-[#94A3B8]">
+                  <div className="text-[#5B6A80] dark:text-[#94A3B8]">
                     Zero Paywalls · Zero Account Required
                   </div>
                 </div>
@@ -1714,7 +1751,7 @@ export default function App() {
                   <h2 className="text-xl sm:text-2xl font-extrabold text-[#171927] dark:text-white tracking-tight">
                     Frequently Asked Questions
                   </h2>
-                  <p className="text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] mt-0.5">
+                  <p className="text-xs sm:text-sm text-[#5B6A80] dark:text-[#94A3B8] mt-0.5">
                     Answers to common questions about local browser privacy, exact KB compression presets, and tool chaining.
                   </p>
                 </div>
@@ -1732,7 +1769,7 @@ export default function App() {
                       <summary className="flex items-center justify-between cursor-pointer list-none text-sm sm:text-base font-bold text-[#171927] dark:text-[#F8F7FC] hover:text-[#7047EB] transition-colors">
                         <span itemProp="name">{faq.q}</span>
                         <ChevronDown
-                          className="w-4 h-4 text-[#64748B] group-open:rotate-180 transition-transform shrink-0 ml-3"
+                          className="w-4 h-4 text-[#5B6A80] group-open:rotate-180 transition-transform shrink-0 ml-3"
                           aria-hidden="true"
                         />
                       </summary>
@@ -1740,7 +1777,7 @@ export default function App() {
                         itemScope
                         itemProp="acceptedAnswer"
                         itemType="https://schema.org/Answer"
-                        className="mt-2.5 text-xs sm:text-sm text-[#64748B] dark:text-[#94A3B8] leading-relaxed"
+                        className="mt-2.5 text-xs sm:text-sm text-[#5B6A80] dark:text-[#94A3B8] leading-relaxed"
                       >
                         <p itemProp="text">
                           <RichSeoText
@@ -1763,6 +1800,17 @@ export default function App() {
           SEMANTIC DARK FOOTER
       ===================================================================== */}
       <footer className="bg-[#171927] text-[#CBD5E1] py-12 border-t border-[#2A2E42]">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-8">
+          <nav aria-label="Site information" className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-[#94A3B8]">
+            <a href={toPublicPath('/about/')} className="hover:text-white">About</a>
+            <a href={toPublicPath('/contact/')} className="hover:text-white">Contact</a>
+            <a href={toPublicPath('/privacy/')} className="hover:text-white">Privacy</a>
+            <a href={toPublicPath('/terms/')} className="hover:text-white">Terms</a>
+            <a href={toPublicPath('/editorial-policy/')} className="hover:text-white">Editorial policy</a>
+            <a href={toPublicPath('/changelog/')} className="hover:text-white">Changelog</a>
+            <a href={toPublicPath('/sitemap/')} className="hover:text-white">All tools</a>
+          </nav>
+        </div>
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
           <div className="space-y-3">
             <div className="flex items-center gap-2.5 text-white font-extrabold text-lg">
@@ -1774,12 +1822,12 @@ export default function App() {
             <p className="text-xs text-[#94A3B8] leading-relaxed">
               Free browser-based utilities for PDF, image, text, and developer tasks. Many core tools process locally; AI and remote-service features may send the data needed for the requested operation to their providers.
             </p>
-            <div className="pt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#94A3B8]">
+            <div className="pt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[#94A3B8]">
               <a
                 href="https://developer.mozilla.org/en-US/docs/Web/API"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-white inline-flex items-center gap-0.5"
+                className="hover:text-white inline-flex min-h-6 items-center gap-1 px-0.5"
               >
                 <span>MDN Web APIs</span>
                 <ExternalLink className="w-2.5 h-2.5" aria-hidden="true" />
@@ -1789,7 +1837,7 @@ export default function App() {
                 href="https://www.w3.org/TR/WebCryptoAPI/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-white inline-flex items-center gap-0.5"
+                className="hover:text-white inline-flex min-h-6 items-center gap-1 px-0.5"
               >
                 <span>W3C WebCrypto</span>
                 <ExternalLink className="w-2.5 h-2.5" aria-hidden="true" />

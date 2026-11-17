@@ -1,4 +1,8 @@
-name: NextGenToolkit SEO Build Check
+name: Production SEO build check
+
+# Validates the exact production configuration (origin, canonical host, sitemap)
+# before a Cloudflare Pages deploy. Kept separate from the pull-request quality
+# gate because it asserts production-only invariants (absolute URLs, robots host).
 
 on:
   push:
@@ -9,8 +13,9 @@ permissions:
   contents: read
 
 jobs:
-  validate-and-build:
+  production-seo:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       SITE_URL: https://nextgentoolkit.pages.dev
       VITE_SITE_URL: https://nextgentoolkit.pages.dev
@@ -23,53 +28,51 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
-      - name: Run utility engine tests
-        run: npm test
-
-      - name: Type-check project
-        run: npm run lint
-
-      - name: Build and generate static SEO pages
+      - name: Build (runs generate-seo-pages and verify-seo-build)
         run: npm run build
 
-      - name: Verify generated SEO routes
+      - name: Assert production invariants
+        shell: bash
         run: |
+          set -euo pipefail
+
           test -f dist/index.html
           test -f dist/404.html
           test -f dist/robots.txt
-          test -f dist/sitemap.xml\n          test -s dist/og-cover.png
-          test -f dist/pdf-tools/compress-pdf/index.html
-          test -f dist/image-tools/compress-image-to-kb/index.html
-          test -f dist/dev-tools/json-formatter-validator/index.html
-          test -f dist/generators/cron-expression-generator/index.html
-          grep -q 'rel="canonical"' dist/pdf-tools/compress-pdf/index.html
-          grep -q 'application/ld+json' dist/pdf-tools/compress-pdf/index.html
-          node --input-type=module <<'NODE'
-          import assert from 'node:assert/strict';
-          import { readFileSync, existsSync } from 'node:fs';
-          const base = new URL(process.env.SITE_URL).pathname.replace(/\/+$/, '');
-          const png = readFileSync('dist/og-cover.png');\n          assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', 'Social preview must be a PNG');\n          assert.equal(png.readUInt32BE(16), 1200, 'Social preview width must be 1200px');\n          assert.equal(png.readUInt32BE(20), 630, 'Social preview height must be 630px');\n          const xml = readFileSync('dist/sitemap.xml', 'utf8');
-          const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
-          assert.equal(urls.length, 32, 'Expected homepage + sitemap + 5 hubs + 25 tool URLs');
-          for (const url of urls) {
-            const pathname = new URL(url).pathname.slice(base.length).replace(/^\/+|\/+$/g, '');
-            const html = pathname ? `dist/${pathname}/index.html` : 'dist/index.html';
-            assert.ok(existsSync(html), `Missing prerendered route: ${html}`);
-            const page = readFileSync(html, 'utf8');
-            assert.ok(page.includes(`<link rel=\"canonical\" href=\"${url}\"`), `Missing canonical: ${url}`);
-            assert.ok(page.includes('<h1>'), `Missing server-rendered heading: ${url}`);
-          }
-          assert.ok(readFileSync('dist/robots.txt', 'utf8').includes('sitemap.xml'));
-          console.log(`Validated ${urls.length} prerendered routes.`);
-          NODE
+          test -f dist/sitemap.xml
+          test -s dist/og-cover.png
+          test -f dist/_headers
 
-      - name: Upload static site artifact for review
-        uses: actions/upload-artifact@v4
-        with:
-          name: nextgentoolkit-static-site
-          path: dist
-          if-no-files-found: error
+          # Trust pages must ship with every build.
+          for page in about contact privacy terms editorial-policy changelog; do
+            test -f "dist/$page/index.html" || { echo "Missing trust page: $page"; exit 1; }
+          done
+
+          # The rasteriser is live now, so its page must be indexable...
+          test -f dist/pdf-tools/pdf-to-image/index.html
+          grep -q 'rel="canonical"' dist/pdf-tools/pdf-to-image/index.html
+          # ...while the OCR page remains honestly quarantined.
+          test -f dist/image-tools/image-to-text-ocr/index.html
+          grep -q 'name="robots" content="noindex' dist/image-tools/image-to-text-ocr/index.html
+          if grep -q 'image-to-text-ocr' dist/sitemap.xml; then
+            echo "Preview tool leaked into the sitemap"; exit 1
+          fi
+
+          # Core SEO invariants for a money page.
+          grep -q 'rel="canonical"' dist/image-tools/compress-image-to-kb/index.html
+          grep -q 'application/ld+json' dist/image-tools/compress-image-to-kb/index.html
+
+          node -e "
+            const fs = require('node:fs');
+            const xml = fs.readFileSync('dist/sitemap.xml', 'utf8');
+            const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
+            if (urls.length < 30) { console.error('Sitemap too small:', urls.length); process.exit(1); }
+            const robots = fs.readFileSync('dist/robots.txt', 'utf8');
+            if (!robots.includes('sitemap.xml')) { console.error('robots.txt missing sitemap'); process.exit(1); }
+            console.log('Production sitemap URLs:', urls.length);
+          "

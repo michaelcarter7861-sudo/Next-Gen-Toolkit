@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ByteGauge, type ByteGaugeProps } from './ByteGauge';
 import {
   UploadCloud,
   Zap,
@@ -52,6 +53,12 @@ import { NineZoneSeoContent } from './NineZoneSeoContent';
 import { BreadcrumbsNav } from './BreadcrumbsNav';
 import { ImageCompareModal } from './ImageCompareModal';
 
+/** Honest, user-facing status messages for features whose engine is not shipped yet. */
+
+
+export const OCR_NOTICE =
+  'OCR is not available in this build. No text-recognition engine is bundled, so this tool does not extract text from images yet. The previous version echoed input text and presented it as recognised output, which was misleading. Your image is untouched and was not uploaded anywhere.';
+
 export interface ChainedToolPayload {
   text?: string;
   files?: File[];
@@ -64,6 +71,8 @@ interface ToolWorkspaceProps {
   onSelectHub: (hubId: HubId) => void;
   onSelectTool: (toolId: string) => void;
   onOpenAiModal: (context: string) => void;
+  /** The AI assistant has no working backend in the static deployment. */
+  aiAssistantEnabled?: boolean;
   isFavorite?: boolean;
   onToggleFavorite?: (toolId: string) => void;
   chainedPayload?: ChainedToolPayload | null;
@@ -93,6 +102,7 @@ export function ToolWorkspace({
   onSelectHub,
   onSelectTool,
   onOpenAiModal,
+  aiAssistantEnabled = false,
   isFavorite = false,
   onToggleFavorite,
   chainedPayload = null,
@@ -115,6 +125,13 @@ export function ToolWorkspace({
   const [processedItems, setProcessedItems] = useState<ProcessedFileItem[]>([]);
   const [forensicTable, setForensicTable] = useState<Record<string, string> | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  // Cooperative cancellation: engines check this between files and between PDF
+  // pages, so Cancel stops real work instead of only hiding the spinner.
+  const cancelRequestedRef = useRef(false);
+  const [cancelAvailable, setCancelAvailable] = useState(false);
+  const [processingNotice, setProcessingNotice] = useState<string | null>(null);
+  const [gauge, setGauge] = useState<ByteGaugeProps | null>(null);
+  const processedItemsRef = useRef<ProcessedFileItem[]>([]);
   const [executionDurationMs, setExecutionDurationMs] = useState<number | null>(null);
   const [chainedFromLabel, setChainedFromLabel] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -123,10 +140,22 @@ export function ToolWorkspace({
 
   // Tool-Specific Control States
   const [qualitySlider, setQualitySlider] = useState<number>(80);
-  const [targetKb, setTargetKb] = useState<number>(100);
+  const [targetKb, setTargetKb] = useState<number>(() => {
+    // Deep links such as /image-tools/compress-image-to-kb/?kb=20 land with the
+    // preset already selected instead of forcing a second click.
+    try {
+      const preset = Number(new URLSearchParams(window.location.search).get('kb'));
+      if ([10, 20, 50, 100, 200, 500].includes(preset)) return preset;
+    } catch {
+      // Ignore malformed URLs.
+    }
+    return 100;
+  });
   const [imageOutputFormat, setImageOutputFormat] = useState<'image/webp' | 'image/jpeg' | 'image/png'>('image/webp');
   const [pdfRotation, setPdfRotation] = useState<number>(0);
-  const [pdfRangeSyntax, setPdfRangeSyntax] = useState<string>('1-2, 4');
+  // Splitting needs an explicit range; rendering defaults to the whole document.
+  const [pdfRangeSyntax, setPdfRangeSyntax] = useState<string>('1-2');
+  const [pdfImagePages, setPdfImagePages] = useState<string>('all');
   const [pdfDpi, setPdfDpi] = useState<150 | 300 | 600>(300);
   const [pdfPageSize, setPdfPageSize] = useState<'A4' | 'Letter' | 'Fit'>('A4');
   const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('portrait');
@@ -463,13 +492,11 @@ export function ToolWorkspace({
           break;
         }
         case 'image-to-text-ocr': {
-          if (!inputText) {
-            setOutputText(
-              `INVOICE #NGT-2026-8841   DATE: 2026-11-13\nGPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)\nDEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100\nPORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop\nOCR VERIFICATION LINE: Pack my box with five dozen liquor jugs.`
-            );
-          } else {
-            setOutputText(inputText);
-          }
+          // No OCR engine is bundled in this build. Previously this branch echoed
+          // the input (or canned sample text) and presented it as recognised text.
+          // Emitting nothing is the only honest option until tesseract.js ships.
+          setOutputText('');
+          setProcessingNotice(OCR_NOTICE);
           break;
         }
       }
@@ -519,7 +546,15 @@ export function ToolWorkspace({
       if (filesToProcess.length === 0) return;
       const t0 = performance.now();
       setIsProcessing(true);
+      cancelRequestedRef.current = false;
+      setCancelAvailable(true);
       setForensicTable(null);
+      setProcessingNotice(null);
+      setGauge(null);
+      // Release the previous run's blob URLs so long sessions cannot leak memory.
+      for (const previous of processedItemsRef.current) {
+        if (previous.previewUrl) URL.revokeObjectURL(previous.previewUrl);
+      }
 
       try {
         // Keep the heavy PDF/image/ZIP engines out of the initial page bundle.
@@ -528,17 +563,42 @@ export function ToolWorkspace({
 
         if (tool.id === 'compress-pdf') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.compressPdfToTargetKb(f, targetKb);
+            const statusLabel =
+              res.status === 'met-target'
+                ? `Target met (≤ ${targetKb} KB)`
+                : res.status === 'already-below-target'
+                  ? 'Already under the limit — returned unchanged'
+                  : res.status === 'no-gain'
+                    ? 'No gain possible — original returned unchanged'
+                    : `Optimised, target NOT met (${Math.round(res.compressedSize / 1024)} KB)`;
+            if (f === filesToProcess[0]) {
+              setGauge({
+                originalBytes: res.originalSize,
+                outputBytes: res.compressedSize,
+                targetBytes: targetKb * 1024,
+                targetMet: res.targetMet,
+                statusLabel,
+                details: [`${res.pageCount} page${res.pageCount === 1 ? '' : 's'}`, 'structure rebuilt, page layout preserved'],
+              });
+            }
             results.push({
               id: `${f.name}-${Date.now()}`,
-              name: `${f.name.replace(/\.pdf$/i, '')}-compressed-${targetKb}kb.pdf`,
+              name: `${f.name.replace(/\.pdf$/i, '')}-optimised.pdf`,
               originalSize: res.originalSize,
               outputSize: res.compressedSize,
               mimeType: 'application/pdf',
               blob: res.blob,
               metaSummary: {
                 Pages: String(res.pageCount),
-                Savings: `${res.savingsPercent}% Reduced`,
+                Change:
+                  res.savingsPercent > 0
+                    ? `${res.savingsPercent}% smaller`
+                    : res.returnedOriginal
+                      ? '0% — original returned'
+                      : '0%',
+                Status: statusLabel,
               },
             });
           }
@@ -558,6 +618,7 @@ export function ToolWorkspace({
           });
         } else if (tool.id === 'split-pdf') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.splitPdfByRangesClient(f, pdfRangeSyntax);
             results.push({
               id: `split-${f.name}`,
@@ -573,9 +634,53 @@ export function ToolWorkspace({
             });
           }
         } else if (tool.id === 'pdf-to-image') {
-          const first = filesToProcess[0];
-          const rendered = await binary.renderPdfSummaryPreviewImages(first, pdfDpi, imageOutputFormat);
-          results.push(...rendered);
+          // Real rasterisation with pdf.js. The module (and its worker) is only
+          // fetched when this tool runs, so the rest of the site keeps its bundle.
+          const raster = await import('../utils/pdfRasterBrowser');
+          for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
+            const rendered = await raster.renderPdfPagesInBrowser(f, {
+              pages: pdfImagePages.trim() || 'all',
+              dpi: pdfDpi,
+              format: imageOutputFormat,
+              quality: qualitySlider / 100,
+              shouldAbort: () => cancelRequestedRef.current,
+            });
+            if (rendered.pages.length === 0) {
+              setProcessingNotice('No pages matched the page selection.');
+            }
+            if (rendered.skipped > 0) {
+              const reason =
+                rendered.truncatedReason === 'cancelled'
+                  ? 'you cancelled the run'
+                  : rendered.truncatedReason === 'pixel-budget'
+                    ? 'the per-document pixel budget was reached (high DPI on a long document needs more memory than this device should give)'
+                    : 'the per-run page cap was reached';
+              setProcessingNotice(
+                `Rendered ${rendered.pages.length} page${rendered.pages.length === 1 ? '' : 's'}. ${rendered.skipped} more were skipped because ${reason}. Lower the DPI or render them in a second run.`
+              );
+            }
+            for (const page of rendered.pages) {
+              const blob = new Blob([page.bytes as unknown as BlobPart], { type: page.mime });
+              results.push({
+                id: `${f.name}-p${page.pageNumber}-${Date.now()}`,
+                name: page.name,
+                originalSize: f.size,
+                outputSize: blob.size,
+                mimeType: page.mime,
+                blob,
+                previewUrl: URL.createObjectURL(blob),
+                metaSummary: {
+                  Page: `${page.pageNumber} of ${rendered.pageCount}`,
+                  Dimensions: `${page.width} × ${page.height} px`,
+                  'Render DPI': page.dpiReduced
+                    ? `${page.dpi} DPI (lowered from ${pdfDpi} DPI to stay inside browser memory limits)`
+                    : `${page.dpi} DPI`,
+                  Format: page.mime.replace('image/', '').toUpperCase(),
+                },
+              });
+            }
+          }
         } else if (tool.id === 'image-to-pdf') {
           const res = await binary.convertImagesToPdfClient(filesToProcess, {
             pageSize: pdfPageSize,
@@ -598,6 +703,7 @@ export function ToolWorkspace({
           });
         } else if (tool.id === 'pdf-metadata-cleaner') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.inspectAndCleanPdfMetadata(f, true);
             setForensicTable(res.metadata);
             results.push({
@@ -612,23 +718,57 @@ export function ToolWorkspace({
           }
         } else if (tool.id === 'compress-image-to-kb') {
           for (const f of filesToProcess) {
-            const res = await binary.compressImageToExactKbClient(f, targetKb);
+            if (cancelRequestedRef.current) break;
+            const res = await binary.compressImageToExactKbClient(f, targetKb, imageOutputFormat);
+            const statusLabel =
+              res.status === 'met-target'
+                ? `Target met (≤ ${targetKb} KB)`
+                : res.status === 'already-below-target'
+                  ? 'Already under the limit — returned unchanged'
+                  : res.status === 'best-effort'
+                    ? `Best effort — still above target (${(res.outputSize / 1024).toFixed(1)} KB)`
+                    : 'Target unreachable at usable quality';
+            if (f === filesToProcess[0]) {
+              setGauge({
+                originalBytes: res.originalSize,
+                outputBytes: res.outputSize,
+                targetBytes: targetKb * 1024,
+                targetMet: res.targetMet,
+                statusLabel,
+                details: [
+                  `${res.actualMime.replace('image/', '').toUpperCase()}`,
+                  `${res.finalDimensions}${res.scaled ? ' (scaled to fit the limit)' : ' (native dimensions)'}`,
+                  res.achievedQuality === null ? 'lossless PNG' : `quality ${res.achievedQuality}%`,
+                ],
+              });
+            }
             results.push({
               ...res,
               metaSummary: {
                 'Target Limit': `≤ ${targetKb} KB`,
-                'Quality Reached': `${res.achievedQuality}% (${res.iterations} binary steps)`,
-                Dimensions: res.dimensions,
+                Result: statusLabel,
+                Output: `${res.actualMime.replace('image/', '').toUpperCase()} · ${res.finalDimensions}`,
+                ...(res.formatFallback
+                  ? { Format: `This browser could not encode ${res.requestedMime.replace('image/', '').toUpperCase()} — saved as ${res.actualMime.replace('image/', '').toUpperCase()}` }
+                  : res.conversionSkipped
+                    ? { Format: `Kept as ${res.actualMime.replace('image/', '').toUpperCase()} — the file already fits the limit, so converting it would only lose quality` }
+                    : {}),
+                ...(res.achievedQuality === null
+                  ? { Lossless: res.scaled ? 'PNG kept lossless; resolution reduced to reach the limit' : 'PNG kept lossless' }
+                  : { 'Quality Reached': `${res.achievedQuality}% (${res.iterations} passes)` }),
+                ...(res.transparencyNote ? { Transparency: res.transparencyNote } : {}),
               },
             });
           }
         } else if (tool.id === 'bulk-webp-avif-converter') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.transcodeImageClient(f, imageOutputFormat, qualitySlider / 100);
             results.push(res);
           }
         } else if (tool.id === 'exif-metadata-remover') {
           for (const f of filesToProcess) {
+            if (cancelRequestedRef.current) break;
             const res = await binary.inspectAndScrubExifClient(f);
             setForensicTable(res.forensicTags);
             results.push(res.cleanItem);
@@ -638,10 +778,31 @@ export function ToolWorkspace({
           results.push(...pack);
         }
 
+        processedItemsRef.current = results;
         setProcessedItems(results);
         setExecutionDurationMs(Math.max(1, Math.round(performance.now() - t0)));
+        if (cancelRequestedRef.current) {
+          setProcessingNotice(
+            results.length === 0
+              ? 'Cancelled before the first file finished. Nothing was written and no file left your device.'
+              : `Cancelled. ${results.length} finished file${results.length === 1 ? '' : 's'} kept below — the rest were not started.`
+          );
+        }
+      } catch (error) {
+        // Without this the engine's message ("Page 9 does not exist in this 1-page PDF.")
+        // was only an unhandled rejection: the spinner stopped and the user got nothing.
+        const message = error instanceof Error ? error.message : String(error);
+        setProcessedItems([]);
+        processedItemsRef.current = [];
+        setGauge(null);
+        setProcessingNotice(
+          /does not exist|no pages|matched/i.test(message)
+            ? `${message.replace(/\.$/, '')}. Use “all”, a single page or a range inside the document.`
+            : message
+        );
       } finally {
         setIsProcessing(false);
+        setCancelAvailable(false);
       }
     },
     [
@@ -649,6 +810,7 @@ export function ToolWorkspace({
       targetKb,
       pdfRotation,
       pdfRangeSyntax,
+      pdfImagePages,
       pdfDpi,
       imageOutputFormat,
       pdfPageSize,
@@ -678,9 +840,9 @@ export function ToolWorkspace({
       const sampleImg = await createSampleImageFile('nextgentoolkit-highres-sample.jpg');
       setUploadedFiles([sampleImg]);
       if (tool.id === 'image-to-text-ocr') {
-        setInputText(
-          `INVOICE #NGT-2025-8841   DATE: 2025-02-20\nGPS CAMERA TAG: 37.7749 N, 122.4194 W (San Francisco, CA)\nDEVICE MODEL: Sony Alpha ILCE-7RM5 • f/2.8 • 1/500s • ISO 100\nPORTAL COMPLIANCE TARGET: 20 KB / 50 KB / 100 KB Exact Byte Loop\nOCR VERIFICATION LINE: Pack my box with five dozen liquor jugs.`
-        );
+        // No canned "recognised" text: an OCR preview must not invent output.
+        setInputText('');
+        setProcessingNotice(OCR_NOTICE);
       }
     } else {
       setInputText(SAMPLE_TEXT_PRESETS[tool.id] || 'NextGenToolkit Sample Input');
@@ -748,13 +910,25 @@ export function ToolWorkspace({
     });
   };
 
+  /**
+   * Firefox only starts a download for an anchor that is attached to the
+   * document; a detached `a.click()` silently does nothing there. Append, click,
+   * remove, and keep the blob URL alive long enough for the browser to read it.
+   */
+  const triggerDownload = useCallback((url: string, filename: string) => {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.rel = 'noopener';
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }, []);
+
   const handleDownloadSingleItem = (item: ProcessedFileItem) => {
-    const url = URL.createObjectURL(item.blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = item.name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    triggerDownload(URL.createObjectURL(item.blob), item.name);
   };
 
   const handleDownloadAllZip = async () => {
@@ -763,12 +937,7 @@ export function ToolWorkspace({
       const zipBlob = await createBatchZipBlob(
         processedItems.map((it) => ({ name: it.name, content: it.blob }))
       );
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nextgentoolkit-${tool.slug}-batch.zip`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      triggerDownload(URL.createObjectURL(zipBlob), `nextgentoolkit-${tool.slug}-batch.zip`);
     } else if (outputText) {
       const { createBatchZipBlob } = await import('../utils/binaryEngines');
       const ext =
@@ -782,12 +951,7 @@ export function ToolWorkspace({
       const zipBlob = await createBatchZipBlob([
         { name: `nextgentoolkit-${tool.slug}-output.${ext}`, content: outputText },
       ]);
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nextgentoolkit-${tool.slug}-archive.zip`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      triggerDownload(URL.createObjectURL(zipBlob), `nextgentoolkit-${tool.slug}-archive.zip`);
     }
   };
 
@@ -861,11 +1025,16 @@ export function ToolWorkspace({
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#171927] dark:text-[#F8F7FC] tracking-tight">
               {tool.name}
             </h1>
-            <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-0.5">
+            {tool.status === 'preview' && (
+              <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 text-[11px] font-bold uppercase tracking-wide">
+                Preview — engine not shipped
+              </span>
+            )}
+            <p className="text-sm text-[#5B6A80] dark:text-[#94A3B8] mt-0.5">
               {tool.valuePropSubtitle}
             </p>
             {TOOL_EDITORIAL_LINKS[tool.id] && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-[#5B6A80] dark:text-[#94A3B8]">
                 {TOOL_EDITORIAL_LINKS[tool.id].internalLinks[0] && (
                   <span>
                     Connected workflow:{' '}
@@ -886,7 +1055,7 @@ export function ToolWorkspace({
                 )}
                 {TOOL_EDITORIAL_LINKS[tool.id].externalLinks[0] && (
                   <>
-                    <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
+                    <span className="text-[#5B6A80] dark:text-[#CBD5E1]">·</span>
                     <span>
                       Specification:{' '}
                       <a
@@ -930,7 +1099,8 @@ export function ToolWorkspace({
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Processing details</span>
           </button>
-          <button
+          {aiAssistantEnabled && (
+<button
             type="button"
             onClick={() => onOpenAiModal(outputText || inputText)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F4E5FF] dark:bg-[#7047EB]/20 text-[#7E22CE] dark:text-[#C4B5FD] text-xs font-semibold hover:bg-[#EDE7FF] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
@@ -938,6 +1108,7 @@ export function ToolWorkspace({
             <Sparkles className="w-3.5 h-3.5" />
             <span>AI Grounded Inspect</span>
           </button>
+            )}
         </div>
       </div>
 
@@ -1060,7 +1231,7 @@ export function ToolWorkspace({
                   setForensicTable(null);
                 }}
                 aria-label="Clear workspace"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[#64748B] hover:text-red-600 transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[#5B6A80] hover:text-red-600 transition-colors whitespace-nowrap shrink-0"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Clear</span>
@@ -1092,7 +1263,7 @@ export function ToolWorkspace({
                 <p className="text-base font-bold text-[#171927] dark:text-[#F8F7FC]">
                   Drop your {tool.hubId === 'pdf-tools' && tool.id !== 'image-to-pdf' ? 'PDF files' : 'images'} here
                 </p>
-                <p className="text-xs text-[#64748B] mt-1 mb-4">or click to browse files</p>
+                <p className="text-xs text-[#5B6A80] mt-1 mb-4">or click to browse files</p>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1103,7 +1274,7 @@ export function ToolWorkspace({
                 >
                   Select {tool.hubId === 'pdf-tools' && tool.id !== 'image-to-pdf' ? 'PDF Files' : 'Images'}
                 </button>
-                <p className="text-xs text-[#64748B] mt-4">
+                <p className="text-xs text-[#5B6A80] mt-4">
                   {tool.specTable.supportedFormats} · Batch capacity depends on file size and available browser memory
                 </p>
               </div>
@@ -1115,7 +1286,7 @@ export function ToolWorkspace({
                     <span className="font-bold text-[#171927] dark:text-[#F8F7FC] tabular-nums">
                       Queued Input Files ({uploadedFiles.length})
                     </span>
-                    <span className="text-[#64748B]">
+                    <span className="text-[#5B6A80]">
                       {uploadedFiles.length > 1
                         ? 'Use arrows to set order before processing'
                         : 'Processed locally in browser RAM'}
@@ -1134,7 +1305,7 @@ export function ToolWorkspace({
                           <span className="font-semibold text-[#171927] dark:text-[#F8F7FC] truncate">
                             {file.name}
                           </span>
-                          <span className="text-[#64748B] font-mono text-[11px] shrink-0 tabular-nums">
+                          <span className="text-[#5B6A80] font-mono text-[11px] shrink-0 tabular-nums">
                             {(file.size / 1024).toFixed(1)} KB
                           </span>
                         </div>
@@ -1146,7 +1317,7 @@ export function ToolWorkspace({
                                 onClick={() => moveQueuedFile(idx, -1)}
                                 disabled={idx === 0}
                                 aria-label={`Move ${file.name} up`}
-                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
                               >
                                 <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
@@ -1155,7 +1326,7 @@ export function ToolWorkspace({
                                 onClick={() => moveQueuedFile(idx, 1)}
                                 disabled={idx === uploadedFiles.length - 1}
                                 aria-label={`Move ${file.name} down`}
-                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
+                                className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80] hover:text-[#7047EB] disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed"
                               >
                                 <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
@@ -1165,7 +1336,7 @@ export function ToolWorkspace({
                             type="button"
                             onClick={() => removeQueuedFile(idx)}
                             aria-label={`Remove ${file.name}`}
-                            className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:text-red-600 cursor-pointer"
+                            className="p-1 rounded border border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80] hover:text-red-600 cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5" aria-hidden="true" />
                           </button>
@@ -1188,7 +1359,7 @@ export function ToolWorkspace({
                         key={k}
                         className="flex items-center justify-between gap-2 bg-white dark:bg-[#151824] px-3 py-1.5 rounded-lg border border-amber-200/60 dark:border-amber-800/40"
                       >
-                        <span className="font-semibold text-[#64748B]">{k}:</span>
+                        <span className="font-semibold text-[#5B6A80]">{k}:</span>
                         <span className="font-mono text-[#171927] dark:text-[#E2E8F0] truncate max-w-[200px]">
                           {v}
                         </span>
@@ -1198,16 +1369,65 @@ export function ToolWorkspace({
                 </div>
               )}
 
+              {/* Honest feature-availability notice (aria-live so screen readers hear it) */}
+              {processingNotice && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 space-y-1"
+                >
+                  <div className="font-bold">Not available yet — nothing was faked</div>
+                  <p className="leading-relaxed">{processingNotice}</p>
+                </div>
+              )}
+
               {/* Processed Batch Queue Results */}
               {isProcessing && (
-                <div className="p-4 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] text-xs font-semibold text-[#7047EB] flex items-center gap-2">
-                  <RotateCcw className="w-4 h-4 animate-spin" />
-                  <span>Processing files inside browser RAM...</span>
+                <div
+                  className="ngt-card p-4 space-y-3"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Processing files"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold text-[#7047EB] dark:text-[#A78BFA] flex items-center gap-2">
+                      <RotateCcw className="w-4 h-4 animate-spin" aria-hidden="true" />
+                      Working inside your browser — nothing is uploaded
+                    </span>
+                    {cancelAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          cancelRequestedRef.current = true;
+                          setProcessingNotice('Cancelling — finishing the file already in progress…');
+                        }}
+                        className="ngt-btn ngt-btn-ghost px-3 py-1.5 text-xs"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2" aria-hidden="true">
+                    <div className="ngt-skeleton h-2.5 w-11/12" />
+                    <div className="ngt-skeleton h-2.5 w-8/12" />
+                  </div>
                 </div>
               )}
 
               {processedItems.length > 0 && (
                 <div className="space-y-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 className="text-sm font-bold text-[#171927] dark:text-white">
+                      Results
+                      <span className="ml-2 font-medium text-[#5B6A80] dark:text-[#94A3B8] tabular-nums">
+                        {processedItems.length} file{processedItems.length === 1 ? '' : 's'}
+                      </span>
+                    </h2>
+                    <span className="text-xs text-[#5B6A80] dark:text-[#94A3B8] tabular-nums">
+                      {(processedItems.reduce((acc, item) => acc + item.outputSize, 0) / 1024).toFixed(1)} KB total
+                    </span>
+                  </div>
+                  {gauge && <ByteGauge {...gauge} />}
                   {/* Local Execution Speed & Savings Receipt */}
                   {(() => {
                     const totalOrig = processedItems.reduce((acc, i) => acc + i.originalSize, 0);
@@ -1220,7 +1440,7 @@ export function ToolWorkspace({
                         <div className="flex flex-wrap items-center gap-2 text-emerald-900 dark:text-emerald-200 font-medium tabular-nums">
                           <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span>
-                            Processed locally in <strong>{executionDurationMs ?? 24} ms</strong>
+                            Processed locally in <strong>{executionDurationMs === null ? '—' : `${executionDurationMs} ms`}</strong>
                           </span>
                           <span>·</span>
                           <span>No File Upload to Processing Server</span>
@@ -1273,7 +1493,7 @@ export function ToolWorkspace({
                               <div className="text-xs sm:text-sm font-bold text-[#171927] dark:text-[#F8F7FC] truncate">
                                 {item.name}
                               </div>
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B] tabular-nums mt-0.5">
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-[#5B6A80] tabular-nums mt-0.5">
                                 <span>{(item.originalSize / 1024).toFixed(1)} KB</span>
                                 <span>→</span>
                                 <span className="font-semibold text-emerald-700 dark:text-emerald-400">
@@ -1400,16 +1620,17 @@ export function ToolWorkspace({
                         const f = items[i].getAsFile();
                         if (f) {
                           setUploadedFiles([f]);
-                          setInputText(
-                            `[OCR Extracted from Clipboard Image: ${f.name || 'screenshot.png'} (${(
-                              f.size / 1024
-                            ).toFixed(1)} KB)]\nINVOICE #NGT-2026-8841   DATE: 2026-11-13\nTOTAL DUE: $1,420.00   STATUS: PAID\n100% Client-Side Browser OCR Extraction Complete.`
+                          // The OCR engine is not shipped. Never invent recognised
+                          // text here: say what actually happened instead.
+                          setInputText('');
+                          setProcessingNotice(
+                            'OCR is not available yet. The image was attached, but no text was extracted — nothing here is guesswork.'
                           );
                         }
                       }
                     }
                   }}
-                  className="p-4 rounded-xl border-2 border-dashed border-[#C7B8F9] dark:border-[#4C3D99] bg-[#F8F7FC] dark:bg-[#151824] text-center text-xs text-[#64748B]"
+                  className="p-4 rounded-xl border-2 border-dashed border-[#C7B8F9] dark:border-[#4C3D99] bg-[#F8F7FC] dark:bg-[#151824] text-center text-xs text-[#5B6A80]"
                 >
                   Press <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-[#1C1F2E] border font-mono">Ctrl+V</kbd> anywhere to paste a screenshot directly from your clipboard, or edit the recognized OCR text below.
                 </div>
@@ -1421,6 +1642,7 @@ export function ToolWorkspace({
                     {tool.id === 'code-diff-checker' ? 'Original Text / Code (A)' : 'Input Source'}
                   </label>
                   <textarea
+                  aria-label="Type, paste, or click Load Sample Data..."
                     id={`ngt-input-${tool.id}`}
                     rows={12}
                     value={inputText}
@@ -1458,7 +1680,9 @@ export function ToolWorkspace({
                     <textarea
                       id={`ngt-output-${tool.id}`}
                       rows={12}
-                      readOnly={tool.id !== 'image-to-text-ocr'}
+                      readOnly
+                      aria-live="polite"
+                      aria-label={`${tool.name} output`}
                       value={outputText}
                       onChange={(e) => setOutputText(e.target.value)}
                       className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#131520] text-[#E2E8F0] p-3.5 font-mono text-xs focus:outline-none leading-relaxed"
@@ -1473,7 +1697,11 @@ export function ToolWorkspace({
                   <label className="block text-xs font-bold text-[#171927] dark:text-[#F8F7FC]">
                     Unified Myers Diff & Git .patch Output
                   </label>
-                  <pre className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#131520] text-[#E2E8F0] p-4 font-mono text-xs overflow-x-auto max-h-64 whitespace-pre-wrap">
+                  <pre
+                    aria-live="polite"
+                    aria-label="Diff output"
+                    className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#131520] text-[#E2E8F0] p-4 font-mono text-xs overflow-x-auto max-h-64 whitespace-pre-wrap"
+                  >
                     {outputText}
                   </pre>
                 </div>
@@ -1493,7 +1721,7 @@ export function ToolWorkspace({
                       <div className="text-sm font-bold text-[#171927] dark:text-[#F8F7FC]">
                         100% Permanent Static QR Code (Never Expires)
                       </div>
-                      <p className="text-xs text-[#64748B]">
+                      <p className="text-xs text-[#5B6A80]">
                         Reed-Solomon Error Correction Level {qrEcc} · ISO/IEC 18004 Vector SVG & 600px PNG
                       </p>
                       <div className="flex flex-wrap items-center gap-2 pt-2">
@@ -1522,25 +1750,25 @@ export function ToolWorkspace({
                 <div className="pt-2 space-y-3">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="p-3 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42]">
-                      <div className="text-xs text-[#64748B]">Estimated BPE Tokens</div>
+                      <div className="text-xs text-[#5B6A80]">Estimated BPE Tokens</div>
                       <div className="text-lg font-extrabold text-[#7047EB] font-mono tabular-nums">
                         {tokenStats.tokens.toLocaleString()}
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42]">
-                      <div className="text-xs text-[#64748B]">Words</div>
+                      <div className="text-xs text-[#5B6A80]">Words</div>
                       <div className="text-lg font-extrabold text-[#171927] dark:text-[#F8F7FC] font-mono tabular-nums">
                         {tokenStats.words.toLocaleString()}
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42]">
-                      <div className="text-xs text-[#64748B]">Characters</div>
+                      <div className="text-xs text-[#5B6A80]">Characters</div>
                       <div className="text-lg font-extrabold text-[#171927] dark:text-[#F8F7FC] font-mono tabular-nums">
                         {tokenStats.chars.toLocaleString()}
                       </div>
                     </div>
                     <div className="p-3 rounded-xl bg-[#F8F7FC] dark:bg-[#151824] border border-[#E8E6F2] dark:border-[#2A2E42]">
-                      <div className="text-xs text-[#64748B]">Lines</div>
+                      <div className="text-xs text-[#5B6A80]">Lines</div>
                       <div className="text-lg font-extrabold text-[#171927] dark:text-[#F8F7FC] font-mono tabular-nums">
                         {tokenStats.lines.toLocaleString()}
                       </div>
@@ -1549,7 +1777,7 @@ export function ToolWorkspace({
 
                   <div className="overflow-x-auto rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42]">
                     <table className="w-full text-left text-xs border-collapse tabular-nums">
-                      <thead className="bg-[#F8F7FC] dark:bg-[#151824] text-[#64748B]">
+                      <thead className="bg-[#F8F7FC] dark:bg-[#151824] text-[#5B6A80]">
                         <tr>
                           <th className="py-2.5 px-3 font-semibold">LLM Model & Tokenizer</th>
                           <th className="py-2.5 px-3 font-semibold">Tokens</th>
@@ -1569,7 +1797,7 @@ export function ToolWorkspace({
                             </td>
                             <td className="py-2.5 px-3 font-mono">${m.inputCostUsd.toFixed(6)}</td>
                             <td className="py-2.5 px-3 font-mono">${m.outputCostUsd.toFixed(6)}</td>
-                            <td className="py-2.5 px-3 font-mono text-[#64748B]">
+                            <td className="py-2.5 px-3 font-mono text-[#5B6A80]">
                               {(m.contextWindow / 1000).toFixed(0)}K
                             </td>
                           </tr>
@@ -1635,6 +1863,7 @@ export function ToolWorkspace({
                   <span className="font-mono text-[#7047EB] font-bold">≤ {targetKb} KB</span>
                 </div>
                 <input
+                  aria-label="Target size in kilobytes"
                   type="range"
                   min={20}
                   max={500}
@@ -1643,7 +1872,7 @@ export function ToolWorkspace({
                   onChange={(e) => setTargetKb(Number(e.target.value))}
                   className="w-full ngt-slider"
                 />
-                <div className="text-[11px] font-semibold text-[#64748B]">
+                <div className="text-[11px] font-semibold text-[#5B6A80]">
                   1-Click Portal &amp; Form Presets:
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -1661,7 +1890,7 @@ export function ToolWorkspace({
                       className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors text-left truncate cursor-pointer ${
                         targetKb === preset.kb
                           ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                          : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B] hover:border-[#7047EB]'
+                          : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80] hover:border-[#7047EB]'
                       }`}
                     >
                       {preset.label}
@@ -1678,9 +1907,10 @@ export function ToolWorkspace({
                     <span className="font-semibold text-[#171927] dark:text-[#F8F7FC]">
                       Quality: {qualitySlider}%
                     </span>
-                    <span className="font-mono text-[#64748B]">{qualitySlider}%</span>
+                    <span className="font-mono text-[#5B6A80]">{qualitySlider}%</span>
                   </div>
                   <input
+                  aria-label="Quality level"
                     type="range"
                     min={10}
                     max={100}
@@ -1695,6 +1925,7 @@ export function ToolWorkspace({
                     Output Format
                   </label>
                   <select
+                  aria-label="Output image format"
                     value={imageOutputFormat}
                     onChange={(e) =>
                       setImageOutputFormat(e.target.value as 'image/webp' | 'image/jpeg' | 'image/png')
@@ -1715,6 +1946,7 @@ export function ToolWorkspace({
                   Normalize Page Rotation
                 </label>
                 <select
+                  aria-label="Page rotation"
                   value={pdfRotation}
                   onChange={(e) => setPdfRotation(Number(e.target.value))}
                   className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] px-3 py-2 text-xs font-medium text-[#171927] dark:text-[#F8F7FC]"
@@ -1733,6 +1965,7 @@ export function ToolWorkspace({
                   Custom Page Range Syntax
                 </label>
                 <input
+                  aria-label="Page range to extract"
                   type="text"
                   value={pdfRangeSyntax}
                   onChange={(e) => setPdfRangeSyntax(e.target.value)}
@@ -1743,25 +1976,71 @@ export function ToolWorkspace({
             )}
 
             {tool.id === 'pdf-to-image' && (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC]">
-                  Render DPI Scale
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {([150, 300, 600] as const).map((dpi) => (
-                    <button
-                      key={dpi}
-                      type="button"
-                      onClick={() => setPdfDpi(dpi)}
-                      className={`py-2 rounded-xl text-xs font-mono font-semibold border ${
-                        pdfDpi === dpi
-                          ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                          : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
-                      }`}
-                    >
-                      {dpi} DPI
-                    </button>
-                  ))}
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <span className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC]">
+                    Render resolution
+                  </span>
+                  <div className="grid grid-cols-3 gap-2" role="group" aria-label="Render resolution">
+                    {([150, 300, 600] as const).map((dpi) => (
+                      <button
+                        key={dpi}
+                        type="button"
+                        aria-pressed={pdfDpi === dpi}
+                        onClick={() => setPdfDpi(dpi)}
+                        className={`min-h-11 py-2 rounded-xl text-xs font-mono font-semibold border ${
+                          pdfDpi === dpi
+                            ? 'bg-[#7047EB] text-white border-[#7047EB]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
+                        }`}
+                      >
+                        {dpi} DPI
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-[#5B6A80] dark:text-[#94A3B8]">
+                    Very high resolutions are lowered automatically on small devices; the result
+                    panel reports the DPI that was actually used.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="ngt-pdf-page-range"
+                    className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC]"
+                  >
+                    Pages (all, or 1-3, 5)
+                  </label>
+                  <input
+                  aria-label="Pages to render as images"
+                    id="ngt-pdf-page-range"
+                    type="text"
+                    inputMode="text"
+                    value={pdfImagePages}
+                    onChange={(e) => setPdfImagePages(e.target.value)}
+                    placeholder="all"
+                    className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] px-3 py-2 min-h-11 text-xs font-mono"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="ngt-pdf-image-format"
+                    className="block text-xs font-semibold text-[#171927] dark:text-[#F8F7FC]"
+                  >
+                    Image format
+                  </label>
+                  <select
+                  aria-label="Output image format"
+                    id="ngt-pdf-image-format"
+                    value={imageOutputFormat}
+                    onChange={(e) =>
+                      setImageOutputFormat(e.target.value as 'image/webp' | 'image/jpeg' | 'image/png')
+                    }
+                    className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] px-3 py-2 min-h-11 text-xs font-medium"
+                  >
+                    <option value="image/png">PNG (lossless)</option>
+                    <option value="image/jpeg">JPEG</option>
+                    <option value="image/webp">WebP</option>
+                  </select>
                 </div>
               </div>
             )}
@@ -1773,6 +2052,7 @@ export function ToolWorkspace({
                     Container Page Size
                   </label>
                   <select
+                  aria-label="PDF page size"
                     value={pdfPageSize}
                     onChange={(e) => setPdfPageSize(e.target.value as 'A4' | 'Letter' | 'Fit')}
                     className="w-full rounded-xl border border-[#E8E6F2] dark:border-[#2A2E42] bg-[#F8F7FC] dark:bg-[#151824] px-3 py-2 text-xs font-medium"
@@ -1793,7 +2073,7 @@ export function ToolWorkspace({
                         type="button"
                         onClick={() => setPdfOrientation(o)}
                         className={`px-2.5 py-1 rounded-lg capitalize font-semibold ${
-                          pdfOrientation === o ? 'bg-[#7047EB] text-white' : 'text-[#64748B]'
+                          pdfOrientation === o ? 'bg-[#7047EB] text-white' : 'text-[#5B6A80]'
                         }`}
                       >
                         {o}
@@ -1803,6 +2083,7 @@ export function ToolWorkspace({
                 </div>
                 <label className="flex items-center gap-2 text-xs cursor-pointer">
                   <input
+                  aria-label="Add page numbers"
                     type="checkbox"
                     checked={pdfStampNumbers}
                     onChange={(e) => setPdfStampNumbers(e.target.checked)}
@@ -1836,7 +2117,7 @@ export function ToolWorkspace({
                         className={`py-1.5 px-2 rounded-lg text-xs font-semibold border ${
                           jsonFormatTab === t.id
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {t.label}
@@ -1862,7 +2143,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg text-xs font-semibold border ${
                           jsonIndent === ind.n
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {ind.label}
@@ -1888,7 +2169,7 @@ export function ToolWorkspace({
                         className={`py-2 rounded-xl text-xs font-semibold uppercase border ${
                           llmPackFormat === fmt
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {fmt} Tags
@@ -1956,7 +2237,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg text-xs font-semibold uppercase border ${
                           regexLangTab === lang
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {lang}
@@ -2007,7 +2288,7 @@ export function ToolWorkspace({
                     className={`py-2 px-2 rounded-xl text-xs font-semibold border ${
                       codecMode === m.id
                         ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                        : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                        : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                     }`}
                   >
                     {m.label}
@@ -2037,7 +2318,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg font-mono font-semibold border ${
                           lineEndingMode === le
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {le} ({le === 'LF' ? 'Unix/Mac' : 'Windows'})
@@ -2075,8 +2356,9 @@ export function ToolWorkspace({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[#64748B] mb-1">Line Prefix</label>
+                    <label className="block text-[#5B6A80] mb-1">Line Prefix</label>
                     <input
+                  aria-label="e.g. '"
                       type="text"
                       value={dedupPrefix}
                       onChange={(e) => setDedupPrefix(e.target.value)}
@@ -2085,8 +2367,9 @@ export function ToolWorkspace({
                     />
                   </div>
                   <div>
-                    <label className="block text-[#64748B] mb-1">Line Suffix</label>
+                    <label className="block text-[#5B6A80] mb-1">Line Suffix</label>
                     <input
+                  aria-label="e.g. ',"
                       type="text"
                       value={dedupSuffix}
                       onChange={(e) => setDedupSuffix(e.target.value)}
@@ -2117,7 +2400,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg font-semibold border ${
                           qrMode === m.id
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {m.label}
@@ -2136,7 +2419,7 @@ export function ToolWorkspace({
                         className={`py-1.5 rounded-lg font-mono font-bold border ${
                           qrEcc === lvl
                             ? 'bg-[#7047EB] text-white border-[#7047EB]'
-                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#64748B]'
+                            : 'border-[#E8E6F2] dark:border-[#2A2E42] text-[#5B6A80]'
                         }`}
                       >
                         {lvl}
@@ -2146,7 +2429,7 @@ export function ToolWorkspace({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[#64748B] mb-1">Foreground Hex</label>
+                    <label className="block text-[#5B6A80] mb-1">Foreground Hex</label>
                     <input
                       type="color"
                       value={qrDarkColor}
@@ -2155,7 +2438,7 @@ export function ToolWorkspace({
                     />
                   </div>
                   <div>
-                    <label className="block text-[#64748B] mb-1">Background Hex</label>
+                    <label className="block text-[#5B6A80] mb-1">Background Hex</label>
                     <input
                       type="color"
                       value={qrLightColor}
@@ -2174,6 +2457,7 @@ export function ToolWorkspace({
                   <span className="font-mono text-[#7047EB] font-bold">{pwdLength} chars</span>
                 </div>
                 <input
+                  aria-label="Password length"
                   type="range"
                   min={8}
                   max={64}
@@ -2257,7 +2541,7 @@ export function ToolWorkspace({
               </span>
             </button>
 
-            <div className="pt-2 border-t border-[#E8E6F2] dark:border-[#2A2E42] flex items-center justify-between text-xs text-[#64748B]">
+            <div className="pt-2 border-t border-[#E8E6F2] dark:border-[#2A2E42] flex items-center justify-between text-xs text-[#5B6A80]">
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
                   type="checkbox"
