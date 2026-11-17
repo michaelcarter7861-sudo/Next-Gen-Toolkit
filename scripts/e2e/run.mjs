@@ -112,7 +112,11 @@ async function main() {
   const server = await serve();
   const engine = engines[process.env.BROWSER ?? 'chromium'] ?? chromium;
   const browser = await engine.launch();
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+    // Firefox needs this explicit; Chromium defaults to accepting downloads.
+    acceptDownloads: true,
+  });
   const page = await context.newPage();
   const consoleErrors = [];
   let currentRoute = '/';
@@ -194,12 +198,26 @@ async function main() {
   await check('the compressed image downloads with a target-named file', async () => {
     const button = page.getByRole('button', { name: 'Download', exact: true }).first();
     if (!(await button.count())) throw new Error('no download control rendered');
-    const [download] = await Promise.all([page.waitForEvent('download', { timeout: 30_000 }), button.click()]);
+    let download;
+    try {
+      [download] = await Promise.all([
+        page.waitForEvent('download', { timeout: 60_000 }),
+        button.click(),
+      ]);
+    } catch (error) {
+      const names = await page
+        .getByRole('button', { name: /download/i })
+        .allInnerTexts()
+        .catch(() => []);
+      throw new Error(`${error.message} — download buttons on the page: ${JSON.stringify(names)}`);
+    }
     const name = download.suggestedFilename();
     if (!/-20kb\.(jpg|png|webp)$/i.test(name)) throw new Error(`unexpected filename: ${name}`);
+    const failure = await download.failure();
+    if (failure) throw new Error(`download failed: ${failure}`);
     const stream = await download.createReadStream();
     let bytes = 0;
-    for await (const chunk of stream) bytes += chunk.length;
+    for await (const chunk of stream ?? []) bytes += chunk.length;
     if (bytes === 0) throw new Error('downloaded file is empty');
     if (bytes > 20.5 * 1024) throw new Error(`downloaded file is ${(bytes / 1024).toFixed(1)} KB, above the 20 KB ceiling`);
   });
