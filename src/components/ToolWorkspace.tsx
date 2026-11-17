@@ -1055,7 +1055,7 @@ export function ToolWorkspace({
                 )}
                 {TOOL_EDITORIAL_LINKS[tool.id].externalLinks[0] && (
                   <>
-                    <span className="text-[#CBD5E1] dark:text-[#334155]">·</span>
+                    <span className="text-[#5B6A80] dark:text-[#CBD5E1]">·</span>
                     <span>
                       Specification:{' '}
                       <a

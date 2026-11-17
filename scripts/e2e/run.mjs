@@ -420,7 +420,7 @@ async function main() {
     // The invalid-route scenario deliberately requests a 404 document.
     const relevant = consoleErrors.filter(
       (m) =>
-        !/googletagmanager|analytics|gtag|ERR_BLOCKED|\/g\/collect|google-analytics|this-route-does-not-exist/i.test(
+        !/googletagmanager|analytics|gtag|ERR_BLOCKED|\/g\/collect|\/td$|google-analytics|this-route-does-not-exist/i.test(
           m
         )
     );
